@@ -1,0 +1,1184 @@
+/**
+ * ORBITAL Mission Seed Data
+ * 
+ * All data is sourced from publicly available information.
+ * Labels indicate data provenance: OBSERVED | DERIVED | AI | ESTIMATED
+ * 
+ * Sources:
+ * - NASA: https://www.nasa.gov / https://api.nasa.gov
+ * - CelesTrak: https://celestrak.org
+ * - SatNOGS: https://db.satnogs.org
+ * - ESA: https://www.esa.int
+ * - JPL: https://www.jpl.nasa.gov
+ */
+
+import { Mission, MissionStatus } from './types';
+
+export const MISSIONS: Mission[] = [
+  // ============================================================
+  // EARTH MISSIONS
+  // ============================================================
+  {
+    id: 'iss',
+    name: 'International Space Station',
+    shortName: 'ISS',
+    agency: 'NASA / Roscosmos / ESA / JAXA / CSA',
+    agencies: ['NASA', 'Roscosmos', 'ESA', 'JAXA', 'CSA'],
+    destination: 'earth',
+    missionType: 'crewed',
+    status: 'active',
+    launchDate: '1998-11-20',
+    description:
+      'The International Space Station is a modular space station in low Earth orbit. It is a multinational collaborative project between five space agencies and serves as a microgravity and space environment research laboratory.',
+    objectives: [
+      'Conduct fundamental science in microgravity',
+      'Enable human spaceflight research for long-duration missions',
+      'Serve as a technology testbed for future exploration',
+      'Foster international cooperation in space',
+    ],
+    heroImageUrl: 'https://images-assets.nasa.gov/image/iss070e016032/iss070e016032~orig.jpg',
+    thumbnailUrl: 'https://images-assets.nasa.gov/image/iss070e016032/iss070e016032~thumb.jpg',
+    currentLocation: {
+      description: 'Low Earth Orbit, ~408 km altitude',
+      label: 'DERIVED',
+      source: 'CelesTrak',
+    },
+    phases: [
+      { id: 'assembly', name: 'Assembly', description: 'Station assembly', isCompleted: true },
+      { id: 'operations', name: 'Continuous Operations', description: 'Ongoing crewed operations', isCurrent: true },
+    ],
+    currentPhase: {
+      id: 'operations',
+      name: 'Continuous Operations',
+      description: 'Ongoing crewed operations since 2000',
+      isCurrent: true,
+    },
+    spacecraft: [
+      {
+        id: 'iss-spacecraft',
+        missionId: 'iss',
+        name: 'ISS',
+        type: 'station',
+        description: 'Modular space station in low Earth orbit',
+        noradId: '25544',
+        massKg: { value: 419725, label: 'OBSERVED', source: 'NASA' },
+        powerSource: 'Solar arrays',
+        manufacturer: 'Multiple international partners',
+        orbitalElements: {
+          noradId: '25544',
+          inclination: { value: 51.6, label: 'DERIVED', source: 'CelesTrak' },
+          altitude: { value: 408, label: 'DERIVED', source: 'CelesTrak' },
+          period: { value: 92.68, label: 'DERIVED', source: 'CelesTrak' },
+          apoapsis: { value: 418, label: 'DERIVED', source: 'CelesTrak' },
+          periapsis: { value: 408, label: 'DERIVED', source: 'CelesTrak' },
+          source: 'CelesTrak',
+          updatedAt: '2024-01-01',
+        },
+        transmitters: [
+          { frequency: 437.55, mode: 'FM', status: 'active', source: 'SatNOGS' },
+        ],
+      },
+    ],
+    events: [
+      { id: 'e1', missionId: 'iss', eventType: 'launch', timestamp: '1998-11-20', title: 'Zarya Module Launch', description: 'First ISS module launched aboard Proton rocket', source: 'NASA' },
+      { id: 'e2', missionId: 'iss', eventType: 'milestone', timestamp: '2000-11-02', title: 'First Crew Arrival', description: 'Expedition 1 crew arrives — ISS has been continuously occupied since', source: 'NASA' },
+      { id: 'e3', missionId: 'iss', eventType: 'milestone', timestamp: '2024-01-01', title: 'Year-Round Operations', description: 'ISS continues ongoing science and operations with rotating crew', source: 'NASA' },
+    ],
+    images: [
+      { id: 'iss-img-1', missionId: 'iss', url: 'https://images-assets.nasa.gov/image/iss070e016032/iss070e016032~orig.jpg', title: 'ISS from SpaceX Crew Dragon', date: '2023-10-05', source: 'NASA', sourceUrl: 'https://images.nasa.gov/' },
+      { id: 'iss-img-2', missionId: 'iss', url: 'https://images-assets.nasa.gov/image/iss068e025450/iss068e025450~orig.jpg', title: 'ISS in Orbit', date: '2022-11-14', source: 'NASA', sourceUrl: 'https://images.nasa.gov/' },
+    ],
+    sourceUrl: 'https://www.nasa.gov/international-space-station/',
+    tags: ['crewed', 'LEO', 'international', 'science', 'active'],
+    aiInsights: [
+      {
+        id: 'iss-ai-1',
+        missionId: 'iss',
+        type: 'summary',
+        content: 'The ISS is humanity\'s continuously crewed outpost in space — an engineering marvel that has hosted more than 270 people from 20 countries since 2000. It serves as both a research platform and a stepping stone for future exploration beyond Earth orbit.',
+        confidence: 'high',
+        createdAt: '2024-01-01',
+        basedOn: ['NASA', 'ESA'],
+      },
+    ],
+  },
+
+  {
+    id: 'terra',
+    name: 'Terra',
+    shortName: 'Terra',
+    agency: 'NASA',
+    destination: 'earth',
+    missionType: 'earth-observation',
+    status: 'active',
+    launchDate: '1999-12-18',
+    description:
+      'Terra is NASA\'s flagship Earth Observing System (EOS) satellite, carrying five instruments that study the interactions of Earth\'s atmosphere, land, ocean, and radiant energy.',
+    objectives: [
+      'Observe Earth\'s changing climate',
+      'Monitor land surface changes',
+      'Study atmospheric composition and clouds',
+      'Understand the global carbon and water cycles',
+    ],
+    heroImageUrl: 'https://images-assets.nasa.gov/image/PIA01349/PIA01349~orig.jpg',
+    thumbnailUrl: 'https://images-assets.nasa.gov/image/PIA01349/PIA01349~thumb.jpg',
+    currentLocation: {
+      description: 'Sun-synchronous orbit, ~705 km altitude',
+      label: 'DERIVED',
+      source: 'CelesTrak',
+    },
+    phases: [
+      { id: 'ops', name: 'Extended Science Operations', description: 'Ongoing Earth observation', isCurrent: true },
+    ],
+    currentPhase: { id: 'ops', name: 'Extended Science Operations', description: 'Ongoing Earth observation', isCurrent: true },
+    spacecraft: [
+      {
+        id: 'terra-sc',
+        missionId: 'terra',
+        name: 'Terra',
+        type: 'orbiter',
+        description: 'Multi-instrument Earth observation satellite',
+        noradId: '25994',
+        powerSource: 'Solar arrays',
+        manufacturer: 'Ball Aerospace',
+        orbitalElements: {
+          noradId: '25994',
+          inclination: { value: 98.2, label: 'DERIVED', source: 'CelesTrak' },
+          altitude: { value: 705, label: 'DERIVED', source: 'CelesTrak' },
+          period: { value: 98.8, label: 'DERIVED', source: 'CelesTrak' },
+          source: 'CelesTrak',
+          updatedAt: '2024-01-01',
+        },
+      },
+    ],
+    events: [
+      { id: 'terra-e1', missionId: 'terra', eventType: 'launch', timestamp: '1999-12-18', title: 'Terra Launch', description: 'Launched from Vandenberg AFB aboard Atlas IIAS', source: 'NASA' },
+      { id: 'terra-e2', missionId: 'terra', eventType: 'milestone', timestamp: '2019-12-18', title: '20-Year Anniversary', description: 'Terra celebrates 20 years of continuous Earth observation', source: 'NASA' },
+    ],
+    images: [
+      { id: 'terra-img-1', missionId: 'terra', url: 'https://images-assets.nasa.gov/image/PIA01349/PIA01349~orig.jpg', title: 'Terra MODIS Earth Image', date: '2000-01-01', source: 'NASA', sourceUrl: 'https://images.nasa.gov/' },
+    ],
+    sourceUrl: 'https://terra.nasa.gov/',
+    tags: ['Earth observation', 'climate', 'MODIS'],
+    aiInsights: [
+      {
+        id: 'terra-ai-1',
+        missionId: 'terra',
+        type: 'summary',
+        content: 'Terra has been monitoring Earth\'s systems for over 25 years, generating an invaluable climate record. Its MODIS instrument has produced daily global images that scientists use to track everything from wildfires to sea ice extent.',
+        confidence: 'high',
+        createdAt: '2024-01-01',
+        basedOn: ['NASA'],
+      },
+    ],
+  },
+
+  {
+    id: 'aqua',
+    name: 'Aqua',
+    shortName: 'Aqua',
+    agency: 'NASA',
+    destination: 'earth',
+    missionType: 'earth-observation',
+    status: 'active',
+    launchDate: '2002-05-04',
+    description:
+      'Aqua is a NASA Earth Science satellite collecting information about Earth\'s water cycle, including evaporation from the oceans, water vapor in the atmosphere, clouds, precipitation, soil moisture, sea ice, land ice, and snow cover.',
+    objectives: [
+      'Study Earth\'s water cycle',
+      'Monitor sea surface temperature and ocean productivity',
+      'Track atmospheric water vapor and precipitation',
+      'Observe polar ice changes',
+    ],
+    heroImageUrl: 'https://images-assets.nasa.gov/image/0201490/0201490~orig.jpg',
+    thumbnailUrl: 'https://images-assets.nasa.gov/image/0201490/0201490~thumb.jpg',
+    currentLocation: {
+      description: 'Sun-synchronous orbit, ~705 km altitude',
+      label: 'DERIVED',
+      source: 'CelesTrak',
+    },
+    phases: [
+      { id: 'ops', name: 'Extended Operations', description: 'Ongoing Earth observation', isCurrent: true },
+    ],
+    currentPhase: { id: 'ops', name: 'Extended Operations', description: 'Ongoing Earth observation', isCurrent: true },
+    spacecraft: [
+      {
+        id: 'aqua-sc',
+        missionId: 'aqua',
+        name: 'Aqua',
+        type: 'orbiter',
+        description: 'Earth observation satellite focused on water cycle',
+        noradId: '27424',
+        powerSource: 'Solar arrays',
+        manufacturer: 'TRW Inc.',
+        orbitalElements: {
+          noradId: '27424',
+          inclination: { value: 98.2, label: 'DERIVED', source: 'CelesTrak' },
+          altitude: { value: 705, label: 'DERIVED', source: 'CelesTrak' },
+          period: { value: 98.8, label: 'DERIVED', source: 'CelesTrak' },
+          source: 'CelesTrak',
+          updatedAt: '2024-01-01',
+        },
+      },
+    ],
+    events: [
+      { id: 'aqua-e1', missionId: 'aqua', eventType: 'launch', timestamp: '2002-05-04', title: 'Aqua Launch', description: 'Launched from Vandenberg AFB', source: 'NASA' },
+    ],
+    images: [],
+    sourceUrl: 'https://aqua.nasa.gov/',
+    tags: ['Earth observation', 'water cycle', 'MODIS'],
+    aiInsights: [
+      {
+        id: 'aqua-ai-1',
+        missionId: 'aqua',
+        type: 'summary',
+        content: 'Aqua is a cornerstone of Earth climate monitoring. Its six instruments track global precipitation patterns, sea surface temperatures, and atmospheric humidity — data that underpins modern weather forecasting and climate models.',
+        confidence: 'high',
+        createdAt: '2024-01-01',
+        basedOn: ['NASA'],
+      },
+    ],
+  },
+
+  {
+    id: 'landsat-9',
+    name: 'Landsat 9',
+    shortName: 'Landsat 9',
+    agency: 'NASA / USGS',
+    agencies: ['NASA', 'USGS'],
+    destination: 'earth',
+    missionType: 'earth-observation',
+    status: 'active',
+    launchDate: '2021-09-27',
+    description:
+      'Landsat 9 is a partnership between NASA and the U.S. Geological Survey that continues the Landsat program\'s 50-year record of Earth\'s land and coastal areas. It carries two instruments: the Operational Land Imager 2 (OLI-2) and the Thermal Infrared Sensor 2 (TIRS-2).',
+    objectives: [
+      'Extend the 50-year Landsat record of Earth\'s land surface',
+      'Monitor global land use and land cover change',
+      'Support water resource management',
+      'Track forest changes and agricultural production',
+    ],
+    heroImageUrl: 'https://images-assets.nasa.gov/image/GSFC_20171208_Archive_e001925/GSFC_20171208_Archive_e001925~orig.jpg',
+    thumbnailUrl: 'https://images-assets.nasa.gov/image/GSFC_20171208_Archive_e001925/GSFC_20171208_Archive_e001925~thumb.jpg',
+    currentLocation: {
+      description: 'Sun-synchronous orbit, ~705 km altitude',
+      label: 'DERIVED',
+      source: 'CelesTrak',
+    },
+    phases: [
+      { id: 'ops', name: 'Science Operations', description: 'Routine land imaging operations', isCurrent: true },
+    ],
+    currentPhase: { id: 'ops', name: 'Science Operations', description: 'Routine land imaging operations', isCurrent: true },
+    spacecraft: [
+      {
+        id: 'landsat-9-sc',
+        missionId: 'landsat-9',
+        name: 'Landsat 9',
+        type: 'orbiter',
+        description: 'Land imaging satellite with OLI-2 and TIRS-2 instruments',
+        noradId: '49260',
+        orbitalElements: {
+          noradId: '49260',
+          inclination: { value: 98.2, label: 'DERIVED', source: 'CelesTrak' },
+          altitude: { value: 705, label: 'DERIVED', source: 'CelesTrak' },
+          period: { value: 98.8, label: 'DERIVED', source: 'CelesTrak' },
+          source: 'CelesTrak',
+          updatedAt: '2024-01-01',
+        },
+      },
+    ],
+    events: [
+      { id: 'l9-e1', missionId: 'landsat-9', eventType: 'launch', timestamp: '2021-09-27', title: 'Landsat 9 Launch', description: 'Launched aboard Atlas V from Vandenberg Space Force Base', source: 'NASA' },
+      { id: 'l9-e2', missionId: 'landsat-9', eventType: 'milestone', timestamp: '2022-02-10', title: 'First Science Images', description: 'Landsat 9 begins routine science operations', source: 'NASA' },
+    ],
+    images: [],
+    sourceUrl: 'https://landsat.gsfc.nasa.gov/satellites/landsat-9/',
+    tags: ['Earth observation', 'land imaging', 'USGS'],
+    aiInsights: [
+      {
+        id: 'l9-ai-1',
+        missionId: 'landsat-9',
+        type: 'summary',
+        content: 'Landsat 9 continues a half-century land imaging record that has become essential for tracking environmental change. Scientists use Landsat data to monitor deforestation, glacier retreat, urban growth, and drought — a long baseline that no other dataset can replace.',
+        confidence: 'high',
+        createdAt: '2024-01-01',
+        basedOn: ['NASA'],
+      },
+    ],
+  },
+
+  // ============================================================
+  // MOON MISSIONS
+  // ============================================================
+  {
+    id: 'artemis-2',
+    name: 'Artemis II',
+    shortName: 'Artemis II',
+    agency: 'NASA',
+    destination: 'moon',
+    missionType: 'crewed',
+    status: 'planned',
+    launchDate: '2025-09-01',
+    description:
+      'Artemis II is NASA\'s first crewed mission to the vicinity of the Moon since Apollo 17 in 1972. The four-person crew will fly aboard the Orion spacecraft, launched by the Space Launch System, on a 10-day mission that includes a lunar flyby. This mission does not land on the Moon; it is a critical test of crewed deep-space systems.',
+    objectives: [
+      'First crewed test of the Orion spacecraft in deep space',
+      'Validate life support systems beyond low Earth orbit',
+      'Test SLS performance with crew',
+      'Fly a free-return trajectory around the Moon',
+      'Demonstrate deep-space communication and navigation',
+    ],
+    heroImageUrl: 'https://images-assets.nasa.gov/image/KSC-20220316-PH-KLS01_0013/KSC-20220316-PH-KLS01_0013~orig.jpg',
+    thumbnailUrl: 'https://images-assets.nasa.gov/image/KSC-20220316-PH-KLS01_0013/KSC-20220316-PH-KLS01_0013~thumb.jpg',
+    currentLocation: {
+      description: 'Pre-launch at Kennedy Space Center, Florida',
+      label: 'OBSERVED',
+      source: 'NASA',
+    },
+    phases: [
+      { id: 'prelaunch', name: 'Pre-Launch Processing', description: 'Vehicle integration and testing at KSC', isCurrent: true },
+      { id: 'launch', name: 'Launch', description: 'SLS launch from Launch Complex 39B', isFuture: true },
+      { id: 'earth-orbit', name: 'Earth Orbit', description: 'Orbit checkout and verification', isFuture: true },
+      { id: 'tli', name: 'Translunar Injection', description: 'Departure burn for the Moon', isFuture: true },
+      { id: 'transit', name: 'Lunar Transit', description: 'Cruise toward the Moon', isFuture: true },
+      { id: 'lunar-flyby', name: 'Lunar Flyby', description: 'Close approach and flyby of the Moon', isFuture: true },
+      { id: 'return', name: 'Return Transit', description: 'Return cruise to Earth', isFuture: true },
+      { id: 'reentry', name: 'Re-Entry & Splashdown', description: 'Orion re-enters atmosphere and splashes down in the Pacific', isFuture: true },
+    ],
+    currentPhase: {
+      id: 'prelaunch',
+      name: 'Pre-Launch Processing',
+      description: 'Vehicle integration and testing at Kennedy Space Center',
+      isCurrent: true,
+    },
+    spacecraft: [
+      {
+        id: 'orion-a2',
+        missionId: 'artemis-2',
+        name: 'Orion (Artemis II)',
+        type: 'capsule',
+        description: 'NASA\'s Orion Multi-Purpose Crew Vehicle, carrying four astronauts on a lunar flyby trajectory. Includes a Crew Module and European Service Module.',
+        imageUrl: 'https://images-assets.nasa.gov/image/KSC-20220316-PH-KLS01_0013/KSC-20220316-PH-KLS01_0013~orig.jpg',
+        massKg: { value: 26520, label: 'OBSERVED', source: 'NASA', notes: 'Approximate launch mass' },
+        powerSource: 'Solar arrays (European Service Module)',
+        manufacturer: 'Lockheed Martin (Crew Module) / Airbus Defence and Space (European Service Module)',
+      },
+      {
+        id: 'sls-a2',
+        missionId: 'artemis-2',
+        name: 'Space Launch System Block 1 Crew',
+        type: 'rocket',
+        description: 'NASA\'s Space Launch System in Block 1 Crew configuration, the most powerful rocket ever to fly. Delivers Orion to a high-energy trajectory toward the Moon.',
+        powerSource: 'RS-25 engines + solid rocket boosters',
+        manufacturer: 'Boeing (core stage) / Northrop Grumman (SRBs) / Aerojet Rocketdyne (RS-25)',
+      },
+    ],
+    events: [
+      { id: 'a2-e1', missionId: 'artemis-2', eventType: 'milestone', timestamp: '2023-04-03', title: 'Crew Announced', description: 'NASA announces four-person Artemis II crew: Reid Wiseman, Victor Glover, Christina Koch, Jeremy Hansen', source: 'NASA', sourceUrl: 'https://www.nasa.gov/artemis-ii' },
+      { id: 'a2-e2', missionId: 'artemis-2', eventType: 'milestone', timestamp: '2024-07-09', title: 'Launch Date Target Update', description: 'NASA targets September 2025 for Artemis II launch', source: 'NASA' },
+    ],
+    images: [
+      { id: 'a2-img-1', missionId: 'artemis-2', url: 'https://images-assets.nasa.gov/image/KSC-20220316-PH-KLS01_0013/KSC-20220316-PH-KLS01_0013~orig.jpg', title: 'Artemis II Orion Spacecraft at KSC', date: '2022-03-16', source: 'NASA', sourceUrl: 'https://images.nasa.gov/' },
+    ],
+    sourceUrl: 'https://www.nasa.gov/artemis-ii',
+    tags: ['crewed', 'Artemis', 'Orion', 'SLS', 'lunar flyby'],
+    aiInsights: [
+      {
+        id: 'a2-ai-1',
+        missionId: 'artemis-2',
+        type: 'summary',
+        content: 'Artemis II is not a landing — it is a rigorous test drive. Four astronauts will fly farther from Earth than any human has traveled since 1972, validating every system Orion and SLS need before humans attempt to land on the Moon in Artemis III.',
+        confidence: 'high',
+        createdAt: '2024-01-01',
+        basedOn: ['NASA'],
+      },
+      {
+        id: 'a2-ai-2',
+        missionId: 'artemis-2',
+        type: 'significance',
+        content: 'Artemis II matters because it is the final verification step before landing humans on the Moon for the first time in over 50 years. The mission also features the first Black person and first Canadian to travel to lunar distance — a historic milestone in the expansion of human spaceflight.',
+        confidence: 'high',
+        createdAt: '2024-01-01',
+        basedOn: ['NASA'],
+      },
+    ],
+  },
+
+  {
+    id: 'lro',
+    name: 'Lunar Reconnaissance Orbiter',
+    shortName: 'LRO',
+    agency: 'NASA',
+    destination: 'moon',
+    missionType: 'orbiter',
+    status: 'active',
+    launchDate: '2009-06-18',
+    description:
+      'The Lunar Reconnaissance Orbiter (LRO) is a NASA robotic spacecraft currently in polar orbit around the Moon. It has been mapping the Moon in unprecedented detail since 2009, providing critical data for future human landing sites.',
+    objectives: [
+      'Create a comprehensive map of the lunar surface',
+      'Identify safe landing sites for future human missions',
+      'Characterize the lunar radiation environment',
+      'Search for water ice in permanently shadowed polar regions',
+      'Measure lunar temperatures',
+    ],
+    heroImageUrl: 'https://images-assets.nasa.gov/image/PIA14021/PIA14021~orig.jpg',
+    thumbnailUrl: 'https://images-assets.nasa.gov/image/PIA14021/PIA14021~thumb.jpg',
+    currentLocation: {
+      description: 'Polar orbit around the Moon, ~50–200 km altitude',
+      label: 'DERIVED',
+      source: 'NASA',
+    },
+    phases: [
+      { id: 'mapping', name: 'Extended Science Operations', description: 'Ongoing polar lunar mapping', isCurrent: true },
+    ],
+    currentPhase: { id: 'mapping', name: 'Extended Science Operations', description: 'Ongoing polar lunar mapping', isCurrent: true },
+    spacecraft: [
+      {
+        id: 'lro-sc',
+        missionId: 'lro',
+        name: 'LRO',
+        type: 'orbiter',
+        description: 'Robotic lunar orbiter carrying seven science instruments',
+        massKg: { value: 1916, label: 'OBSERVED', source: 'NASA' },
+        powerSource: 'Solar arrays',
+        manufacturer: 'Goddard Space Flight Center',
+        orbitalElements: {
+          inclination: { value: 90, label: 'DERIVED', source: 'NASA', notes: 'Approximate polar orbit' },
+          altitude: { value: 100, label: 'ESTIMATED', source: 'NASA', notes: 'Varies, typical value ~50-200 km' },
+          source: 'NASA',
+          updatedAt: '2024-01-01',
+        },
+      },
+    ],
+    events: [
+      { id: 'lro-e1', missionId: 'lro', eventType: 'launch', timestamp: '2009-06-18', title: 'LRO Launch', description: 'Launched aboard Atlas V along with LCROSS', source: 'NASA' },
+      { id: 'lro-e2', missionId: 'lro', eventType: 'milestone', timestamp: '2009-09-17', title: 'Primary Science Orbit', description: 'LRO enters primary mapping orbit', source: 'NASA' },
+      { id: 'lro-e3', missionId: 'lro', eventType: 'milestone', timestamp: '2024-01-01', title: 'Ongoing Operations', description: 'LRO continues lunar mapping in extended mission', source: 'NASA' },
+    ],
+    images: [
+      { id: 'lro-img-1', missionId: 'lro', url: 'https://images-assets.nasa.gov/image/PIA14021/PIA14021~orig.jpg', title: 'Lunar South Pole by LRO LROC', date: '2011-01-01', source: 'NASA', sourceUrl: 'https://images.nasa.gov/' },
+    ],
+    sourceUrl: 'https://lunar.gsfc.nasa.gov/',
+    tags: ['orbiter', 'lunar mapping', 'ice prospecting'],
+    aiInsights: [
+      {
+        id: 'lro-ai-1',
+        missionId: 'lro',
+        type: 'summary',
+        content: 'LRO has been circling the Moon for over 15 years, building the most detailed map of the lunar surface ever made. Its cameras can resolve objects less than a meter across — sharp enough to photograph the Apollo landing sites. This data directly guides where NASA plans to land Artemis crews.',
+        confidence: 'high',
+        createdAt: '2024-01-01',
+        basedOn: ['NASA'],
+      },
+    ],
+  },
+
+  {
+    id: 'kplo',
+    name: 'Korea Pathfinder Lunar Orbiter',
+    shortName: 'KPLO (Danuri)',
+    agency: 'KARI',
+    destination: 'moon',
+    missionType: 'orbiter',
+    status: 'active',
+    launchDate: '2022-08-05',
+    description:
+      'The Korea Pathfinder Lunar Orbiter (KPLO), also known as Danuri, is South Korea\'s first lunar mission. It orbits the Moon collecting imagery and scientific data, and carries a NASA payload (ShadowCam) to image permanently shadowed regions.',
+    objectives: [
+      'Demonstrate South Korea\'s deep-space capabilities',
+      'Image the lunar surface in visible and gamma-ray wavelengths',
+      'Map permanently shadowed regions with NASA\'s ShadowCam',
+      'Test deep-space communications',
+    ],
+    heroImageUrl: 'https://images-assets.nasa.gov/image/KSC-20220803-PH-SPX01_0033/KSC-20220803-PH-SPX01_0033~orig.jpg',
+    thumbnailUrl: 'https://images-assets.nasa.gov/image/KSC-20220803-PH-SPX01_0033/KSC-20220803-PH-SPX01_0033~thumb.jpg',
+    currentLocation: {
+      description: 'Polar orbit around the Moon, ~100 km altitude',
+      label: 'DERIVED',
+      source: 'NASA',
+    },
+    phases: [
+      { id: 'science', name: 'Science Operations', description: 'Ongoing lunar science', isCurrent: true },
+    ],
+    currentPhase: { id: 'science', name: 'Science Operations', description: 'Ongoing lunar science', isCurrent: true },
+    spacecraft: [
+      {
+        id: 'kplo-sc',
+        missionId: 'kplo',
+        name: 'Danuri',
+        type: 'orbiter',
+        description: 'Korea\'s first lunar orbiter, carrying 6 scientific instruments including NASA\'s ShadowCam',
+        powerSource: 'Solar arrays',
+        manufacturer: 'KARI (Korea Aerospace Research Institute)',
+        orbitalElements: {
+          altitude: { value: 100, label: 'DERIVED', source: 'NASA' },
+          inclination: { value: 90, label: 'DERIVED', source: 'NASA', notes: 'Polar orbit' },
+          source: 'NASA',
+          updatedAt: '2024-01-01',
+        },
+      },
+    ],
+    events: [
+      { id: 'kplo-e1', missionId: 'kplo', eventType: 'launch', timestamp: '2022-08-05', title: 'Danuri Launch', description: 'Launched on SpaceX Falcon 9 from Cape Canaveral', source: 'NASA' },
+      { id: 'kplo-e2', missionId: 'kplo', eventType: 'milestone', timestamp: '2022-12-27', title: 'Lunar Orbit Insertion', description: 'Danuri enters lunar orbit', source: 'NASA' },
+    ],
+    images: [],
+    sourceUrl: 'https://www.kari.re.kr/',
+    tags: ['orbiter', 'South Korea', 'ShadowCam', 'international'],
+    aiInsights: [
+      {
+        id: 'kplo-ai-1',
+        missionId: 'kplo',
+        type: 'summary',
+        content: 'Danuri marks South Korea\'s entry into deep-space exploration and is a showcase of international collaboration — carrying NASA\'s ShadowCam instrument, which photographs the Moon\'s permanently dark polar craters where water ice may exist.',
+        confidence: 'high',
+        createdAt: '2024-01-01',
+        basedOn: ['NASA', 'ESA'],
+      },
+    ],
+  },
+
+  {
+    id: 'lunar-gateway',
+    name: 'Lunar Gateway',
+    shortName: 'Gateway',
+    agency: 'NASA / ESA / JAXA / CSA',
+    agencies: ['NASA', 'ESA', 'JAXA', 'CSA'],
+    destination: 'moon',
+    missionType: 'crewed',
+    status: 'planned',
+    launchDate: '2025-11-01',
+    description:
+      'The Lunar Gateway is a planned small space station in a near-rectilinear halo orbit around the Moon. It will serve as a waystation for Artemis missions and future deep-space exploration. The Power and Propulsion Element (PPE) and Habitation and Logistics Outpost (HALO) are the first elements planned for launch.',
+    objectives: [
+      'Provide a crewed staging point for lunar surface missions',
+      'Serve as a long-term orbiting lunar laboratory',
+      'Test technologies for future Mars missions',
+      'Expand international partnerships in deep space',
+    ],
+    heroImageUrl: 'https://images-assets.nasa.gov/image/KSC-20230920-PH-JBS01_0091/KSC-20230920-PH-JBS01_0091~orig.jpg',
+    thumbnailUrl: 'https://images-assets.nasa.gov/image/KSC-20230920-PH-JBS01_0091/KSC-20230920-PH-JBS01_0091~thumb.jpg',
+    phases: [
+      { id: 'development', name: 'Development & Integration', description: 'PPE and HALO development and integration', isCurrent: true },
+      { id: 'launch', name: 'First Launch', description: 'PPE and HALO launch on Falcon Heavy', isFuture: true },
+      { id: 'ops', name: 'Operational', description: 'Crewed operations begin', isFuture: true },
+    ],
+    currentPhase: { id: 'development', name: 'Development & Integration', description: 'PPE and HALO development and integration', isCurrent: true },
+    spacecraft: [
+      {
+        id: 'gateway-ppe',
+        missionId: 'lunar-gateway',
+        name: 'Gateway PPE/HALO',
+        type: 'station',
+        description: 'Power and Propulsion Element and Habitation and Logistics Outpost — first elements of the Lunar Gateway',
+        powerSource: 'Solar Electric Propulsion',
+        manufacturer: 'Maxar Technologies (PPE) / Northrop Grumman (HALO)',
+      },
+    ],
+    events: [
+      { id: 'gw-e1', missionId: 'lunar-gateway', eventType: 'milestone', timestamp: '2019-05-23', title: 'PPE Contract Awarded', description: 'NASA awards PPE contract to Maxar Technologies', source: 'NASA' },
+    ],
+    images: [],
+    sourceUrl: 'https://www.nasa.gov/lunar-gateway/',
+    tags: ['planned', 'crewed', 'space station', 'Artemis', 'international'],
+    aiInsights: [
+      {
+        id: 'gw-ai-1',
+        missionId: 'lunar-gateway',
+        type: 'summary',
+        content: 'Gateway is designed to be the first space station in deep space — a permanently available waystation in lunar orbit that Artemis crews can visit, use as a staging point for surface missions, and leave between visits. Unlike the ISS, Gateway will go unmanned for extended periods.',
+        confidence: 'high',
+        createdAt: '2024-01-01',
+        basedOn: ['NASA'],
+      },
+    ],
+  },
+
+  // ============================================================
+  // MARS MISSIONS
+  // ============================================================
+  {
+    id: 'perseverance',
+    name: 'Mars 2020 / Perseverance',
+    shortName: 'Perseverance',
+    agency: 'NASA',
+    destination: 'mars',
+    missionType: 'rover',
+    status: 'surface-operations',
+    launchDate: '2020-07-30',
+    description:
+      'Perseverance is NASA\'s most capable Mars rover, currently exploring Jezero Crater — an ancient lake bed and river delta. Its primary mission is to seek signs of ancient microbial life and collect rock and soil samples for potential return to Earth.',
+    objectives: [
+      'Search for signs of ancient microbial life in Jezero Crater',
+      'Collect and cache rock and soil samples for future return to Earth',
+      'Test in-situ oxygen production (MOXIE experiment)',
+      'Characterize Martian weather and dust',
+      'Support Ingenuity helicopter flight operations',
+    ],
+    heroImageUrl: 'https://mars.nasa.gov/system/news_items/main_images/9098_PIA24401-16.jpg',
+    thumbnailUrl: 'https://mars.nasa.gov/system/news_items/main_images/9098_PIA24401-16.jpg',
+    currentLocation: {
+      description: 'Jezero Crater, Mars — exploring the ancient lake delta margin',
+      label: 'OBSERVED',
+      source: 'NASA',
+    },
+    surfaceLocation: {
+      lat: 18.4447,
+      lon: 77.4508,
+      siteName: 'Jezero Crater',
+      label: 'OBSERVED',
+      source: 'NASA',
+    },
+    phases: [
+      { id: 'landing', name: 'Landing', description: 'EDL — Entry, Descent, and Landing', isCompleted: true },
+      { id: 'checkout', name: 'Checkout & Ingenuity Ops', description: 'Rover system checkout, Ingenuity helicopter flights', isCompleted: true },
+      { id: 'crater-floor', name: 'Crater Floor', description: 'Exploration of Jezero Crater floor', isCompleted: true },
+      { id: 'delta-front', name: 'Delta Front', description: 'Exploration of ancient river delta', isCompleted: true },
+      { id: 'upper-fan', name: 'Upper Delta / Margin', description: 'Exploring upper delta and crater rim', isCurrent: true },
+    ],
+    currentPhase: {
+      id: 'upper-fan',
+      name: 'Upper Delta Exploration',
+      description: 'Exploring the ancient river delta margin and crater rim for biosignatures and diverse rock types',
+      isCurrent: true,
+    },
+    spacecraft: [
+      {
+        id: 'perseverance-rover',
+        missionId: 'perseverance',
+        name: 'Perseverance Rover',
+        type: 'rover',
+        description: 'Car-sized rover with 7 science instruments, 23 cameras, 2 microphones, a sample caching system, and the MOXIE oxygen experiment.',
+        massKg: { value: 1025, label: 'OBSERVED', source: 'NASA' },
+        powerSource: 'Multi-Mission Radioisotope Thermoelectric Generator (MMRTG)',
+        manufacturer: 'NASA Jet Propulsion Laboratory',
+      },
+      {
+        id: 'ingenuity',
+        missionId: 'perseverance',
+        name: 'Ingenuity Helicopter',
+        type: 'probe',
+        description: 'Technology demonstration helicopter — first powered aircraft to fly on another planet. Flew 72 times before rotor damage ended operations in January 2024.',
+        massKg: { value: 1.8, label: 'OBSERVED', source: 'NASA' },
+        powerSource: 'Solar-charged lithium-ion batteries',
+        manufacturer: 'NASA Jet Propulsion Laboratory',
+      },
+    ],
+    events: [
+      { id: 'p-e1', missionId: 'perseverance', eventType: 'launch', timestamp: '2020-07-30', title: 'Launch', description: 'Launched aboard Atlas V 541 from Cape Canaveral', source: 'NASA' },
+      { id: 'p-e2', missionId: 'perseverance', eventType: 'landing', timestamp: '2021-02-18', title: 'Landing in Jezero Crater', description: 'Perseverance lands successfully after "Seven Minutes of Terror" EDL', source: 'NASA' },
+      { id: 'p-e3', missionId: 'perseverance', eventType: 'milestone', timestamp: '2021-04-19', title: 'Ingenuity First Flight', description: 'Ingenuity helicopter makes first powered flight on Mars', source: 'NASA' },
+      { id: 'p-e4', missionId: 'perseverance', eventType: 'science', timestamp: '2021-09-06', title: 'First Core Sample', description: 'Perseverance successfully drills and caches first rock core sample', source: 'NASA' },
+      { id: 'p-e5', missionId: 'perseverance', eventType: 'science', timestamp: '2022-09-01', title: 'Delta Exploration Begins', description: 'Rover begins exploring ancient river delta — primary astrobiological target', source: 'NASA' },
+      { id: 'p-e6', missionId: 'perseverance', eventType: 'milestone', timestamp: '2024-01-25', title: 'Ingenuity Ends Operations', description: 'Ingenuity\'s 72nd flight ends with rotor blade damage; helicopter operations conclude', source: 'NASA' },
+      { id: 'p-e7', missionId: 'perseverance', eventType: 'science', timestamp: '2024-07-01', title: 'Campaign 4 Begins', description: 'Rover begins fourth science campaign exploring crater margin', source: 'NASA' },
+    ],
+    images: [
+      { id: 'p-img-1', missionId: 'perseverance', url: 'https://mars.nasa.gov/system/news_items/main_images/9098_PIA24401-16.jpg', title: 'Perseverance Rover First Image', date: '2021-02-18', source: 'NASA', sourceUrl: 'https://mars.nasa.gov/' },
+      { id: 'p-img-2', missionId: 'perseverance', url: 'https://images-assets.nasa.gov/image/PIA24546/PIA24546~orig.jpg', title: 'Perseverance at Jezero Crater', date: '2021-03-01', source: 'NASA', sourceUrl: 'https://images.nasa.gov/' },
+      { id: 'p-img-3', missionId: 'perseverance', url: 'https://images-assets.nasa.gov/image/PIA24836/PIA24836~orig.jpg', title: 'Ingenuity in Flight', date: '2021-04-19', source: 'NASA', sourceUrl: 'https://images.nasa.gov/' },
+    ],
+    sourceUrl: 'https://mars.nasa.gov/mars2020/',
+    tags: ['rover', 'Jezero', 'astrobiology', 'sample cache', 'Ingenuity'],
+    aiInsights: [
+      {
+        id: 'p-ai-1',
+        missionId: 'perseverance',
+        type: 'summary',
+        content: 'Perseverance is humanity\'s most sophisticated life-hunting rover. It is systematically caching rock samples from one of Mars\'s most scientifically compelling sites — an ancient lake and river delta — for a future mission to retrieve and return to Earth, where scientists can use every available analytical tool to search for biosignatures.',
+        confidence: 'high',
+        createdAt: '2024-01-01',
+        basedOn: ['NASA'],
+      },
+      {
+        id: 'p-ai-2',
+        missionId: 'perseverance',
+        type: 'current-status',
+        content: 'As of mid-2024, Perseverance is exploring the upper reaches of the Jezero Crater delta, a geologically diverse zone where ancient sediments from multiple environments converge. The rover has collected over 20 rock core samples and continues to characterize the crater\'s ancient habitability.',
+        confidence: 'high',
+        createdAt: '2024-07-01',
+        basedOn: ['NASA'],
+      },
+    ],
+  },
+
+  {
+    id: 'curiosity',
+    name: 'Mars Science Laboratory / Curiosity',
+    shortName: 'Curiosity',
+    agency: 'NASA',
+    destination: 'mars',
+    missionType: 'rover',
+    status: 'surface-operations',
+    launchDate: '2011-11-26',
+    description:
+      'Curiosity is a car-sized rover that has been exploring Gale Crater on Mars since 2012. Its mission is to determine whether Mars ever had the conditions to support microbial life. The rover has driven over 30 km and climbed more than 700 m of Mt. Sharp.',
+    objectives: [
+      'Determine the habitability of Gale Crater\'s ancient environment',
+      'Study Mars geology and geochemistry',
+      'Characterize the radiation environment at the surface',
+      'Investigate the role of water in Martian geology',
+    ],
+    heroImageUrl: 'https://images-assets.nasa.gov/image/PIA16239/PIA16239~orig.jpg',
+    thumbnailUrl: 'https://images-assets.nasa.gov/image/PIA16239/PIA16239~thumb.jpg',
+    currentLocation: {
+      description: 'Gale Crater, Mars — climbing the slopes of Mt. Sharp (Aeolis Mons)',
+      label: 'OBSERVED',
+      source: 'NASA',
+    },
+    surfaceLocation: {
+      lat: -4.5895,
+      lon: 137.4417,
+      siteName: 'Gale Crater / Mt. Sharp',
+      label: 'OBSERVED',
+      source: 'NASA',
+    },
+    phases: [
+      { id: 'landing', name: 'Landing', description: 'Sky crane EDL', isCompleted: true },
+      { id: 'flat-plains', name: 'Crater Floor', description: 'Early exploration of Gale Crater floor', isCompleted: true },
+      { id: 'murray', name: 'Murray Formation', description: 'Exploring ancient lake sediments', isCompleted: true },
+      { id: 'mt-sharp', name: 'Mt. Sharp Ascent', description: 'Climbing and exploring Aeolis Mons', isCurrent: true },
+    ],
+    currentPhase: {
+      id: 'mt-sharp',
+      name: 'Mt. Sharp Ascent',
+      description: 'Exploring the stratigraphy of Mt. Sharp to read the Martian climate record',
+      isCurrent: true,
+    },
+    spacecraft: [
+      {
+        id: 'curiosity-rover',
+        missionId: 'curiosity',
+        name: 'Curiosity Rover',
+        type: 'rover',
+        description: 'The largest Mars rover ever when launched. Carries 10 scientific instruments including ChemCam (laser + spectrometer), SAM (atmospheric and organic chemistry), and MAHLI (close-up imager).',
+        massKg: { value: 899, label: 'OBSERVED', source: 'NASA' },
+        powerSource: 'Multi-Mission Radioisotope Thermoelectric Generator (MMRTG)',
+        manufacturer: 'NASA Jet Propulsion Laboratory',
+      },
+    ],
+    events: [
+      { id: 'c-e1', missionId: 'curiosity', eventType: 'launch', timestamp: '2011-11-26', title: 'Launch', description: 'Launched aboard Atlas V from Cape Canaveral Air Force Station', source: 'NASA' },
+      { id: 'c-e2', missionId: 'curiosity', eventType: 'landing', timestamp: '2012-08-06', title: 'Sky Crane Landing', description: 'First use of sky crane EDL system — Curiosity lands in Gale Crater', source: 'NASA' },
+      { id: 'c-e3', missionId: 'curiosity', eventType: 'science', timestamp: '2013-03-12', title: 'Habitable Environment Confirmed', description: 'Scientists announce Yellowknife Bay showed ancient habitable environment', source: 'NASA' },
+      { id: 'c-e4', missionId: 'curiosity', eventType: 'milestone', timestamp: '2022-08-06', title: '10-Year Anniversary on Mars', description: 'Curiosity marks 10 years of surface operations', source: 'NASA' },
+      { id: 'c-e5', missionId: 'curiosity', eventType: 'science', timestamp: '2023-07-01', title: 'Organic Molecule Discovery', description: 'Detection of diverse organic molecules in ancient lake sediments', source: 'NASA' },
+    ],
+    images: [
+      { id: 'c-img-1', missionId: 'curiosity', url: 'https://images-assets.nasa.gov/image/PIA16239/PIA16239~orig.jpg', title: 'Curiosity Self-Portrait in Gale Crater', date: '2012-10-31', source: 'NASA', sourceUrl: 'https://images.nasa.gov/' },
+      { id: 'c-img-2', missionId: 'curiosity', url: 'https://images-assets.nasa.gov/image/PIA20844/PIA20844~orig.jpg', title: 'Murray Buttes', date: '2016-09-08', source: 'NASA', sourceUrl: 'https://images.nasa.gov/' },
+    ],
+    sourceUrl: 'https://mars.nasa.gov/msl/',
+    tags: ['rover', 'Gale Crater', 'geochemistry', 'Mt. Sharp'],
+    aiInsights: [
+      {
+        id: 'c-ai-1',
+        missionId: 'curiosity',
+        type: 'summary',
+        content: 'Curiosity answered the central question it was sent to answer: Gale Crater was indeed habitable billions of years ago. Now over 12 years into its extended mission, the rover is climbing Mt. Sharp — a layered mountain of sediment that records billions of years of Martian climate history, readable like the pages of a book.',
+        confidence: 'high',
+        createdAt: '2024-01-01',
+        basedOn: ['NASA'],
+      },
+    ],
+  },
+
+  {
+    id: 'maven',
+    name: 'MAVEN',
+    shortName: 'MAVEN',
+    agency: 'NASA',
+    destination: 'mars',
+    missionType: 'orbiter',
+    status: 'science-operations',
+    launchDate: '2013-11-18',
+    description:
+      'MAVEN (Mars Atmosphere and Volatile Evolution) is a NASA spacecraft that has been orbiting Mars since 2014. It investigates how and why Mars lost its thick early atmosphere and liquid water.',
+    objectives: [
+      'Determine the role of solar wind in stripping Mars\'s early atmosphere',
+      'Measure the rate of atmospheric escape from Mars',
+      'Understand how Martian climate evolved over time',
+      'Serve as a communications relay for surface missions',
+    ],
+    heroImageUrl: 'https://images-assets.nasa.gov/image/PIA18922/PIA18922~orig.jpg',
+    thumbnailUrl: 'https://images-assets.nasa.gov/image/PIA18922/PIA18922~thumb.jpg',
+    currentLocation: {
+      description: 'Elliptical orbit around Mars',
+      label: 'DERIVED',
+      source: 'NASA',
+    },
+    phases: [
+      { id: 'science', name: 'Extended Science Operations', description: 'Ongoing atmospheric science', isCurrent: true },
+    ],
+    currentPhase: { id: 'science', name: 'Extended Science Operations', description: 'Ongoing atmospheric science and relay support', isCurrent: true },
+    spacecraft: [
+      {
+        id: 'maven-sc',
+        missionId: 'maven',
+        name: 'MAVEN',
+        type: 'orbiter',
+        description: 'Atmospheric science orbiter with 8 instruments measuring solar wind interaction with Martian upper atmosphere',
+        massKg: { value: 2454, label: 'OBSERVED', source: 'NASA' },
+        powerSource: 'Solar arrays',
+        manufacturer: 'Lockheed Martin Space',
+        orbitalElements: {
+          periapsis: { value: 150, label: 'DERIVED', source: 'NASA', notes: 'Approximate — varies with orbit adjustment' },
+          apoapsis: { value: 6000, label: 'DERIVED', source: 'NASA', notes: 'Approximate' },
+          inclination: { value: 75, label: 'DERIVED', source: 'NASA' },
+          source: 'NASA',
+          updatedAt: '2024-01-01',
+        },
+      },
+    ],
+    events: [
+      { id: 'm-e1', missionId: 'maven', eventType: 'launch', timestamp: '2013-11-18', title: 'Launch', description: 'Launched aboard Atlas V from Cape Canaveral', source: 'NASA' },
+      { id: 'm-e2', missionId: 'maven', eventType: 'milestone', timestamp: '2014-09-22', title: 'Mars Orbit Insertion', description: 'MAVEN enters Mars orbit after 10-month cruise', source: 'NASA' },
+      { id: 'm-e3', missionId: 'maven', eventType: 'science', timestamp: '2015-11-05', title: 'Key Results Published', description: 'NASA reveals MAVEN data showing Mars lost atmosphere to solar wind', source: 'NASA' },
+      { id: 'm-e4', missionId: 'maven', eventType: 'milestone', timestamp: '2024-01-01', title: 'Ongoing Science & Relay', description: 'MAVEN continues atmospheric science and serves as relay for Mars surface missions', source: 'NASA' },
+    ],
+    images: [
+      { id: 'm-img-1', missionId: 'maven', url: 'https://images-assets.nasa.gov/image/PIA18922/PIA18922~orig.jpg', title: 'MAVEN Artist Concept', date: '2014-01-01', source: 'NASA', sourceUrl: 'https://images.nasa.gov/' },
+    ],
+    sourceUrl: 'https://lasp.colorado.edu/maven/',
+    tags: ['orbiter', 'atmosphere', 'solar wind', 'climate history'],
+    aiInsights: [
+      {
+        id: 'm-ai-1',
+        missionId: 'maven',
+        type: 'summary',
+        content: 'MAVEN answered a fundamental question about Mars: where did the water go? The spacecraft measured the rate at which the solar wind strips Mars\'s upper atmosphere — determining that over billions of years, solar erosion removed most of the atmosphere that once made Mars warm and wet.',
+        confidence: 'high',
+        createdAt: '2024-01-01',
+        basedOn: ['NASA'],
+      },
+    ],
+  },
+
+  {
+    id: 'mro',
+    name: 'Mars Reconnaissance Orbiter',
+    shortName: 'MRO',
+    agency: 'NASA',
+    destination: 'mars',
+    missionType: 'orbiter',
+    status: 'science-operations',
+    launchDate: '2005-08-12',
+    description:
+      'The Mars Reconnaissance Orbiter (MRO) is NASA\'s most capable planetary science orbiter. Since 2006, it has studied Martian climate, geology, and weather — and its powerful HiRISE camera has taken images of Mars\'s surface at 25 cm per pixel resolution.',
+    objectives: [
+      'Characterize Martian climate and weather',
+      'Identify landing sites for future missions',
+      'Study Martian geology and mineralogy',
+      'Search for evidence of past water',
+      'Serve as communications relay for surface missions',
+    ],
+    heroImageUrl: 'https://images-assets.nasa.gov/image/PIA10216/PIA10216~orig.jpg',
+    thumbnailUrl: 'https://images-assets.nasa.gov/image/PIA10216/PIA10216~thumb.jpg',
+    currentLocation: {
+      description: 'Near-polar orbit around Mars, ~300 km altitude',
+      label: 'DERIVED',
+      source: 'NASA',
+    },
+    phases: [
+      { id: 'science', name: 'Extended Science Operations', description: 'Ongoing science and relay support', isCurrent: true },
+    ],
+    currentPhase: { id: 'science', name: 'Extended Science Operations', description: 'Ongoing science and relay support', isCurrent: true },
+    spacecraft: [
+      {
+        id: 'mro-sc',
+        missionId: 'mro',
+        name: 'MRO',
+        type: 'orbiter',
+        description: 'Reconnaissance orbiter carrying HiRISE (high-resolution camera), CRISM (mineral mapper), SHARAD (radar sounder), and other instruments',
+        massKg: { value: 2180, label: 'OBSERVED', source: 'NASA' },
+        powerSource: 'Solar arrays',
+        manufacturer: 'Lockheed Martin Space',
+        orbitalElements: {
+          altitude: { value: 300, label: 'DERIVED', source: 'NASA' },
+          inclination: { value: 92.6, label: 'DERIVED', source: 'NASA' },
+          period: { value: 112, label: 'DERIVED', source: 'NASA' },
+          source: 'NASA',
+          updatedAt: '2024-01-01',
+        },
+      },
+    ],
+    events: [
+      { id: 'mro-e1', missionId: 'mro', eventType: 'launch', timestamp: '2005-08-12', title: 'Launch', description: 'Launched aboard Atlas V from Cape Canaveral', source: 'NASA' },
+      { id: 'mro-e2', missionId: 'mro', eventType: 'milestone', timestamp: '2006-03-10', title: 'Mars Orbit Insertion', description: 'MRO begins orbit insertion at Mars', source: 'NASA' },
+      { id: 'mro-e3', missionId: 'mro', eventType: 'milestone', timestamp: '2024-01-01', title: 'Ongoing Operations', description: 'MRO continues science and relay operations after nearly 20 years', source: 'NASA' },
+    ],
+    images: [
+      { id: 'mro-img-1', missionId: 'mro', url: 'https://images-assets.nasa.gov/image/PIA10216/PIA10216~orig.jpg', title: 'Recurring Slope Lineae on Mars (HiRISE)', date: '2011-08-05', source: 'NASA', sourceUrl: 'https://images.nasa.gov/' },
+    ],
+    sourceUrl: 'https://mars.nasa.gov/mro/',
+    tags: ['orbiter', 'HiRISE', 'radar', 'mineralogy', 'relay'],
+    aiInsights: [
+      {
+        id: 'mro-ai-1',
+        missionId: 'mro',
+        type: 'summary',
+        content: 'MRO is the eyes of Mars exploration — its HiRISE camera is so powerful it can photograph Mars rovers from orbit. After nearly 20 years in operation, it has returned more data from Mars than all other spacecraft combined and continues to serve as a critical relay for surface missions.',
+        confidence: 'high',
+        createdAt: '2024-01-01',
+        basedOn: ['NASA'],
+      },
+    ],
+  },
+
+  {
+    id: 'mars-express',
+    name: 'Mars Express',
+    shortName: 'Mars Express',
+    agency: 'ESA',
+    destination: 'mars',
+    missionType: 'orbiter',
+    status: 'science-operations',
+    launchDate: '2003-06-02',
+    description:
+      'Mars Express is the European Space Agency\'s first planetary mission. It has been orbiting Mars since December 2003, conducting radar sounding, atmospheric studies, and high-resolution imaging.',
+    objectives: [
+      'Map the Martian surface and subsurface',
+      'Search for water ice using ground-penetrating radar',
+      'Characterize Martian atmosphere and ionosphere',
+      'Study interactions between solar wind and Mars',
+    ],
+    heroImageUrl: 'https://images-assets.nasa.gov/image/PIA19952/PIA19952~orig.jpg',
+    thumbnailUrl: 'https://images-assets.nasa.gov/image/PIA19952/PIA19952~thumb.jpg',
+    currentLocation: {
+      description: 'Elliptical orbit around Mars',
+      label: 'DERIVED',
+      source: 'ESA',
+    },
+    phases: [
+      { id: 'science', name: 'Extended Science Operations', description: 'Ongoing Martian science — over 20 years', isCurrent: true },
+    ],
+    currentPhase: { id: 'science', name: 'Extended Science Operations', description: 'Ongoing Martian science — over 20 years', isCurrent: true },
+    spacecraft: [
+      {
+        id: 'mexpress-sc',
+        missionId: 'mars-express',
+        name: 'Mars Express',
+        type: 'orbiter',
+        description: 'ESA orbiter with 7 instruments including MARSIS radar sounder and HRSC high-resolution stereo camera',
+        massKg: { value: 1120, label: 'OBSERVED', source: 'ESA' },
+        powerSource: 'Solar arrays',
+        manufacturer: 'Astrium (EADS)',
+        orbitalElements: {
+          inclination: { value: 86.6, label: 'DERIVED', source: 'ESA' },
+          periapsis: { value: 298, label: 'DERIVED', source: 'ESA' },
+          apoapsis: { value: 10107, label: 'DERIVED', source: 'ESA' },
+          period: { value: 426, label: 'DERIVED', source: 'ESA' },
+          source: 'ESA',
+          updatedAt: '2024-01-01',
+        },
+      },
+    ],
+    events: [
+      { id: 'me-e1', missionId: 'mars-express', eventType: 'launch', timestamp: '2003-06-02', title: 'Launch', description: 'Launched from Baikonur Cosmodrome aboard Soyuz-FG/Fregat', source: 'ESA' },
+      { id: 'me-e2', missionId: 'mars-express', eventType: 'milestone', timestamp: '2003-12-25', title: 'Mars Orbit Insertion', description: 'Mars Express enters Martian orbit on Christmas Day', source: 'ESA' },
+      { id: 'me-e3', missionId: 'mars-express', eventType: 'science', timestamp: '2018-07-25', title: 'Subglacial Lake Detected', description: 'MARSIS radar detects bright radar reflection suggesting liquid water lake beneath south polar cap', source: 'ESA' },
+    ],
+    images: [],
+    sourceUrl: 'https://www.esa.int/Science_Exploration/Space_Science/Mars_Express',
+    tags: ['orbiter', 'ESA', 'radar', 'MARSIS', 'subglacial lake'],
+    aiInsights: [
+      {
+        id: 'me-ai-1',
+        missionId: 'mars-express',
+        type: 'summary',
+        content: 'Mars Express is one of the most successful planetary missions in history. Its MARSIS radar made one of the most tantalizing Mars discoveries: a bright radar reflection under the south polar ice cap interpreted by some scientists as liquid water. This potential subglacial lake — if confirmed — would be the best candidate for extant Martian life.',
+        confidence: 'high',
+        createdAt: '2024-01-01',
+        basedOn: ['ESA'],
+      },
+    ],
+  },
+
+  {
+    id: 'tgo',
+    name: 'ExoMars Trace Gas Orbiter',
+    shortName: 'TGO',
+    agency: 'ESA / Roscosmos',
+    agencies: ['ESA', 'Roscosmos'],
+    destination: 'mars',
+    missionType: 'orbiter',
+    status: 'science-operations',
+    launchDate: '2016-03-14',
+    description:
+      'The ExoMars Trace Gas Orbiter (TGO) is a joint ESA–Roscosmos mission designed to study trace gases in the Martian atmosphere — particularly methane, which could indicate geological or biological activity.',
+    objectives: [
+      'Detect and characterize trace gases, especially methane',
+      'Map the distribution of water and ice in the subsurface',
+      'Study solar wind interaction with Mars',
+      'Serve as relay for future ExoMars surface missions',
+    ],
+    heroImageUrl: 'https://images-assets.nasa.gov/image/PIA21131/PIA21131~orig.jpg',
+    thumbnailUrl: 'https://images-assets.nasa.gov/image/PIA21131/PIA21131~thumb.jpg',
+    currentLocation: {
+      description: 'Near-circular orbit around Mars, ~400 km altitude',
+      label: 'DERIVED',
+      source: 'ESA',
+    },
+    phases: [
+      { id: 'aerobraking', name: 'Aerobraking', description: 'Orbit lowering via atmospheric drag', isCompleted: true },
+      { id: 'science', name: 'Science Operations', description: 'Ongoing trace gas and atmospheric science', isCurrent: true },
+    ],
+    currentPhase: { id: 'science', name: 'Science Operations', description: 'Ongoing trace gas and atmospheric science', isCurrent: true },
+    spacecraft: [
+      {
+        id: 'tgo-sc',
+        missionId: 'tgo',
+        name: 'TGO',
+        type: 'orbiter',
+        description: 'Trace gas orbiter with NOMAD (nadir/limb spectrometer), ACS (atmospheric chemistry suite), CaSSIS (color camera), and FREND (neutron detector)',
+        massKg: { value: 3732, label: 'OBSERVED', source: 'ESA' },
+        powerSource: 'Solar arrays',
+        manufacturer: 'Thales Alenia Space',
+        orbitalElements: {
+          altitude: { value: 400, label: 'DERIVED', source: 'ESA' },
+          inclination: { value: 74, label: 'DERIVED', source: 'ESA' },
+          period: { value: 120, label: 'DERIVED', source: 'ESA' },
+          source: 'ESA',
+          updatedAt: '2024-01-01',
+        },
+      },
+    ],
+    events: [
+      { id: 'tgo-e1', missionId: 'tgo', eventType: 'launch', timestamp: '2016-03-14', title: 'Launch', description: 'Launched aboard Proton-M/Briz-M from Baikonur', source: 'ESA' },
+      { id: 'tgo-e2', missionId: 'tgo', eventType: 'milestone', timestamp: '2016-10-19', title: 'Mars Orbit Insertion', description: 'TGO enters Mars orbit; Schiaparelli lander crashes during EDL test', source: 'ESA' },
+      { id: 'tgo-e3', missionId: 'tgo', eventType: 'science', timestamp: '2021-01-01', title: 'No Methane Detection', description: 'TGO finds no detectable global methane — puzzling given Curiosity\'s detections', source: 'ESA' },
+    ],
+    images: [],
+    sourceUrl: 'https://exploration.esa.int/web/mars/-/48088-mission-overview',
+    tags: ['orbiter', 'ESA', 'methane', 'trace gases', 'ExoMars'],
+    aiInsights: [
+      {
+        id: 'tgo-ai-1',
+        missionId: 'tgo',
+        type: 'summary',
+        content: 'TGO is chasing one of Mars\'s biggest mysteries: methane. On Earth, most methane is biological. Curiosity detected methane spikes, but TGO\'s far more sensitive global measurements have not confirmed a sustained source — setting up one of the most intriguing puzzles in planetary science today.',
+        confidence: 'high',
+        createdAt: '2024-01-01',
+        basedOn: ['ESA'],
+      },
+    ],
+  },
+
+  {
+    id: 'insight',
+    name: 'InSight',
+    shortName: 'InSight',
+    agency: 'NASA',
+    destination: 'mars',
+    missionType: 'lander',
+    status: 'completed',
+    launchDate: '2018-05-05',
+    endDate: '2022-12-21',
+    description:
+      'InSight (Interior Exploration using Seismic Investigations, Geodesy and Heat Transport) was a Mars lander mission that studied the deep interior of Mars. It detected over 1,300 Marsquakes before dust accumulation on its solar panels ended operations.',
+    objectives: [
+      'Measure Martian seismic activity',
+      'Determine the size, composition, and structure of Mars\'s core, mantle, and crust',
+      'Measure the rate of heat escaping from the interior',
+      'Study the impacts of meteorites on Mars',
+    ],
+    heroImageUrl: 'https://images-assets.nasa.gov/image/PIA22743/PIA22743~orig.jpg',
+    thumbnailUrl: 'https://images-assets.nasa.gov/image/PIA22743/PIA22743~thumb.jpg',
+    currentLocation: {
+      description: 'Elysium Planitia, Mars — stationary lander, mission ended December 2022',
+      label: 'OBSERVED',
+      source: 'NASA',
+    },
+    surfaceLocation: {
+      lat: 4.5024,
+      lon: 135.6234,
+      siteName: 'Elysium Planitia',
+      label: 'OBSERVED',
+      source: 'NASA',
+    },
+    phases: [
+      { id: 'landing', name: 'Landing', description: 'Successful landing in Elysium Planitia', isCompleted: true },
+      { id: 'operations', name: 'Science Operations', description: 'Seismic monitoring and heat flow measurements', isCompleted: true },
+      { id: 'eom', name: 'End of Mission', description: 'Solar panels incapacitated by dust accumulation', isCompleted: true },
+    ],
+    currentPhase: {
+      id: 'eom',
+      name: 'End of Mission',
+      description: 'Mission concluded December 21, 2022 when power levels fell too low for operations',
+      isCompleted: true,
+    },
+    spacecraft: [
+      {
+        id: 'insight-lander',
+        missionId: 'insight',
+        name: 'InSight Lander',
+        type: 'lander',
+        description: 'Stationary lander carrying SEIS seismometer, HP³ heat flow probe, and RISE radio science experiment',
+        massKg: { value: 694, label: 'OBSERVED', source: 'NASA' },
+        powerSource: 'Solar arrays (dust-covered at end of mission)',
+        manufacturer: 'Lockheed Martin Space',
+      },
+    ],
+    events: [
+      { id: 'ins-e1', missionId: 'insight', eventType: 'launch', timestamp: '2018-05-05', title: 'Launch', description: 'First interplanetary launch from west coast of the US', source: 'NASA' },
+      { id: 'ins-e2', missionId: 'insight', eventType: 'landing', timestamp: '2018-11-26', title: 'Landing in Elysium Planitia', description: 'InSight successfully lands on Mars', source: 'NASA' },
+      { id: 'ins-e3', missionId: 'insight', eventType: 'science', timestamp: '2019-04-06', title: 'First Marsquake', description: 'InSight detects first likely seismic signal on Mars', source: 'NASA' },
+      { id: 'ins-e4', missionId: 'insight', eventType: 'science', timestamp: '2022-05-04', title: 'Largest Marsquake', description: 'SEIS records magnitude 5 marsquake — largest ever detected', source: 'NASA' },
+      { id: 'ins-e5', missionId: 'insight', eventType: 'milestone', timestamp: '2022-12-21', title: 'End of Mission', description: 'Last contact with InSight as power levels fall below operational threshold', source: 'NASA' },
+    ],
+    images: [
+      { id: 'ins-img-1', missionId: 'insight', url: 'https://images-assets.nasa.gov/image/PIA22743/PIA22743~orig.jpg', title: 'InSight Lander Artist Concept', date: '2018-01-01', source: 'NASA', sourceUrl: 'https://images.nasa.gov/' },
+    ],
+    sourceUrl: 'https://mars.nasa.gov/insight/',
+    tags: ['lander', 'seismology', 'interior', 'completed'],
+    aiInsights: [
+      {
+        id: 'ins-ai-1',
+        missionId: 'insight',
+        type: 'summary',
+        content: 'InSight revolutionized our understanding of Mars\'s interior — mapping the planet\'s crust, mantle, and core using seismology for the first time. Its data confirmed Mars has a surprisingly large, partially liquid iron core. Though the mission ended, the dataset continues to yield discoveries.',
+        confidence: 'high',
+        createdAt: '2024-01-01',
+        basedOn: ['NASA'],
+      },
+    ],
+  },
+];
+
+export function getMissionById(id: string): Mission | undefined {
+  return MISSIONS.find((m) => m.id === id);
+}
+
+export function getMissionsByDestination(destination: string): Mission[] {
+  return MISSIONS.filter((m) => m.destination === destination);
+}
+
+export function getMissionsByStatus(status: MissionStatus): Mission[] {
+  return MISSIONS.filter((m) => m.status === status);
+}
+
+export function getActiveMissions(): Mission[] {
+  return MISSIONS.filter((m) =>
+    ['active', 'science-operations', 'surface-operations', 'extended', 'cruise'].includes(m.status)
+  );
+}
+
+export function searchMissions(query: string): Mission[] {
+  const q = query.toLowerCase().trim();
+  if (!q) return [];
+  return MISSIONS.filter(
+    (m) =>
+      m.name.toLowerCase().includes(q) ||
+      m.shortName?.toLowerCase().includes(q) ||
+      m.agency.toLowerCase().includes(q) ||
+      m.destination.includes(q) ||
+      m.missionType.includes(q) ||
+      m.tags?.some((t) => t.toLowerCase().includes(q)) ||
+      m.spacecraft.some(
+        (s) =>
+          s.name.toLowerCase().includes(q) ||
+          s.noradId === q
+      )
+  );
+}

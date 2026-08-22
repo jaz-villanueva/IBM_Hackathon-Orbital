@@ -1,0 +1,188 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --space-black: #050810;
+  --space-navy: #080f1e;
+  --space-deep: #0a1628;
+  --space-panel: #0d1a2e;
+  --space-border: #1a2d4a;
+  --orbit-blue: #3b82f6;
+  --orbit-cyan: #06b6d4;
+  --orbit-white: #e8edf5;
+  --orbit-dim: #8fa3be;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--space-black);
+  color: var(--orbit-white);
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* ── Scrollbar ──────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--space-navy);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--space-border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #2a4060;
+}
+
+/* ── Glass panels ───────────────────────────────────────────── */
+.glass {
+  background: rgba(13, 26, 46, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(26, 45, 74, 0.8);
+}
+
+.glass-subtle {
+  background: rgba(8, 15, 30, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(26, 45, 74, 0.5);
+}
+
+/* ── Data labels ────────────────────────────────────────────── */
+.label-observed {
+  @apply text-emerald-400 bg-emerald-400/10 border border-emerald-400/30;
+}
+.label-derived {
+  @apply text-blue-400 bg-blue-400/10 border border-blue-400/30;
+}
+.label-ai {
+  @apply text-purple-400 bg-purple-400/10 border border-purple-400/30;
+}
+.label-estimated {
+  @apply text-amber-400 bg-amber-400/10 border border-amber-400/30;
+}
+
+/* ── Status badges ──────────────────────────────────────────── */
+.status-active { @apply text-emerald-400; }
+.status-science-operations { @apply text-purple-400; }
+.status-surface-operations { @apply text-amber-400; }
+.status-cruise { @apply text-blue-400; }
+.status-extended { @apply text-cyan-400; }
+.status-completed { @apply text-slate-400; }
+.status-planned { @apply text-sky-400; }
+.status-unknown { @apply text-slate-500; }
+
+/* ── Planet colors ──────────────────────────────────────────── */
+.planet-earth { color: #4db8ff; }
+.planet-moon { color: #c4c8d4; }
+.planet-mars { color: #e05c30; }
+.planet-sun { color: #f59e0b; }
+
+/* ── Canvas container ───────────────────────────────────────── */
+.canvas-container {
+  width: 100%;
+  height: 100%;
+  outline: none;
+}
+
+/* ── Typography ─────────────────────────────────────────────── */
+.heading-display {
+  font-size: clamp(2rem, 5vw, 4rem);
+  font-weight: 300;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.text-mono {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+}
+
+/* ── Orbital glow effects ───────────────────────────────────── */
+@keyframes orbit-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+.orbit-glow {
+  animation: orbit-pulse 3s ease-in-out infinite;
+}
+
+/* ── Star field background ──────────────────────────────────── */
+.star-field {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Mission card hover ─────────────────────────────────────── */
+.mission-card {
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.mission-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(59, 130, 246, 0.4);
+  box-shadow: 0 8px 32px rgba(59, 130, 246, 0.12);
+}
+
+/* ── Timeline line ──────────────────────────────────────────── */
+.timeline-line {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: linear-gradient(to bottom, transparent, rgba(59, 130, 246, 0.5) 20%, rgba(59, 130, 246, 0.5) 80%, transparent);
+  transform: translateX(-50%);
+}
+
+/* ── Markdown content ───────────────────────────────────────── */
+.prose-space p { @apply mb-3 text-orbit-dim leading-relaxed; }
+.prose-space strong { @apply text-orbit-white font-semibold; }
+.prose-space ul { @apply list-disc pl-5 space-y-1; }
+.prose-space li { @apply text-orbit-dim; }
+.prose-space h1, .prose-space h2, .prose-space h3 { @apply text-orbit-white font-semibold mb-2; }
+
+/* ── Animated scan line ─────────────────────────────────────── */
+@keyframes scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+/* ── Loading states ─────────────────────────────────────────── */
+.shimmer {
+  background: linear-gradient(90deg, var(--space-panel) 25%, #132035 50%, var(--space-panel) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── Focus styles ───────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--orbit-blue);
+  outline-offset: 2px;
+}
+
+/* ── Transitions ────────────────────────────────────────────── */
+.transition-all-smooth {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
