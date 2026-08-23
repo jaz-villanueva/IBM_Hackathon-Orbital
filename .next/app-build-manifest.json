@@ -16,6 +16,11 @@
       "static/chunks/main-app.js",
       "static/chunks/app/page.js"
     ],
+    "/missions/[id]/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/missions/[id]/page.js"
+    ],
     "/missions/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
@@ -25,11 +30,6 @@
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/timeline/page.js"
-    ],
-    "/missions/[id]/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/missions/[id]/page.js"
     ]
   }
 }
