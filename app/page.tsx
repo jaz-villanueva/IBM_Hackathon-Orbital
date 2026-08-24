@@ -165,7 +165,7 @@ export default function HomePage() {
         {/* AI Analyst button — kept for deep conversation mode */}
         <button
           onClick={() => setAiOpen(true)}
-          className="absolute bottom-8 left-6 flex items-center gap-2 px-4 py-2.5 glass rounded-lg border border-purple-400/30 text-purple-400 hover:bg-purple-400/10 transition-colors text-xs tracking-wider"
+          className="absolute bottom-16 right-4 flex items-center gap-2 px-4 py-2.5 glass rounded-lg border border-purple-400/30 text-purple-400 hover:bg-purple-400/10 transition-colors text-xs tracking-wider"
         >
           <Sparkles size={13} />
           <span>AI ANALYST</span>

@@ -761,7 +761,7 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect }: 
       )}
 
       {/* ── Simulation Clock (top-left) ── */}
-      <div className="absolute top-4 left-4 z-20">
+      <div className="absolute top-[375px] left-10 z-20">
         <div className="glass border border-space-border/70 rounded-lg px-3 py-2 space-y-1.5">
           <div className="flex items-center gap-2">
             <Clock size={10} className="text-orbit-dim" />
@@ -796,7 +796,7 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect }: 
       </div>
 
       {/* ── Data provenance label ── */}
-      <div className="absolute top-4 left-4 z-20 mt-[130px]">
+      <div className="absolute bottom-[10px] left-4 z-20">
         <div className="glass border border-space-border/40 rounded px-2 py-1">
           <div className="text-[8px] text-orbit-dim/60 tracking-widest">
             EARTH TEXTURE · ESTIMATED · NATURAL EARTH
@@ -930,7 +930,7 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect }: 
       </div>
 
       {/* ── Bottom legend ── */}
-      <div className="absolute bottom-4 left-4 space-y-1 pointer-events-none z-10">
+      <div className="absolute bottom-[20px] left-4 space-y-1 pointer-events-none z-10">
         <div className="text-[8px] text-orbit-dim/50 tracking-widest mb-1">LEGEND</div>
         {[
           { color: '#22c55e', label: 'Active' },
@@ -952,7 +952,7 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect }: 
       </div>
 
       {/* Controls hint */}
-      <div className="absolute bottom-28 left-4 text-[10px] text-orbit-dim/40 tracking-wider pointer-events-none z-10">
+      <div className="absolute bottom-[140px] left-4 text-[10px] text-orbit-dim/40 tracking-wider pointer-events-none z-10">
         <div>DRAG to rotate · SCROLL to zoom</div>
         <div>CLICK spacecraft or planet</div>
         {simSpeed > 1 && (
