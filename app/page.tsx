@@ -56,7 +56,7 @@ export default function HomePage() {
   };
 
   const handlePlanetSelect = (planet: string) => {
-    setSelectedPlanet((prev) => (prev === planet ? '' : planet));
+    setSelectedPlanet(planet);
     setSelectedMission(null);
   };
 
@@ -100,7 +100,7 @@ export default function HomePage() {
 
         {/* Planet info panel (when selected) */}
         {selectedPlanet && PLANET_LABELS[selectedPlanet] && (
-          <div className="absolute top-8 right-6 md:right-10 animate-slide-up">
+          <div className="absolute top-[110px] right-[15px] animate-slide-up">
             <div className="glass rounded-xl p-5 w-64 border border-space-border">
               <div className={`text-[10px] tracking-widest font-semibold mb-1 ${PLANET_LABELS[selectedPlanet].color}`}>
                 {PLANET_LABELS[selectedPlanet].title}
@@ -165,7 +165,7 @@ export default function HomePage() {
         {/* AI Analyst button — kept for deep conversation mode */}
         <button
           onClick={() => setAiOpen(true)}
-          className="absolute bottom-8 left-6 flex items-center gap-2 px-4 py-2.5 glass rounded-lg border border-purple-400/30 text-purple-400 hover:bg-purple-400/10 transition-colors text-xs tracking-wider"
+          className="absolute bottom-16 right-4 flex items-center gap-2 px-4 py-2.5 glass rounded-lg border border-purple-400/30 text-purple-400 hover:bg-purple-400/10 transition-colors text-xs tracking-wider"
         >
           <Sparkles size={13} />
           <span>AI ANALYST</span>
