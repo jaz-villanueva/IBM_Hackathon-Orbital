@@ -254,13 +254,16 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect }: 
   const [aiPulseText,    setAiPulseText]    = useState<string | null>(null);
   const [aiPulseLoading, setAiPulseLoading] = useState(false);
 
-  // Visible objects after filtering
+  // Visible objects after filtering.
+  // When a planet/moon is selected, only show missions belonging to that destination.
   const visibleObjects = useMemo(() => ALL_SCENE_OBJECTS.filter(obj => {
     if (!typeFilters[obj.objectType]) return false;
     if (!statusFilters[obj.status as keyof typeof statusFilters]) return false;
     if (!destFilters[obj.destination]) return false;
+    // When a destination is selected, hide missions for other destinations.
+    if (selectedPlanet && obj.destination !== selectedPlanet) return false;
     return true;
-  }), [typeFilters, statusFilters, destFilters]);
+  }), [typeFilters, statusFilters, destFilters, selectedPlanet]);
 
   const counts = useMemo(() => {
     const c = { earth: 0, moon: 0, mars: 0 };
@@ -629,10 +632,20 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect }: 
         return;
       }
 
-      const pHits = raycaster.intersectObjects(Array.from(planetsRef.current.values()));
+      const hoverMeshes = Array.from(planetsRef.current.values());
+      const hoverIds = new Set(Array.from(planetsRef.current.keys()));
+      const pHits = raycaster.intersectObjects(hoverMeshes, true);
       if (pHits.length) {
-        setHoveredBody(pHits[0].object.name);
-        setTooltip({ x: e.clientX - rect.left, y: e.clientY - rect.top - 10, label: pHits[0].object.name.toUpperCase() });
+        // Walk up to find the named interactive body
+        let hitObj: THREE.Object3D | null = pHits[0].object;
+        let hoverBodyId: string | null = null;
+        while (hitObj) {
+          if (hoverIds.has(hitObj.name)) { hoverBodyId = hitObj.name; break; }
+          hitObj = hitObj.parent;
+        }
+        const displayName = hoverBodyId ?? pHits[0].object.name;
+        setHoveredBody(displayName);
+        setTooltip({ x: e.clientX - rect.left, y: e.clientY - rect.top - 10, label: displayName.toUpperCase() });
         document.body.style.cursor = 'pointer';
       } else {
         setHoveredBody(null);
@@ -681,13 +694,27 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect }: 
         return;
       }
 
+      // Use recursive=true so child meshes (clouds, atmosphere) are also tested,
+      // then walk up the hit object's ancestry to find the interactive body id.
       const interactiveMeshes = Array.from(planetsRef.current.entries())
         .filter(([id]) => SOLAR_SYSTEM.find(b => b.id === id)?.interactive)
         .map(([, mesh]) => mesh);
-      const pHits = raycaster.intersectObjects(interactiveMeshes);
+      const interactiveIds = new Set(
+        Array.from(planetsRef.current.keys()).filter(id => SOLAR_SYSTEM.find(b => b.id === id)?.interactive)
+      );
+      const pHits = raycaster.intersectObjects(interactiveMeshes, true);
       if (pHits.length) {
-        onPlanetSelect(pHits[0].object.name);
-        setSelectedObject(null); setPopupPos(null);
+        // Walk up from the hit object to find the interactive body (e.g. 'earth', not 'earth-clouds')
+        let hitObj: THREE.Object3D | null = pHits[0].object;
+        let bodyId: string | null = null;
+        while (hitObj) {
+          if (interactiveIds.has(hitObj.name)) { bodyId = hitObj.name; break; }
+          hitObj = hitObj.parent;
+        }
+        if (bodyId) {
+          onPlanetSelect(bodyId);
+          setSelectedObject(null); setPopupPos(null);
+        }
       }
     };
 
