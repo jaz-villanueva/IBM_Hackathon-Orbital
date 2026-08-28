@@ -91,6 +91,7 @@ export function AIAnalyst({ context, isOpen, onClose }: AIAnalystProps) {
           messages: [...messages, userMsg],
           missionId: context.selectedMission?.id,
           planet: context.selectedPlanet,
+          riskContext: context.selectedRisk,
         }),
       });
       const data = await res.json();
@@ -137,10 +138,15 @@ export function AIAnalyst({ context, isOpen, onClose }: AIAnalystProps) {
           <Sparkles size={13} className="text-purple-400 shrink-0" />
           <div>
             <div className="text-[11px] font-semibold text-orbit-white tracking-widest">AI SPACE ANALYST</div>
-            {!minimized && context.selectedMission && (
-              <div className="text-[9px] text-orbit-dim mt-0.5 truncate">
-                Context: {context.selectedMission.name}
-              </div>
+            {!minimized && (context.selectedRisk
+              ? <div className="text-[9px] text-purple-300/70 mt-0.5 truncate">
+                  Risk: {context.selectedRisk.objectAName} ↔ {context.selectedRisk.objectBName}
+                </div>
+              : context.selectedMission && (
+                <div className="text-[9px] text-orbit-dim mt-0.5 truncate">
+                  Context: {context.selectedMission.name}
+                </div>
+              )
             )}
           </div>
         </div>

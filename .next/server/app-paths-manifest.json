@@ -1,6 +1,0 @@
-{
-  "/page": "app/page.js",
-  "/timeline/page": "app/timeline/page.js",
-  "/missions/[id]/page": "app/missions/[id]/page.js",
-  "/missions/page": "app/missions/page.js"
-}

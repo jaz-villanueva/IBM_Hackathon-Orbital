@@ -192,8 +192,36 @@ export interface AIMessage {
   confidence?: 'high' | 'medium' | 'low';
 }
 
+/**
+ * Orbital risk context injected from the RiskHUD into the AI copilot.
+ * These values come directly from lib/risk.ts — the AI must not recompute them.
+ */
+export interface OrbitalRiskContext {
+  pairId: string;
+  objectAName: string;
+  objectBName: string;
+  destination: string;
+  objectAAltitudeKm: number;
+  objectBAltitudeKm: number;
+  riskLevel: 'LOW' | 'MODERATE' | 'HIGH' | 'CRITICAL';
+  compositeScore: number;
+  orbitalCompatibilityScore: number;
+  trajectoryRiskScore: number | null;
+  currentSeparationKm: number;
+  relativeSpeedKmS: number;
+  closingSpeedKmS: number;
+  isApproaching: boolean;
+  timeToClosestApproachSec: number | null;
+  predictedMissDistanceKm: number | null;
+  tcaInvalidReason: string | null;
+  dataQuality: 'OBSERVED' | 'DERIVED' | 'AI' | 'ESTIMATED';
+  explanation: string;
+}
+
 export interface AIContext {
   selectedMission?: Mission;
   selectedPlanet?: Destination;
   visibleMissions?: Mission[];
+  /** Set when the user clicks "Analyze with AI" on a RiskHUD card. */
+  selectedRisk?: OrbitalRiskContext;
 }

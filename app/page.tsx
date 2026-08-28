@@ -1,14 +1,15 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { Navigation } from '@/components/Navigation';
 import { MissionPulse } from '@/components/MissionPulse';
 import { MissionCard } from '@/components/MissionCard';
 import { AIAnalyst } from '@/components/AIAnalyst';
+import { RiskHUD, RiskEntry } from '@/components/RiskHUD';
 import { MISSIONS, getMissionsByDestination } from '@/lib/missions';
-import { Mission, AIContext } from '@/lib/types';
+import { Mission, AIContext, OrbitalRiskContext } from '@/lib/types';
 import { Sparkles, ChevronRight, ArrowRight, Database } from 'lucide-react';
 
 // Dynamically import ThreeJS scene to avoid SSR issues
@@ -34,6 +35,11 @@ export default function HomePage() {
   const [selectedPlanet, setSelectedPlanet] = useState('');
   const [selectedMission, setSelectedMission] = useState<Mission | null>(null);
   const [aiOpen, setAiOpen] = useState(false);
+  // Simulation elapsed seconds — updated by SpaceScene's clock ticker every 250 ms
+  const [simTimeSec, setSimTimeSec] = useState(0);
+  const handleSimTimeUpdate = useCallback((t: number) => setSimTimeSec(t), []);
+  // Risk context — set when user clicks "Analyze with AI" on a RiskHUD card
+  const [activeRisk, setActiveRisk] = useState<OrbitalRiskContext | null>(null);
 
   const earthMissions = useMemo(() => getMissionsByDestination('earth'), []);
   const moonMissions = useMemo(() => getMissionsByDestination('moon'), []);
@@ -53,12 +59,41 @@ export default function HomePage() {
     visibleMissions: selectedPlanet
       ? getMissionsByDestination(selectedPlanet)
       : MISSIONS.filter((m) => ['active', 'science-operations', 'surface-operations'].includes(m.status)),
+    selectedRisk: activeRisk ?? undefined,
   };
 
   const handlePlanetSelect = (planet: string) => {
     setSelectedPlanet((prev) => (prev === planet ? '' : planet));
     setSelectedMission(null);
   };
+
+  // Called by RiskHUD when user clicks "Analyze with AI" on a conjunction card.
+  // Maps the RiskEntry shape into OrbitalRiskContext and opens the AI panel.
+  const handleAnalyzeRisk = useCallback((risk: RiskEntry) => {
+    const ctx: OrbitalRiskContext = {
+      pairId:                    risk.pairId,
+      objectAName:               risk.objectA.name,
+      objectBName:               risk.objectB.name,
+      destination:               risk.objectA.destination,
+      objectAAltitudeKm:         risk.objectA.altitudeKm,
+      objectBAltitudeKm:         risk.objectB.altitudeKm,
+      riskLevel:                 risk.riskLevel,
+      compositeScore:            risk.compositeScore,
+      orbitalCompatibilityScore: risk.orbitalCompatibilityScore,
+      trajectoryRiskScore:       risk.trajectoryRiskScore,
+      currentSeparationKm:       risk.currentSeparationKm,
+      relativeSpeedKmS:          risk.relativeSpeedKmS,
+      closingSpeedKmS:           risk.closingSpeedKmS,
+      isApproaching:             risk.isApproaching,
+      timeToClosestApproachSec:  risk.timeToClosestApproachSec,
+      predictedMissDistanceKm:   risk.predictedMissDistanceKm,
+      tcaInvalidReason:          risk.tcaInvalidReason,
+      dataQuality:               risk.dataQuality,
+      explanation:               risk.explanation,
+    };
+    setActiveRisk(ctx);
+    setAiOpen(true);
+  }, []);
 
   return (
     <div className="min-h-screen bg-space-black">
@@ -74,6 +109,7 @@ export default function HomePage() {
             onPlanetSelect={handlePlanetSelect}
             onMissionSelect={setSelectedMission}
             selectedMission={selectedMission}
+            onSimTimeUpdate={handleSimTimeUpdate}
           />
         </div>
 
@@ -278,7 +314,14 @@ export default function HomePage() {
       </div>
 
       {/* AI Analyst Panel */}
-      <AIAnalyst context={aiContext} isOpen={aiOpen} onClose={() => setAiOpen(false)} />
+      <AIAnalyst
+        context={aiContext}
+        isOpen={aiOpen}
+        onClose={() => { setAiOpen(false); setActiveRisk(null); }}
+      />
+
+      {/* Orbital Safety Monitor HUD */}
+      <RiskHUD simulationTimeSec={simTimeSec} onAnalyzeWithAI={handleAnalyzeRisk} />
     </div>
   );
 }

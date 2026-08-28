@@ -47,6 +47,11 @@ interface SpaceSceneProps {
   onPlanetSelect: (planet: string) => void;
   onMissionSelect: (mission: Mission) => void;
   selectedMission?: Mission | null;
+  /**
+   * Called every 250 ms with the current simulation elapsed seconds.
+   * Used by RiskHUD to synchronise /api/risk queries with the scene clock.
+   */
+  onSimTimeUpdate?: (elapsedSec: number) => void;
 }
 
 // ─── Scene constants ──────────────────────────────────────────────────────────
@@ -135,7 +140,7 @@ function eio(t: number): number {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect }: SpaceSceneProps) {
+export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, onSimTimeUpdate }: SpaceSceneProps) {
   const mountRef     = useRef<HTMLDivElement>(null);
   const rendererRef  = useRef<THREE.WebGLRenderer | null>(null);
   const sceneRef     = useRef<THREE.Scene | null>(null);
@@ -570,6 +575,7 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect }: 
     // Sim clock display ticker (updates UI without rerender per frame)
     const clockTick = setInterval(() => {
       setSimTimeStr(formatSimTime(simNow(clockRef.current)));
+      onSimTimeUpdate?.(simElapsedSeconds(clockRef.current));
     }, 250);
 
     return () => {
