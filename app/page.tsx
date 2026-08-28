@@ -56,7 +56,7 @@ export default function HomePage() {
   };
 
   const handlePlanetSelect = (planet: string) => {
-    setSelectedPlanet((prev) => (prev === planet ? '' : planet));
+    setSelectedPlanet(planet);
     setSelectedMission(null);
   };
 
@@ -100,7 +100,7 @@ export default function HomePage() {
 
         {/* Planet info panel (when selected) */}
         {selectedPlanet && PLANET_LABELS[selectedPlanet] && (
-          <div className="absolute top-8 right-6 md:right-10 animate-slide-up">
+          <div className="absolute top-[110px] right-[15px] animate-slide-up">
             <div className="glass rounded-xl p-5 w-64 border border-space-border">
               <div className={`text-[10px] tracking-widest font-semibold mb-1 ${PLANET_LABELS[selectedPlanet].color}`}>
                 {PLANET_LABELS[selectedPlanet].title}

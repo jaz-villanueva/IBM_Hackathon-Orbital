@@ -85,16 +85,23 @@ const KM_TO_SCENE = 2.8e-6;
 const OUTER_PLANET_RADIUS_BOOST = 1.0; // set >1 to further enlarge outer planets
 
 /**
- * Home camera: pulled back far enough to show the full solar system.
- * Neptune at ~30 AU → 300 scene units; camera at z=380 with y elevation.
+ * Home camera: framed to show the inner solar system clearly while
+ * communicating the full scale. Earth sits at ~10 scene units.
+ * FOV is widened in home mode to capture more context.
  */
-const HOME_CAMERA = { pos: [0, 80, 360] as [number, number, number], target: [0, 0, 0] as [number, number, number] };
+const HOME_CAMERA = {
+  target: [0, 0, 0] as [number, number, number],
+  // Spherical orbit coords for home view
+  azimuth: 0,
+  elevation: 0.42,  // ~24° above ecliptic plane
+  radius: 55,       // much closer — Earth visible at ~10 units
+};
 
-/** Camera offset relative to planet when zoomed in (scene units) */
-const PLANET_CAM_OFFSET: Record<string, [number, number, number]> = {
-  earth: [0, 3, 8],
-  moon:  [0, 1.5, 3.5],
-  mars:  [0, 2.5, 6],
+/** Zoom-in radius (distance from body) when a planet is selected */
+const PLANET_CAM_RADIUS: Record<string, number> = {
+  earth: 5,
+  moon:  2.5,
+  mars:  4,
 };
 
 const STATUS_COLOR: Record<string, number> = {
@@ -195,8 +202,28 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect }: 
   const orbitPathRef  = useRef<THREE.Line | null>(null);
 
   const lastMouseRef  = useRef({ x: 0, y: 0 });
-  const rotationRef   = useRef({ x: 0, y: 0 });
-  const targetRotRef  = useRef({ x: 0, y: 0 });
+  const isDraggingRef = useRef(false);
+
+  /**
+   * Spherical camera orbit state.
+   * The camera is always placed at:
+   *   orbitTarget + spherical(azimuth, elevation, radius)
+   * and always looks at orbitTarget.
+   * Drag changes azimuth/elevation; wheel changes radius.
+   */
+  const orbitRef = useRef({
+    // current (smoothed) values
+    azimuth:   HOME_CAMERA.azimuth,
+    elevation: HOME_CAMERA.elevation,
+    radius:    HOME_CAMERA.radius,
+    // target values (we lerp toward these)
+    tAzimuth:   HOME_CAMERA.azimuth,
+    tElevation: HOME_CAMERA.elevation,
+    tRadius:    HOME_CAMERA.radius,
+    // orbit centre
+    target:    new THREE.Vector3(...HOME_CAMERA.target),
+    tTarget:   new THREE.Vector3(...HOME_CAMERA.target),
+  });
 
   // Simulation clock stored in ref (mutated without re-render)
   const clockRef = useRef<SimClock>(makeSimClock());
@@ -253,45 +280,32 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect }: 
     if (obj) { setSelectedObject(obj); onMissionSelect(mission); }
   }, [onPlanetSelect, onMissionSelect]);
 
-  // ─── Camera lerp ──────────────────────────────────────────────────────────
+  // ─── Camera orbit update ──────────────────────────────────────────────────
 
   /**
-   * Smoothly lerp the camera to a destination.
-   * For Earth/Moon/Mars, target = body's current world position (from bodyWorldPos).
-   * Offset is applied in camera-relative space so the body fills the view.
+   * Transition the orbit controller to a new target body (or home).
+   * We set the TARGET values; the animation loop smoothly lerps toward them.
    */
-  const lerpCamera = useCallback((dest: string) => {
-    if (!cameraRef.current) return;
-    const cam = cameraRef.current;
-
-    let endTarget: THREE.Vector3;
-    let endPos: THREE.Vector3;
-
+  const goToDestination = useCallback((dest: string) => {
+    const o = orbitRef.current;
     if (dest === '' || dest === 'home') {
-      endTarget = new THREE.Vector3(...HOME_CAMERA.target);
-      endPos    = new THREE.Vector3(...HOME_CAMERA.pos);
+      o.tTarget.set(...HOME_CAMERA.target);
+      o.tAzimuth   = HOME_CAMERA.azimuth;
+      o.tElevation = HOME_CAMERA.elevation;
+      o.tRadius    = HOME_CAMERA.radius;
     } else {
-      const bodyPos = bodyWorldPos.current.get(dest) ?? new THREE.Vector3(0, 0, 0);
-      endTarget = bodyPos.clone();
-      const off = PLANET_CAM_OFFSET[dest] || [0, 2, 6];
-      endPos = bodyPos.clone().add(new THREE.Vector3(...off));
+      const bodyPos = bodyWorldPos.current.get(dest);
+      if (bodyPos) o.tTarget.copy(bodyPos);
+      o.tRadius    = PLANET_CAM_RADIUS[dest] ?? 5;
+      // Keep azimuth/elevation from wherever user is currently looking — feels natural
+      // but clamp elevation to a reasonable range
+      o.tElevation = Math.max(0.1, Math.min(1.2, o.elevation));
     }
-
-    const startPos = cam.position.clone();
-    let t = 0;
-    const step = () => {
-      t += 0.018;
-      if (t > 1) { cam.lookAt(endTarget); return; }
-      cam.position.lerpVectors(startPos, endPos, eio(Math.min(t, 1)));
-      cam.lookAt(endTarget);
-      frameRef.current = requestAnimationFrame(step);
-    };
-    step();
   }, []);
 
   useEffect(() => {
-    lerpCamera(selectedPlanet === '' ? 'home' : selectedPlanet);
-  }, [selectedPlanet, lerpCamera]);
+    goToDestination(selectedPlanet === '' ? 'home' : selectedPlanet);
+  }, [selectedPlanet, goToDestination]);
 
   // ─── Sim speed changes ─────────────────────────────────────────────────────
 
@@ -310,12 +324,19 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect }: 
 
     // ── Camera ──
     const camera = new THREE.PerspectiveCamera(
-      50,
+      60,
       mountRef.current.clientWidth / mountRef.current.clientHeight,
       0.01,
       5000,
     );
-    camera.position.set(...HOME_CAMERA.pos);
+    // Place camera at initial spherical position
+    {
+      const o = orbitRef.current;
+      const x = o.target.x + o.radius * Math.cos(o.elevation) * Math.sin(o.azimuth);
+      const y = o.target.y + o.radius * Math.sin(o.elevation);
+      const z = o.target.z + o.radius * Math.cos(o.elevation) * Math.cos(o.azimuth);
+      camera.position.set(x, y, z);
+    }
     camera.lookAt(0, 0, 0);
     cameraRef.current = camera;
 
@@ -604,7 +625,7 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect }: 
         setTooltip({ x: e.clientX - rect.left, y: e.clientY - rect.top - 14, label: obj?.shortName || mId });
         document.body.style.cursor = 'pointer';
         setHoveredBody(null);
-        if (e.buttons === 1) { lastMouseRef.current = { x: e.clientX, y: e.clientY }; }
+        if (isDraggingRef.current) { lastMouseRef.current = { x: e.clientX, y: e.clientY }; }
         return;
       }
 
@@ -619,20 +640,23 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect }: 
         document.body.style.cursor = '';
       }
 
-      if (e.buttons === 1) {
-        const dx = (e.clientX - lastMouseRef.current.x) * 0.005;
-        const dy = (e.clientY - lastMouseRef.current.y) * 0.005;
-        targetRotRef.current.y += dx;
-        targetRotRef.current.x = Math.max(-0.6, Math.min(0.6, targetRotRef.current.x + dy));
+      if (isDraggingRef.current) {
+        const dx = (e.clientX - lastMouseRef.current.x) * 0.007;
+        const dy = (e.clientY - lastMouseRef.current.y) * 0.007;
+        // Orbit around current target — change azimuth and elevation
+        orbitRef.current.tAzimuth   -= dx;
+        orbitRef.current.tElevation  = Math.max(0.05, Math.min(1.4, orbitRef.current.tElevation + dy));
         lastMouseRef.current = { x: e.clientX, y: e.clientY };
       }
     };
 
     const onMouseDown = (e: MouseEvent) => {
       lastMouseRef.current = { x: e.clientX, y: e.clientY };
+      isDraggingRef.current = true;
     };
 
     const onMouseUp = (e: MouseEvent) => {
+      isDraggingRef.current = false;
       if (!mountRef.current) return;
       if (Math.abs(e.clientX - lastMouseRef.current.x) > 4 ||
           Math.abs(e.clientY - lastMouseRef.current.y) > 4) return;
@@ -669,9 +693,8 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect }: 
 
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
-      const factor = e.deltaY > 0 ? 1.08 : 0.93;
-      const dir = camera.position.clone().normalize();
-      camera.position.addScaledVector(dir, (camera.position.length() * (factor - 1)));
+      const factor = e.deltaY > 0 ? 1.10 : 0.91;
+      orbitRef.current.tRadius = Math.max(0.5, Math.min(1200, orbitRef.current.tRadius * factor));
     };
 
     const onResize = () => {
@@ -689,16 +712,32 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect }: 
     window.addEventListener('resize', onResize);
 
     // ─── Animation loop ─────────────────────────────────────────────────────
-    let sceneT = 0;
     const animate = () => {
       frameRef.current = requestAnimationFrame(animate);
-      sceneT += 0.005;
 
-      // Scene rotation (drag)
-      rotationRef.current.x += (targetRotRef.current.x - rotationRef.current.x) * 0.08;
-      rotationRef.current.y += (targetRotRef.current.y - rotationRef.current.y) * 0.08;
-      scene.rotation.x = rotationRef.current.x * 0.3;
-      scene.rotation.y = rotationRef.current.y * 0.3 + sceneT * 0.01;
+      // ── Orbit controller: smoothly lerp orbit params toward targets ──
+      const o = orbitRef.current;
+      const lerpK = 0.09; // smoothing factor per frame
+
+      // When tracking a planet (non-home), keep tTarget locked to the
+      // body's live world position so we follow a moving planet.
+      const sel = selectedPlanetRef.current;
+      if (sel && sel !== '' && sel !== 'home') {
+        const livePos = bodyWorldPos.current.get(sel);
+        if (livePos) o.tTarget.copy(livePos);
+      }
+
+      o.azimuth   += (o.tAzimuth   - o.azimuth)   * lerpK;
+      o.elevation += (o.tElevation - o.elevation)  * lerpK;
+      o.radius    += (o.tRadius    - o.radius)     * lerpK;
+      o.target.lerp(o.tTarget, lerpK);
+
+      // Compute camera position from spherical coords around orbit target
+      const camX = o.target.x + o.radius * Math.cos(o.elevation) * Math.sin(o.azimuth);
+      const camY = o.target.y + o.radius * Math.sin(o.elevation);
+      const camZ = o.target.z + o.radius * Math.cos(o.elevation) * Math.cos(o.azimuth);
+      camera.position.set(camX, camY, camZ);
+      camera.lookAt(o.target);
 
       // Current sim date → Julian centuries
       const now   = simNow(clockRef.current);
@@ -1250,9 +1289,10 @@ function MissionPopup({ obj, mission, x, y, onClose }: MissionPopupProps) {
     completed: 'text-slate-400 border-slate-400/30 bg-slate-400/10',
   };
 
-  const left = Math.max(10, Math.min(x - 110, window.innerWidth - 240));
-  const top  = Math.max(10, y - 10);
+  const left = Math.max(320, Math.min(x - 110, window.innerWidth - 240));
+  const top  = Math.max(160, y - 10);
 
+  
   return (
     <div className="absolute z-30 animate-slide-up"
       style={{ left, top, width: 220 }}>
