@@ -1,20 +1,27 @@
 'use client';
 
 /**
- * SpaceScene — Interactive 3D Space Mission Map
+ * SpaceScene — Interactive 3D Solar System Mission Map
  *
- * Upgrades in this version:
- *  • Earth rendered as a geographic globe (procedural continent texture)
- *  • Night-side city-lights layer
- *  • Procedural cloud layer (separate sphere, labeled ESTIMATED)
- *  • Real Keplerian orbital motion driven by SimClock
- *  • Simulation time controls (1× / 10× / 100× / 1,000× / 10,000×)
- *  • Distinct 3D spacecraft models per object type (ISS, rovers, landers…)
- *  • LOD: 3D model when close, sprite icon when far
- *  • Orbit path shown when spacecraft selected
- *  • Mission popup with VIEW MISSION link
- *  • Search, filter layers, mission counter, AI pulse
- *  • Data provenance labels throughout
+ * Architecture:
+ *  • Full heliocentric solar system (Sun + 8 planets) with JPL Keplerian
+ *    orbital mechanics driven by the existing SimClock.
+ *  • Earth → Moon (hierarchical), Mars → Phobos + Deimos (hierarchical).
+ *  • Mission spacecraft (Earth/Moon/Mars) remain attached to moving parent bodies.
+ *  • Static orbital-path lines built once at init (thin, gray, semi-transparent).
+ *  • Camera targets Earth/Moon/Mars at their CURRENT simulated positions.
+ *  • All existing UI (search, filters, sim clock, mission popup, AI pulse) preserved.
+ *
+ * Coordinate system:
+ *   Sun at origin [0, 0, 0].
+ *   1 AU → AU_TO_SCENE scene units.
+ *   Planet & moon visual radii are exaggerated (see lib/solar-system.ts).
+ *   Moon/Phobos/Deimos orbit radii are also scaled by KM_TO_SCENE.
+ *
+ * Data sources:
+ *   Planet elements: JPL/Caltech "Approximate Keplerian Elements" (1800–2050)
+ *   Moon elements: JPL Planetary Satellite Mean Orbital Parameters
+ *   Spacecraft: lib/orbital-mechanics.ts, lib/spacecraft-positions.ts
  */
 
 import { useRef, useEffect, useState, useCallback, useMemo } from 'react';
@@ -34,7 +41,17 @@ import {
   SIM_SPEEDS,
   SimClock,
   SimSpeed,
+  dateToJD,
+  jdToT,
+  jplPlanetPosition,
+  moonPosition,
+  planetOrbitPath,
+  moonOrbitPath,
 } from '@/lib/orbital-mechanics';
+import {
+  SOLAR_SYSTEM,
+  AU_TO_SCENE,
+} from '@/lib/solar-system';
 import { buildSpacecraftModel } from '@/lib/spacecraft-geometry';
 import { makeEarthDayTexture, makeEarthNightTexture, makeCloudTexture } from '@/lib/earth-texture';
 import type { Mission } from '@/lib/types';
@@ -51,17 +68,40 @@ interface SpaceSceneProps {
 
 // ─── Scene constants ──────────────────────────────────────────────────────────
 
-const PLANET_CONFIG = {
-  earth: { color: 0x1e6fa5, emissive: 0x0a2040, radius: 1.2, position: [-4, 0, 0] as [number, number, number], atmosphere: 0x4db8ff },
-  moon:  { color: 0x8a8f9e, emissive: 0x1a1e28, radius: 0.35, position: [0, 1.2, -3] as [number, number, number], atmosphere: 0x9ca3af },
-  mars:  { color: 0xc2410c, emissive: 0x3a0d02, radius: 0.65, position: [4, -0.5, 0] as [number, number, number], atmosphere: 0xe05c30 },
+/**
+ * Scale: km → scene units for moon orbit radii.
+ * Chosen so Luna's orbit (~384 400 km) maps to ~1.2 scene units around Earth
+ * (which sits at ~10 scene units from Sun).
+ * 384400 km × KM_TO_SCENE ≈ 1.2 → KM_TO_SCENE ≈ 3.12e-6
+ * We use 2.8e-6 for a slightly tighter fit that keeps moons visible.
+ */
+const KM_TO_SCENE = 2.8e-6;
+
+/**
+ * Visual radii (scene units) for non-Earth celestial bodies.
+ * These are stored in lib/solar-system.ts CelestialBody.visualRadius but
+ * we also apply an extra multiplier for distant outer planets.
+ */
+const OUTER_PLANET_RADIUS_BOOST = 1.0; // set >1 to further enlarge outer planets
+
+/**
+ * Home camera: framed to show the inner solar system clearly while
+ * communicating the full scale. Earth sits at ~10 scene units.
+ * FOV is widened in home mode to capture more context.
+ */
+const HOME_CAMERA = {
+  target: [0, 0, 0] as [number, number, number],
+  // Spherical orbit coords for home view
+  azimuth: 0,
+  elevation: 0.42,  // ~24° above ecliptic plane
+  radius: 55,       // much closer — Earth visible at ~10 units
 };
 
-const DEST_CAMERA: Record<string, { pos: [number, number, number]; target: [number, number, number] }> = {
-  home:  { pos: [0, 3, 12],     target: [0, 0, 0] },
-  earth: { pos: [-4, 1.2, 4.5], target: [-4, 0, 0] },
-  moon:  { pos: [0, 2.2, 1.5],  target: [0, 1.2, -3] },
-  mars:  { pos: [4, 0.5, 4.5],  target: [4, -0.5, 0] },
+/** Zoom-in radius (distance from body) when a planet is selected */
+const PLANET_CAM_RADIUS: Record<string, number> = {
+  earth: 5,
+  moon:  2.5,
+  mars:  4,
 };
 
 const STATUS_COLOR: Record<string, number> = {
@@ -81,8 +121,7 @@ const TYPE_CHAR: Record<ObjectType, string> = {
   telescope: '✦',
 };
 
-// Scene-unit orbit radius per mission (planet-relative)
-// Derived from actual SMA ratios scaled to visual planet size
+// Scene-unit orbit radii for mission spacecraft (planet-relative, unchanged)
 const VISUAL_ORBIT_RADIUS: Record<string, number> = {
   iss:            1.45,
   terra:          1.72,
@@ -133,30 +172,64 @@ function eio(t: number): number {
   return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
 }
 
+/**
+ * Get current heliocentric scene position for a body, reading from the live
+ * world-positions map (populated each frame).
+ */
+function getBodyPos(id: string, bodyWorldPos: Map<string, THREE.Vector3>): THREE.Vector3 {
+  return bodyWorldPos.get(id) ?? new THREE.Vector3(0, 0, 0);
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect }: SpaceSceneProps) {
-  const mountRef     = useRef<HTMLDivElement>(null);
-  const rendererRef  = useRef<THREE.WebGLRenderer | null>(null);
-  const sceneRef     = useRef<THREE.Scene | null>(null);
-  const cameraRef    = useRef<THREE.PerspectiveCamera | null>(null);
-  const frameRef     = useRef<number>(0);
-  const planetsRef   = useRef<Record<string, THREE.Mesh>>({});
-  // missionId → { sprite, model3d }
-  const objectsRef   = useRef<Map<string, { sprite: THREE.Sprite; model: THREE.Group }>>(new Map());
+  const mountRef      = useRef<HTMLDivElement>(null);
+  const rendererRef   = useRef<THREE.WebGLRenderer | null>(null);
+  const sceneRef      = useRef<THREE.Scene | null>(null);
+  const cameraRef     = useRef<THREE.PerspectiveCamera | null>(null);
+  const frameRef      = useRef<number>(0);
+
+  // id → planet/moon mesh (interactive bodies go into planetsRef for raycasting)
+  const planetsRef    = useRef<Map<string, THREE.Mesh>>(new Map());
+  // id → parent group that moves with the body (children: mesh + satellites)
+  const bodyGroupsRef = useRef<Map<string, THREE.Group>>(new Map());
+  // Live world-space positions (centre of each body), updated every frame
+  const bodyWorldPos  = useRef<Map<string, THREE.Vector3>>(new Map());
+
+  // Mission spacecraft
+  const objectsRef    = useRef<Map<string, { sprite: THREE.Sprite; model: THREE.Group }>>(new Map());
   const orbitRingsRef = useRef<Map<string, THREE.Mesh>>(new Map());
-  // Selected orbit path line
   const orbitPathRef  = useRef<THREE.Line | null>(null);
 
   const lastMouseRef  = useRef({ x: 0, y: 0 });
-  const rotationRef   = useRef({ x: 0, y: 0 });
-  const targetRotRef  = useRef({ x: 0, y: 0 });
+  const isDraggingRef = useRef(false);
+
+  /**
+   * Spherical camera orbit state.
+   * The camera is always placed at:
+   *   orbitTarget + spherical(azimuth, elevation, radius)
+   * and always looks at orbitTarget.
+   * Drag changes azimuth/elevation; wheel changes radius.
+   */
+  const orbitRef = useRef({
+    // current (smoothed) values
+    azimuth:   HOME_CAMERA.azimuth,
+    elevation: HOME_CAMERA.elevation,
+    radius:    HOME_CAMERA.radius,
+    // target values (we lerp toward these)
+    tAzimuth:   HOME_CAMERA.azimuth,
+    tElevation: HOME_CAMERA.elevation,
+    tRadius:    HOME_CAMERA.radius,
+    // orbit centre
+    target:    new THREE.Vector3(...HOME_CAMERA.target),
+    tTarget:   new THREE.Vector3(...HOME_CAMERA.target),
+  });
 
   // Simulation clock stored in ref (mutated without re-render)
   const clockRef = useRef<SimClock>(makeSimClock());
 
   // UI state
-  const [hoveredPlanet,  setHoveredPlanet]  = useState<string | null>(null);
+  const [hoveredBody,    setHoveredBody]    = useState<string | null>(null);
   const [tooltip,        setTooltip]        = useState<{ x: number; y: number; label: string } | null>(null);
   const [selectedObject, setSelectedObject] = useState<SceneObject | null>(null);
   const [popupPos,       setPopupPos]       = useState<{ x: number; y: number } | null>(null);
@@ -181,13 +254,16 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect }: 
   const [aiPulseText,    setAiPulseText]    = useState<string | null>(null);
   const [aiPulseLoading, setAiPulseLoading] = useState(false);
 
-  // Visible objects after filtering
+  // Visible objects after filtering.
+  // When a planet/moon is selected, only show missions belonging to that destination.
   const visibleObjects = useMemo(() => ALL_SCENE_OBJECTS.filter(obj => {
     if (!typeFilters[obj.objectType]) return false;
     if (!statusFilters[obj.status as keyof typeof statusFilters]) return false;
     if (!destFilters[obj.destination]) return false;
+    // When a destination is selected, hide missions for other destinations.
+    if (selectedPlanet && obj.destination !== selectedPlanet) return false;
     return true;
-  }), [typeFilters, statusFilters, destFilters]);
+  }), [typeFilters, statusFilters, destFilters, selectedPlanet]);
 
   const counts = useMemo(() => {
     const c = { earth: 0, moon: 0, mars: 0 };
@@ -207,29 +283,32 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect }: 
     if (obj) { setSelectedObject(obj); onMissionSelect(mission); }
   }, [onPlanetSelect, onMissionSelect]);
 
-  // ─── Camera lerp ──────────────────────────────────────────────────────────
+  // ─── Camera orbit update ──────────────────────────────────────────────────
 
-  const lerpCamera = useCallback((dest: string) => {
-    const cfg = DEST_CAMERA[dest] || DEST_CAMERA.home;
-    if (!cameraRef.current) return;
-    const cam = cameraRef.current;
-    let t = 0;
-    const startPos = cam.position.clone();
-    const endPos   = new THREE.Vector3(...cfg.pos);
-    const endTarget = new THREE.Vector3(...cfg.target);
-    const step = () => {
-      t += 0.018;
-      if (t > 1) { cam.lookAt(endTarget); return; }
-      cam.position.lerpVectors(startPos, endPos, eio(Math.min(t, 1)));
-      cam.lookAt(endTarget);
-      frameRef.current = requestAnimationFrame(step);
-    };
-    step();
+  /**
+   * Transition the orbit controller to a new target body (or home).
+   * We set the TARGET values; the animation loop smoothly lerps toward them.
+   */
+  const goToDestination = useCallback((dest: string) => {
+    const o = orbitRef.current;
+    if (dest === '' || dest === 'home') {
+      o.tTarget.set(...HOME_CAMERA.target);
+      o.tAzimuth   = HOME_CAMERA.azimuth;
+      o.tElevation = HOME_CAMERA.elevation;
+      o.tRadius    = HOME_CAMERA.radius;
+    } else {
+      const bodyPos = bodyWorldPos.current.get(dest);
+      if (bodyPos) o.tTarget.copy(bodyPos);
+      o.tRadius    = PLANET_CAM_RADIUS[dest] ?? 5;
+      // Keep azimuth/elevation from wherever user is currently looking — feels natural
+      // but clamp elevation to a reasonable range
+      o.tElevation = Math.max(0.1, Math.min(1.2, o.elevation));
+    }
   }, []);
 
   useEffect(() => {
-    lerpCamera(selectedPlanet === '' ? 'home' : selectedPlanet);
-  }, [selectedPlanet, lerpCamera]);
+    goToDestination(selectedPlanet === '' ? 'home' : selectedPlanet);
+  }, [selectedPlanet, goToDestination]);
 
   // ─── Sim speed changes ─────────────────────────────────────────────────────
 
@@ -246,11 +325,25 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect }: 
     const scene = new THREE.Scene();
     sceneRef.current = scene;
 
-    const camera = new THREE.PerspectiveCamera(50, mountRef.current.clientWidth / mountRef.current.clientHeight, 0.01, 1000);
-    camera.position.set(0, 3, 12);
+    // ── Camera ──
+    const camera = new THREE.PerspectiveCamera(
+      60,
+      mountRef.current.clientWidth / mountRef.current.clientHeight,
+      0.01,
+      5000,
+    );
+    // Place camera at initial spherical position
+    {
+      const o = orbitRef.current;
+      const x = o.target.x + o.radius * Math.cos(o.elevation) * Math.sin(o.azimuth);
+      const y = o.target.y + o.radius * Math.sin(o.elevation);
+      const z = o.target.z + o.radius * Math.cos(o.elevation) * Math.cos(o.azimuth);
+      camera.position.set(x, y, z);
+    }
     camera.lookAt(0, 0, 0);
     cameraRef.current = camera;
 
+    // ── Renderer ──
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(mountRef.current.clientWidth, mountRef.current.clientHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -259,11 +352,11 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect }: 
     rendererRef.current = renderer;
 
     // ── Stars ──
-    const starPos = new Float32Array(3000 * 3);
-    for (let i = 0; i < 3000; i++) {
+    const starPos = new Float32Array(4000 * 3);
+    for (let i = 0; i < 4000; i++) {
       const th = Math.random() * Math.PI * 2;
       const ph = Math.acos(Math.random() * 2 - 1);
-      const r  = 150 + Math.random() * 100;
+      const r  = 800 + Math.random() * 400;
       starPos[i * 3]     = r * Math.sin(ph) * Math.cos(th);
       starPos[i * 3 + 1] = r * Math.sin(ph) * Math.sin(th);
       starPos[i * 3 + 2] = r * Math.cos(ph);
@@ -271,139 +364,251 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect }: 
     const starGeo = new THREE.BufferGeometry();
     starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
     scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({
-      color: 0xffffff, size: 0.3, sizeAttenuation: true, transparent: true, opacity: 0.8,
+      color: 0xffffff, size: 0.6, sizeAttenuation: true, transparent: true, opacity: 0.75,
     })));
 
     // ── Lights ──
-    scene.add(new THREE.AmbientLight(0x1a2840, 0.8));
-    const sun = new THREE.DirectionalLight(0xffffff, 2.5);
-    sun.position.set(20, 10, 20);
-    scene.add(sun);
-    const fill = new THREE.DirectionalLight(0x2040a0, 0.3);
-    fill.position.set(-10, -5, -10);
-    scene.add(fill);
+    // Point light at Sun's position
+    const sunLight = new THREE.PointLight(0xfff5e0, 3.5, 2000, 0.4);
+    sunLight.position.set(0, 0, 0);
+    scene.add(sunLight);
+    // Ambient fill so dark sides aren't pure black
+    scene.add(new THREE.AmbientLight(0x0d1a2e, 0.6));
 
-    // ── EARTH — geographic globe ──
-    const earthPos = new THREE.Vector3(...PLANET_CONFIG.earth.position);
-    const earthR   = PLANET_CONFIG.earth.radius;
+    // ── Compute initial T (Julian centuries from J2000) for orbital paths ──
+    const initDate = simNow(clockRef.current);
+    const initT    = jdToT(dateToJD(initDate));
 
-    // Day texture (procedural continents)
-    const dayTex   = makeEarthDayTexture();
-    const nightTex = makeEarthNightTexture();
+    // ─── Build Sun ──────────────────────────────────────────────────────────
+    {
+      const sunBody = SOLAR_SYSTEM.find(b => b.id === 'sun')!;
+      const sunGeo  = new THREE.SphereGeometry(sunBody.visualRadius, 32, 32);
+      const sunMat  = new THREE.MeshBasicMaterial({ color: sunBody.color ?? 0xffdd88 });
+      const sunMesh = new THREE.Mesh(sunGeo, sunMat);
+      sunMesh.name  = 'sun';
+      scene.add(sunMesh);
+      // Corona glow
+      const coronaGeo = new THREE.SphereGeometry(sunBody.visualRadius * 1.5, 24, 24);
+      const coronaMat = new THREE.MeshBasicMaterial({
+        color: 0xff8800, transparent: true, opacity: 0.08, side: THREE.BackSide,
+      });
+      scene.add(new THREE.Mesh(coronaGeo, coronaMat));
+      bodyWorldPos.current.set('sun', new THREE.Vector3(0, 0, 0));
+    }
 
-    // Earth main sphere
-    const earthGeo = new THREE.SphereGeometry(earthR, 64, 64);
-    const earthMat = new THREE.MeshStandardMaterial({
-      map:              dayTex,
-      emissiveMap:      nightTex,
-      emissive:         new THREE.Color(0x112244),
-      emissiveIntensity: 0.35,
-      roughness: 0.85,
-      metalness: 0.05,
-    });
-    const earthMesh = new THREE.Mesh(earthGeo, earthMat);
-    earthMesh.position.copy(earthPos);
-    earthMesh.name = 'earth';
-    scene.add(earthMesh);
-    planetsRef.current['earth'] = earthMesh;
-
-    // Cloud layer
-    const cloudTex = makeCloudTexture();
-    const cloudGeo = new THREE.SphereGeometry(earthR * 1.012, 40, 40);
-    const cloudMat = new THREE.MeshStandardMaterial({
-      map: cloudTex,
+    // ─── Orbital-path material (shared, thin gray semi-transparent) ─────────
+    const orbitLineMat = new THREE.LineBasicMaterial({
+      color: 0x888888,
       transparent: true,
-      opacity: 0.38,
-      depthWrite: false,
-      roughness: 1,
-      metalness: 0,
-    });
-    const cloudMesh = new THREE.Mesh(cloudGeo, cloudMat);
-    cloudMesh.position.copy(earthPos);
-    cloudMesh.name = 'earth-clouds';
-    scene.add(cloudMesh);
-
-    // Atmosphere glow (Earth)
-    const atmGeo = new THREE.SphereGeometry(earthR * 1.09, 32, 32);
-    const atmMat = new THREE.MeshBasicMaterial({ color: 0x4db8ff, transparent: true, opacity: 0.055, side: THREE.BackSide });
-    const atm = new THREE.Mesh(atmGeo, atmMat);
-    atm.position.copy(earthPos);
-    scene.add(atm);
-
-    // ── MOON ──
-    const moonPos  = new THREE.Vector3(...PLANET_CONFIG.moon.position);
-    const moonR    = PLANET_CONFIG.moon.radius;
-    const moonMat  = new THREE.MeshStandardMaterial({
-      color: 0x8a8f9e, emissive: 0x1a1e28, emissiveIntensity: 0.2, roughness: 0.9, metalness: 0.05,
-    });
-    const moonMesh = new THREE.Mesh(new THREE.SphereGeometry(moonR, 48, 48), moonMat);
-    moonMesh.position.copy(moonPos);
-    moonMesh.name = 'moon';
-    scene.add(moonMesh);
-    planetsRef.current['moon'] = moonMesh;
-
-    // Moon atmosphere
-    const moonAtm = new THREE.Mesh(
-      new THREE.SphereGeometry(moonR * 1.06, 24, 24),
-      new THREE.MeshBasicMaterial({ color: 0x9ca3af, transparent: true, opacity: 0.04, side: THREE.BackSide })
-    );
-    moonAtm.position.copy(moonPos);
-    scene.add(moonAtm);
-
-    // ── MARS ──
-    const marsPos = new THREE.Vector3(...PLANET_CONFIG.mars.position);
-    const marsR   = PLANET_CONFIG.mars.radius;
-    const marsMat = new THREE.MeshStandardMaterial({
-      color: 0xc2410c, emissive: 0x3a0d02, emissiveIntensity: 0.25, roughness: 0.88, metalness: 0.05,
-    });
-    const marsMesh = new THREE.Mesh(new THREE.SphereGeometry(marsR, 56, 56), marsMat);
-    marsMesh.position.copy(marsPos);
-    marsMesh.name = 'mars';
-    scene.add(marsMesh);
-    planetsRef.current['mars'] = marsMesh;
-
-    // Mars polar ice caps
-    const iceMat = new THREE.MeshStandardMaterial({ color: 0xddeeff, roughness: 0.6 });
-    [-1, 1].forEach(pole => {
-      const cap = new THREE.Mesh(new THREE.SphereGeometry(marsR * 0.22, 16, 8, 0, Math.PI * 2, 0, 0.3), iceMat.clone());
-      cap.position.set(marsPos.x, marsPos.y + pole * marsR * 0.97, marsPos.z);
-      cap.rotation.x = pole === 1 ? 0 : Math.PI;
-      scene.add(cap);
+      opacity: 0.18,
     });
 
-    // Mars wire grid
-    const wireGeo = new THREE.SphereGeometry(marsR + 0.001, 16, 16);
-    const wireMat = new THREE.MeshBasicMaterial({ color: 0x401808, wireframe: true, transparent: true, opacity: 0.1 });
-    const marsWire = new THREE.Mesh(wireGeo, wireMat);
-    marsWire.position.copy(marsPos);
-    scene.add(marsWire);
+    // ─── Build heliocentric planets ─────────────────────────────────────────
+    for (const body of SOLAR_SYSTEM) {
+      if (!body.planetaryElements) continue; // skip Sun and moons here
 
-    // Mars atmosphere
-    const marsAtm = new THREE.Mesh(
-      new THREE.SphereGeometry(marsR * 1.07, 24, 24),
-      new THREE.MeshBasicMaterial({ color: 0xe05c30, transparent: true, opacity: 0.04, side: THREE.BackSide })
-    );
-    marsAtm.position.copy(marsPos);
-    scene.add(marsAtm);
-
-    // ── Interplanetary arcs ──
-    const addArc = (a: THREE.Vector3, b: THREE.Vector3, color: number, opacity: number) => {
-      const pts: THREE.Vector3[] = [];
-      for (let i = 0; i <= 50; i++) {
-        const t = i / 50;
-        const p = new THREE.Vector3().lerpVectors(a, b, t);
-        p.y += Math.sin(t * Math.PI) * 0.85;
-        pts.push(p);
+      // Static orbital path (built once from current epoch T)
+      if (body.showOrbit) {
+        const pathPts = planetOrbitPath(body.planetaryElements, initT, 256);
+        const pathVecs = pathPts.map(p => new THREE.Vector3(
+          p.x * AU_TO_SCENE,
+          p.z * AU_TO_SCENE, // ecliptic Z → scene Y (ecliptic is near XZ plane → map Z to Y to get slight tilt)
+          -p.y * AU_TO_SCENE,
+        ));
+        pathVecs.push(pathVecs[0].clone()); // close loop
+        const pathGeo  = new THREE.BufferGeometry().setFromPoints(pathVecs);
+        const pathLine = new THREE.Line(pathGeo, orbitLineMat.clone());
+        scene.add(pathLine);
       }
-      scene.add(new THREE.Line(
-        new THREE.BufferGeometry().setFromPoints(pts),
-        new THREE.LineBasicMaterial({ color, transparent: true, opacity })
-      ));
-    };
-    addArc(earthPos, moonPos, 0x3b82f6, 0.18);
-    addArc(earthPos, marsPos, 0xe05c30, 0.1);
 
-    // ── Raycaster ──
+      // Planet mesh
+      const r = body.visualRadius * (body.id === 'jupiter' || body.id === 'saturn' ||
+                                      body.id === 'uranus'  || body.id === 'neptune'
+                                      ? OUTER_PLANET_RADIUS_BOOST : 1);
+
+      let mesh: THREE.Mesh;
+
+      if (body.id === 'earth') {
+        // ── Earth: special rendering (texture, clouds, atmosphere) ──
+        const dayTex   = makeEarthDayTexture();
+        const nightTex = makeEarthNightTexture();
+        const earthMat = new THREE.MeshStandardMaterial({
+          map:               dayTex,
+          emissiveMap:       nightTex,
+          emissive:          new THREE.Color(0x112244),
+          emissiveIntensity: 0.35,
+          roughness:         0.85,
+          metalness:         0.05,
+        });
+        mesh = new THREE.Mesh(new THREE.SphereGeometry(r, 64, 64), earthMat);
+        mesh.name = 'earth';
+
+        // Clouds
+        const cloudMat = new THREE.MeshStandardMaterial({
+          map: makeCloudTexture(), transparent: true, opacity: 0.38, depthWrite: false,
+          roughness: 1, metalness: 0,
+        });
+        const clouds = new THREE.Mesh(new THREE.SphereGeometry(r * 1.012, 40, 40), cloudMat);
+        clouds.name = 'earth-clouds';
+        mesh.add(clouds); // parent so clouds move with Earth
+
+        // Atmosphere
+        const atmMat = new THREE.MeshBasicMaterial({
+          color: 0x4db8ff, transparent: true, opacity: 0.055, side: THREE.BackSide,
+        });
+        mesh.add(new THREE.Mesh(new THREE.SphereGeometry(r * 1.09, 24, 24), atmMat));
+
+      } else if (body.id === 'mars') {
+        // ── Mars: special rendering ──
+        const marsMat = new THREE.MeshStandardMaterial({
+          color: body.color ?? 0xc2410c,
+          emissive: new THREE.Color(body.emissive ?? 0x3a0d02),
+          emissiveIntensity: 0.25, roughness: 0.88, metalness: 0.05,
+        });
+        mesh = new THREE.Mesh(new THREE.SphereGeometry(r, 56, 56), marsMat);
+        mesh.name = 'mars';
+
+        // Polar caps
+        const iceMat = new THREE.MeshStandardMaterial({ color: 0xddeeff, roughness: 0.6 });
+        [-1, 1].forEach(pole => {
+          const cap = new THREE.Mesh(
+            new THREE.SphereGeometry(r * 0.22, 16, 8, 0, Math.PI * 2, 0, 0.3),
+            iceMat.clone(),
+          );
+          cap.position.y = pole * r * 0.97;
+          cap.rotation.x = pole === 1 ? 0 : Math.PI;
+          mesh.add(cap);
+        });
+        // Wire grid
+        const wireGeo = new THREE.SphereGeometry(r + 0.001, 16, 16);
+        const wireMat = new THREE.MeshBasicMaterial({
+          color: 0x401808, wireframe: true, transparent: true, opacity: 0.1,
+        });
+        mesh.add(new THREE.Mesh(wireGeo, wireMat));
+        // Atmosphere
+        mesh.add(new THREE.Mesh(
+          new THREE.SphereGeometry(r * 1.07, 24, 24),
+          new THREE.MeshBasicMaterial({ color: 0xe05c30, transparent: true, opacity: 0.04, side: THREE.BackSide }),
+        ));
+
+      } else if (body.id === 'saturn') {
+        // ── Saturn: add ring ──
+        const satMat = new THREE.MeshStandardMaterial({
+          color: body.color ?? 0xe4d191,
+          emissive: new THREE.Color(body.emissive ?? 0x1e1804),
+          emissiveIntensity: 0.15, roughness: 0.9, metalness: 0.0,
+        });
+        mesh = new THREE.Mesh(new THREE.SphereGeometry(r, 48, 48), satMat);
+        mesh.name = 'saturn';
+
+        const ringGeo = new THREE.RingGeometry(r * 1.3, r * 2.2, 80);
+        const ringMat = new THREE.MeshBasicMaterial({
+          color: 0xd4c090, transparent: true, opacity: 0.45, side: THREE.DoubleSide,
+        });
+        const ring = new THREE.Mesh(ringGeo, ringMat);
+        ring.rotation.x = Math.PI / 2.3;
+        mesh.add(ring);
+
+      } else {
+        // ── Generic planet ──
+        const mat = new THREE.MeshStandardMaterial({
+          color: body.color ?? 0xaaaaaa,
+          emissive: new THREE.Color(body.emissive ?? 0x000000),
+          emissiveIntensity: 0.15,
+          roughness: 0.85,
+          metalness: 0.0,
+        });
+        mesh = new THREE.Mesh(new THREE.SphereGeometry(r, 48, 48), mat);
+        mesh.name = body.id;
+
+        // Atmosphere glow for planets that have one
+        if (body.atmosphereColor) {
+          const atmMesh = new THREE.Mesh(
+            new THREE.SphereGeometry(r * 1.06, 24, 24),
+            new THREE.MeshBasicMaterial({
+              color: body.atmosphereColor, transparent: true, opacity: 0.05, side: THREE.BackSide,
+            }),
+          );
+          mesh.add(atmMesh);
+        }
+      }
+
+      // Compute initial position and place mesh
+      const p0 = jplPlanetPosition(body.planetaryElements, initT);
+      // Map ecliptic coords to scene: scene X = ecliptic X, scene Y = ecliptic Z, scene Z = -ecliptic Y
+      const initScenePos = new THREE.Vector3(
+        p0.x * AU_TO_SCENE,
+        p0.z * AU_TO_SCENE,
+        -p0.y * AU_TO_SCENE,
+      );
+      mesh.position.copy(initScenePos);
+      scene.add(mesh);
+      planetsRef.current.set(body.id, mesh);
+      bodyWorldPos.current.set(body.id, initScenePos.clone());
+
+      // Moon orbit path for Earth's Moon (built here, referenced in moon section below)
+      // (handled in the moons loop below)
+    }
+
+    // ─── Build moons (Moon, Phobos, Deimos) ────────────────────────────────
+    for (const body of SOLAR_SYSTEM) {
+      if (!body.moonElements) continue;
+
+      const parentPos = bodyWorldPos.current.get(body.parentId!) ?? new THREE.Vector3();
+      const r = body.visualRadius;
+
+      // Moon orbital path (if shown) — built relative to parent's current pos
+      if (body.showOrbit) {
+        const moonPathPts = moonOrbitPath(body.moonElements, 128);
+        const scale = KM_TO_SCENE;
+        const moonPathVecs = moonPathPts.map(p => new THREE.Vector3(
+          parentPos.x + p.x * scale,
+          parentPos.y + p.z * scale,
+          parentPos.z - p.y * scale,
+        ));
+        moonPathVecs.push(moonPathVecs[0].clone());
+        const moonPathLine = new THREE.Line(
+          new THREE.BufferGeometry().setFromPoints(moonPathVecs),
+          orbitLineMat.clone(),
+        );
+        // Tag it so we can update its position when Earth/Mars moves
+        moonPathLine.name = `orbit-path-${body.id}`;
+        scene.add(moonPathLine);
+      }
+
+      // Moon mesh
+      const moonMat = new THREE.MeshStandardMaterial({
+        color: body.color ?? 0x888888,
+        emissive: new THREE.Color(body.emissive ?? 0x000000),
+        emissiveIntensity: 0.2,
+        roughness: 0.9,
+        metalness: 0.05,
+      });
+      const moonMesh = new THREE.Mesh(new THREE.SphereGeometry(r, 48, 48), moonMat);
+      moonMesh.name = body.id;
+
+      // Atmosphere glow for Moon
+      if (body.id === 'moon') {
+        moonMesh.add(new THREE.Mesh(
+          new THREE.SphereGeometry(r * 1.06, 24, 24),
+          new THREE.MeshBasicMaterial({ color: 0x9ca3af, transparent: true, opacity: 0.04, side: THREE.BackSide }),
+        ));
+      }
+
+      // Compute initial moon position
+      const moonOff = moonPosition(body.moonElements, initDate);
+      const moonScenePos = new THREE.Vector3(
+        parentPos.x + moonOff.x * KM_TO_SCENE,
+        parentPos.y + moonOff.z * KM_TO_SCENE,
+        parentPos.z - moonOff.y * KM_TO_SCENE,
+      );
+      moonMesh.position.copy(moonScenePos);
+      scene.add(moonMesh);
+      if (body.interactive) planetsRef.current.set(body.id, moonMesh);
+      bodyWorldPos.current.set(body.id, moonScenePos.clone());
+    }
+
+    // ─── Raycaster ──────────────────────────────────────────────────────────
     const raycaster = new THREE.Raycaster();
     raycaster.params.Sprite = { threshold: 0.1 };
     const pointer = new THREE.Vector2();
@@ -422,36 +627,49 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect }: 
         const obj = ALL_SCENE_OBJECTS.find(o => o.missionId === mId);
         setTooltip({ x: e.clientX - rect.left, y: e.clientY - rect.top - 14, label: obj?.shortName || mId });
         document.body.style.cursor = 'pointer';
-        setHoveredPlanet(null);
-        if (e.buttons === 1) { lastMouseRef.current = { x: e.clientX, y: e.clientY }; }
+        setHoveredBody(null);
+        if (isDraggingRef.current) { lastMouseRef.current = { x: e.clientX, y: e.clientY }; }
         return;
       }
 
-      const pHits = raycaster.intersectObjects(Object.values(planetsRef.current));
+      const hoverMeshes = Array.from(planetsRef.current.values());
+      const hoverIds = new Set(Array.from(planetsRef.current.keys()));
+      const pHits = raycaster.intersectObjects(hoverMeshes, true);
       if (pHits.length) {
-        setHoveredPlanet(pHits[0].object.name);
-        setTooltip({ x: e.clientX - rect.left, y: e.clientY - rect.top - 10, label: pHits[0].object.name.toUpperCase() });
+        // Walk up to find the named interactive body
+        let hitObj: THREE.Object3D | null = pHits[0].object;
+        let hoverBodyId: string | null = null;
+        while (hitObj) {
+          if (hoverIds.has(hitObj.name)) { hoverBodyId = hitObj.name; break; }
+          hitObj = hitObj.parent;
+        }
+        const displayName = hoverBodyId ?? pHits[0].object.name;
+        setHoveredBody(displayName);
+        setTooltip({ x: e.clientX - rect.left, y: e.clientY - rect.top - 10, label: displayName.toUpperCase() });
         document.body.style.cursor = 'pointer';
       } else {
-        setHoveredPlanet(null);
+        setHoveredBody(null);
         setTooltip(null);
         document.body.style.cursor = '';
       }
 
-      if (e.buttons === 1) {
-        const dx = (e.clientX - lastMouseRef.current.x) * 0.005;
-        const dy = (e.clientY - lastMouseRef.current.y) * 0.005;
-        targetRotRef.current.y += dx;
-        targetRotRef.current.x = Math.max(-0.6, Math.min(0.6, targetRotRef.current.x + dy));
+      if (isDraggingRef.current) {
+        const dx = (e.clientX - lastMouseRef.current.x) * 0.007;
+        const dy = (e.clientY - lastMouseRef.current.y) * 0.007;
+        // Orbit around current target — change azimuth and elevation
+        orbitRef.current.tAzimuth   -= dx;
+        orbitRef.current.tElevation  = Math.max(0.05, Math.min(1.4, orbitRef.current.tElevation + dy));
         lastMouseRef.current = { x: e.clientX, y: e.clientY };
       }
     };
 
     const onMouseDown = (e: MouseEvent) => {
       lastMouseRef.current = { x: e.clientX, y: e.clientY };
+      isDraggingRef.current = true;
     };
 
     const onMouseUp = (e: MouseEvent) => {
+      isDraggingRef.current = false;
       if (!mountRef.current) return;
       if (Math.abs(e.clientX - lastMouseRef.current.x) > 4 ||
           Math.abs(e.clientY - lastMouseRef.current.y) > 4) return;
@@ -476,11 +694,34 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect }: 
         return;
       }
 
-      const pHits = raycaster.intersectObjects(Object.values(planetsRef.current));
+      // Use recursive=true so child meshes (clouds, atmosphere) are also tested,
+      // then walk up the hit object's ancestry to find the interactive body id.
+      const interactiveMeshes = Array.from(planetsRef.current.entries())
+        .filter(([id]) => SOLAR_SYSTEM.find(b => b.id === id)?.interactive)
+        .map(([, mesh]) => mesh);
+      const interactiveIds = new Set(
+        Array.from(planetsRef.current.keys()).filter(id => SOLAR_SYSTEM.find(b => b.id === id)?.interactive)
+      );
+      const pHits = raycaster.intersectObjects(interactiveMeshes, true);
       if (pHits.length) {
-        onPlanetSelect(pHits[0].object.name);
-        setSelectedObject(null); setPopupPos(null);
+        // Walk up from the hit object to find the interactive body (e.g. 'earth', not 'earth-clouds')
+        let hitObj: THREE.Object3D | null = pHits[0].object;
+        let bodyId: string | null = null;
+        while (hitObj) {
+          if (interactiveIds.has(hitObj.name)) { bodyId = hitObj.name; break; }
+          hitObj = hitObj.parent;
+        }
+        if (bodyId) {
+          onPlanetSelect(bodyId);
+          setSelectedObject(null); setPopupPos(null);
+        }
       }
+    };
+
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const factor = e.deltaY > 0 ? 1.10 : 0.91;
+      orbitRef.current.tRadius = Math.max(0.5, Math.min(1200, orbitRef.current.tRadius * factor));
     };
 
     const onResize = () => {
@@ -494,72 +735,158 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect }: 
     el.addEventListener('mousemove', onMouseMove);
     el.addEventListener('mousedown', onMouseDown);
     el.addEventListener('mouseup', onMouseUp);
+    el.addEventListener('wheel', onWheel, { passive: false });
     window.addEventListener('resize', onResize);
 
-    // ── Animation loop ──
-    let sceneT = 0;
+    // ─── Animation loop ─────────────────────────────────────────────────────
     const animate = () => {
       frameRef.current = requestAnimationFrame(animate);
-      sceneT += 0.005;
 
-      // Scene rotation (drag)
-      rotationRef.current.x += (targetRotRef.current.x - rotationRef.current.x) * 0.08;
-      rotationRef.current.y += (targetRotRef.current.y - rotationRef.current.y) * 0.08;
-      scene.rotation.x = rotationRef.current.x * 0.3;
-      scene.rotation.y = rotationRef.current.y * 0.3 + sceneT * 0.02;
+      // ── Orbit controller: smoothly lerp orbit params toward targets ──
+      const o = orbitRef.current;
+      const lerpK = 0.09; // smoothing factor per frame
 
-      // Planet self-rotation
-      if (planetsRef.current['earth']) planetsRef.current['earth'].rotation.y += 0.0015;
-      const cloudMeshLocal = scene.getObjectByName('earth-clouds');
-      if (cloudMeshLocal) cloudMeshLocal.rotation.y += 0.0018;
-      if (planetsRef.current['moon']) planetsRef.current['moon'].rotation.y += 0.0005;
-      if (planetsRef.current['mars']) planetsRef.current['mars'].rotation.y += 0.001;
+      // When tracking a planet (non-home), keep tTarget locked to the
+      // body's live world position so we follow a moving planet.
+      const sel = selectedPlanetRef.current;
+      if (sel && sel !== '' && sel !== 'home') {
+        const livePos = bodyWorldPos.current.get(sel);
+        if (livePos) o.tTarget.copy(livePos);
+      }
 
-      // Keplerian orbital positions
+      o.azimuth   += (o.tAzimuth   - o.azimuth)   * lerpK;
+      o.elevation += (o.tElevation - o.elevation)  * lerpK;
+      o.radius    += (o.tRadius    - o.radius)     * lerpK;
+      o.target.lerp(o.tTarget, lerpK);
+
+      // Compute camera position from spherical coords around orbit target
+      const camX = o.target.x + o.radius * Math.cos(o.elevation) * Math.sin(o.azimuth);
+      const camY = o.target.y + o.radius * Math.sin(o.elevation);
+      const camZ = o.target.z + o.radius * Math.cos(o.elevation) * Math.cos(o.azimuth);
+      camera.position.set(camX, camY, camZ);
+      camera.lookAt(o.target);
+
+      // Current sim date → Julian centuries
+      const now   = simNow(clockRef.current);
+      const T     = jdToT(dateToJD(now));
+
+      // ── Update heliocentric planet positions ──
+      for (const body of SOLAR_SYSTEM) {
+        if (!body.planetaryElements) continue;
+        const p = jplPlanetPosition(body.planetaryElements, T);
+        const scenePos = new THREE.Vector3(
+          p.x * AU_TO_SCENE,
+          p.z * AU_TO_SCENE,
+          -p.y * AU_TO_SCENE,
+        );
+        const mesh = planetsRef.current.get(body.id);
+        if (mesh) mesh.position.copy(scenePos);
+        bodyWorldPos.current.set(body.id, scenePos.clone());
+
+        // Planet self-rotation (visual only)
+        if (mesh) {
+          const rotSpeed: Record<string, number> = {
+            mercury: 0.0003, venus: 0.0002, earth: 0.0015,
+            mars: 0.001, jupiter: 0.003, saturn: 0.0028,
+            uranus: 0.0018, neptune: 0.0016,
+          };
+          mesh.rotation.y += rotSpeed[body.id] ?? 0.001;
+
+          // Rotate Earth's cloud child (index 0 child = clouds)
+          if (body.id === 'earth') {
+            const clouds = mesh.getObjectByName('earth-clouds');
+            if (clouds) clouds.rotation.y += 0.0018;
+          }
+        }
+      }
+
+      // ── Update moon positions (parent-relative) ──
+      for (const body of SOLAR_SYSTEM) {
+        if (!body.moonElements) continue;
+        const parentPos = bodyWorldPos.current.get(body.parentId!) ?? new THREE.Vector3();
+        const off = moonPosition(body.moonElements, now);
+        const moonScenePos = new THREE.Vector3(
+          parentPos.x + off.x * KM_TO_SCENE,
+          parentPos.y + off.z * KM_TO_SCENE,
+          parentPos.z - off.y * KM_TO_SCENE,
+        );
+        const mesh = planetsRef.current.get(body.id);
+        if (mesh) {
+          mesh.position.copy(moonScenePos);
+          mesh.rotation.y += 0.0004;
+        }
+        bodyWorldPos.current.set(body.id, moonScenePos.clone());
+
+        // Slide moon orbital path with parent
+        const pathLine = scene.getObjectByName(`orbit-path-${body.id}`) as THREE.Line | undefined;
+        if (pathLine && body.moonElements) {
+          const moonPathPts = moonOrbitPath(body.moonElements, 128);
+          const scale = KM_TO_SCENE;
+          const pathVecs = moonPathPts.map(pp => new THREE.Vector3(
+            parentPos.x + pp.x * scale,
+            parentPos.y + pp.z * scale,
+            parentPos.z - pp.y * scale,
+          ));
+          pathVecs.push(pathVecs[0].clone());
+          (pathLine.geometry as THREE.BufferGeometry).setFromPoints(pathVecs);
+        }
+      }
+
+      // ── Update mission spacecraft positions ──
       const elapsed = simElapsedSeconds(clockRef.current);
       objectsRef.current.forEach(({ sprite, model }, missionId) => {
         const scObj = ALL_SCENE_OBJECTS.find(o => o.missionId === missionId);
-        if (!scObj || !scObj.isOrbiter) return;
+        if (!scObj) return;
 
-        const params = ORBITAL_PARAMS[missionId];
-        const vr     = VISUAL_ORBIT_RADIUS[missionId] || scObj.orbitRadius || 1.5;
-        const pCfg   = PLANET_CONFIG[scObj.destination];
-        const pPos   = new THREE.Vector3(...pCfg.position);
+        // Parent body world position (now dynamic)
+        const pPos = bodyWorldPos.current.get(scObj.destination) ?? new THREE.Vector3();
 
-        let dx: number, dy: number, dz: number;
-        if (params) {
-          const dir = keplerPosition(params, elapsed);
-          dx = dir.x * vr; dy = dir.y * vr; dz = dir.z * vr;
+        if (scObj.isOrbiter) {
+          const params = ORBITAL_PARAMS[missionId];
+          const vr     = VISUAL_ORBIT_RADIUS[missionId] || scObj.orbitRadius || 1.5;
+          let dx: number, dy: number, dz: number;
+          if (params) {
+            const dir = keplerPosition(params, elapsed);
+            dx = dir.x * vr; dy = dir.y * vr; dz = dir.z * vr;
+          } else {
+            const ang = elapsed * (scObj.orbitSpeed || 1) * 0.0001 + (scObj.orbitPhase || 0);
+            const inc = scObj.orbitInclination || 0;
+            dx = vr * Math.cos(ang);
+            dy = vr * Math.sin(ang) * Math.sin(inc);
+            dz = vr * Math.sin(ang) * Math.cos(inc);
+          }
+          const wx = pPos.x + dx, wy = pPos.y + dy, wz = pPos.z + dz;
+          sprite.position.set(wx, wy, wz);
+          model.position.set(wx, wy, wz);
+
+          // Move orbit ring with parent
+          const ring = orbitRingsRef.current.get(missionId);
+          if (ring) ring.position.copy(pPos);
+
+          const camDist = camera.position.distanceTo(new THREE.Vector3(wx, wy, wz));
+          const showModel = camDist < 4;
+          sprite.visible = !showModel;
+          model.visible  = showModel;
+          if (showModel) { model.rotation.y += 0.005; model.lookAt(pPos); }
         } else {
-          // Fallback: simple circular
-          const ang = elapsed * (scObj.orbitSpeed || 1) * 0.0001 + (scObj.orbitPhase || 0);
-          const inc = scObj.orbitInclination || 0;
-          dx = vr * Math.cos(ang);
-          dy = vr * Math.sin(ang) * Math.sin(inc);
-          dz = vr * Math.sin(ang) * Math.cos(inc);
-        }
-
-        const wx = pPos.x + dx;
-        const wy = pPos.y + dy;
-        const wz = pPos.z + dz;
-        sprite.position.set(wx, wy, wz);
-        model.position.set(wx, wy, wz);
-
-        // LOD: show model if camera is close enough
-        const camDist = camera.position.distanceTo(new THREE.Vector3(wx, wy, wz));
-        const showModel = camDist < 3.5;
-        sprite.visible = !showModel;
-        model.visible  = showModel;
-        if (showModel) {
-          model.rotation.y += 0.005;
-          model.lookAt(pPos);
+          // Surface mission: position relative to parent body
+          const bodyDef  = SOLAR_SYSTEM.find(b => b.missionDestination === scObj.destination);
+          const bodyR    = bodyDef?.visualRadius ?? 0.3;
+          const lat = scObj.surfaceLat ?? 0;
+          const lon = scObj.surfaceLon ?? 0;
+          const sv  = latLonToVec3(lat, lon, bodyR + 0.06);
+          sprite.position.set(pPos.x + sv.x, pPos.y + sv.y, pPos.z + sv.z);
+          model.position.set(pPos.x + sv.x, pPos.y + sv.y, pPos.z + sv.z);
         }
       });
 
-      // Planet glow
-      Object.entries(planetsRef.current).forEach(([name, mesh]) => {
+      // ── Planet emissive glow on hover/select (interactive bodies only) ──
+      planetsRef.current.forEach((mesh, name) => {
         const mat = mesh.material as THREE.MeshStandardMaterial;
-        const target = (hoveredPlanet === name || selectedPlanet === name) ? 0.6 : 0.3;
+        if (!mat || !('emissiveIntensity' in mat)) return;
+        const isSelected = SOLAR_SYSTEM.find(b => b.id === name)?.missionDestination === selectedPlanetRef.current;
+        const isHovered  = name === hoveredBodyRef.current;
+        const target = (isHovered || isSelected) ? 0.6 : 0.15;
         mat.emissiveIntensity += (target - mat.emissiveIntensity) * 0.1;
       });
 
@@ -567,7 +894,7 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect }: 
     };
     animate();
 
-    // Sim clock display ticker (updates UI without rerender per frame)
+    // Sim clock UI update (no re-render per frame)
     const clockTick = setInterval(() => {
       setSimTimeStr(formatSimTime(simNow(clockRef.current)));
     }, 250);
@@ -578,6 +905,7 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect }: 
       el.removeEventListener('mousemove', onMouseMove);
       el.removeEventListener('mousedown', onMouseDown);
       el.removeEventListener('mouseup', onMouseUp);
+      el.removeEventListener('wheel', onWheel);
       window.removeEventListener('resize', onResize);
       renderer.dispose();
       if (el.contains(renderer.domElement)) el.removeChild(renderer.domElement);
@@ -586,13 +914,19 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect }: 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ─── Sync visibleObjects → scene objects ─────────────────────────────────
+  // Refs for values used inside the animation loop (avoid stale closures)
+  const selectedPlanetRef = useRef(selectedPlanet);
+  const hoveredBodyRef    = useRef<string | null>(null);
+  useEffect(() => { selectedPlanetRef.current = selectedPlanet; }, [selectedPlanet]);
+  useEffect(() => { hoveredBodyRef.current = hoveredBody; }, [hoveredBody]);
+
+  // ─── Sync visibleObjects → scene mission spacecraft ───────────────────────
 
   useEffect(() => {
     const scene = sceneRef.current;
     if (!scene) return;
 
-    // Remove old
+    // Remove old spacecraft
     objectsRef.current.forEach(({ sprite, model }) => { scene.remove(sprite); scene.remove(model); });
     objectsRef.current.clear();
     orbitRingsRef.current.forEach(r => scene.remove(r));
@@ -615,11 +949,10 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect }: 
       model.name  = obj.missionId + '-model';
       model.visible = false;
 
-      const pCfg  = PLANET_CONFIG[obj.destination];
-      const pPos  = new THREE.Vector3(...pCfg.position);
+      // Get current parent position
+      const pPos = bodyWorldPos.current.get(obj.destination) ?? new THREE.Vector3();
 
       if (obj.isOrbiter) {
-        // Position based on orbital phase at t=0
         const params = ORBITAL_PARAMS[obj.missionId];
         const vr     = VISUAL_ORBIT_RADIUS[obj.missionId] || obj.orbitRadius || 1.5;
         let dx = vr, dy = 0, dz = 0;
@@ -630,8 +963,8 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect }: 
         sprite.position.set(pPos.x + dx, pPos.y + dy, pPos.z + dz);
         model.position.set(pPos.x + dx, pPos.y + dy, pPos.z + dz);
 
-        // Orbit ring
-        const ringR = VISUAL_ORBIT_RADIUS[obj.missionId] || obj.orbitRadius || 1.5;
+        // Orbit ring (positioned at parent body)
+        const ringR   = vr;
         const ringGeo = new THREE.RingGeometry(ringR - 0.005, ringR + 0.005, 96);
         const ringMat = new THREE.MeshBasicMaterial({
           color: obj.orbitColor || color,
@@ -645,9 +978,11 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect }: 
         orbitRingsRef.current.set(obj.missionId, ring);
       } else {
         // Surface mission
+        const bodyDef = SOLAR_SYSTEM.find(b => b.missionDestination === obj.destination);
+        const bodyR   = bodyDef?.visualRadius ?? 0.3;
         const lat = obj.surfaceLat ?? 0;
         const lon = obj.surfaceLon ?? 0;
-        const sv  = latLonToVec3(lat, lon, pCfg.radius + 0.06);
+        const sv  = latLonToVec3(lat, lon, bodyR + 0.06);
         sprite.position.set(pPos.x + sv.x, pPos.y + sv.y, pPos.z + sv.z);
         model.position.set(pPos.x + sv.x, pPos.y + sv.y, pPos.z + sv.z);
       }
@@ -659,42 +994,39 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect }: 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visibleObjects]);
 
-  // ─── Orbit path when object selected ─────────────────────────────────────
+  // ─── Orbit path when mission object selected ──────────────────────────────
 
   useEffect(() => {
     const scene = sceneRef.current;
     if (!scene) return;
-
-    // Remove old path
     if (orbitPathRef.current) { scene.remove(orbitPathRef.current); orbitPathRef.current = null; }
-
     if (!selectedObject?.isOrbiter) return;
     const params = ORBITAL_PARAMS[selectedObject.missionId];
     if (!params) return;
 
     const vr   = VISUAL_ORBIT_RADIUS[selectedObject.missionId] || selectedObject.orbitRadius || 1.5;
-    const pPos = new THREE.Vector3(...PLANET_CONFIG[selectedObject.destination].position);
+    const pPos = bodyWorldPos.current.get(selectedObject.destination) ?? new THREE.Vector3();
 
     const pts3d = orbitPath(params, 128).map(d => new THREE.Vector3(
       pPos.x + d.x * vr,
       pPos.y + d.y * vr,
       pPos.z + d.z * vr,
     ));
-    pts3d.push(pts3d[0].clone()); // close the loop
+    pts3d.push(pts3d[0].clone());
 
     const pathLine = new THREE.Line(
       new THREE.BufferGeometry().setFromPoints(pts3d),
       new THREE.LineBasicMaterial({
         color: STATUS_COLOR[selectedObject.status] || 0x3b82f6,
         transparent: true, opacity: 0.55,
-      })
+      }),
     );
     scene.add(pathLine);
     orbitPathRef.current = pathLine;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedObject]);
 
-  // ─── Highlight selected sprite ────────────────────────────────────────────
+  // ─── Highlight selected spacecraft sprite ─────────────────────────────────
 
   useEffect(() => {
     objectsRef.current.forEach(({ sprite }, mId) => {
@@ -760,8 +1092,8 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect }: 
         />
       )}
 
-      {/* ── Simulation Clock (top-left) ── */}
-      <div className="absolute top-4 left-4 z-20">
+      {/* ── Simulation Clock ── */}
+      <div className="absolute top-[375px] left-10 z-20">
         <div className="glass border border-space-border/70 rounded-lg px-3 py-2 space-y-1.5">
           <div className="flex items-center gap-2">
             <Clock size={10} className="text-orbit-dim" />
@@ -795,19 +1127,19 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect }: 
         </div>
       </div>
 
-      {/* ── Data provenance label ── */}
-      <div className="absolute top-4 left-4 z-20 mt-[130px]">
+      {/* ── Data provenance ── */}
+      <div className="absolute bottom-[10px] left-4 z-20">
         <div className="glass border border-space-border/40 rounded px-2 py-1">
           <div className="text-[8px] text-orbit-dim/60 tracking-widest">
-            EARTH TEXTURE · ESTIMATED · NATURAL EARTH
+            PLANETS · DERIVED · JPL KEPLERIAN ELEMENTS (1800–2050)
           </div>
           <div className="text-[8px] text-orbit-dim/60 tracking-widest">
-            ORBITS · DERIVED · KEPLERIAN PROPAGATION
+            SPACECRAFT · DERIVED · KEPLERIAN PROPAGATION
           </div>
         </div>
       </div>
 
-      {/* ── Search (top-right) ── */}
+      {/* ── Search ── */}
       <div className="absolute top-4 right-4 z-20 w-56">
         <div className="relative">
           <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-orbit-dim pointer-events-none" />
@@ -930,7 +1262,7 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect }: 
       </div>
 
       {/* ── Bottom legend ── */}
-      <div className="absolute bottom-4 left-4 space-y-1 pointer-events-none z-10">
+      <div className="absolute bottom-[20px] left-4 space-y-1 pointer-events-none z-10">
         <div className="text-[8px] text-orbit-dim/50 tracking-widest mb-1">LEGEND</div>
         {[
           { color: '#22c55e', label: 'Active' },
@@ -952,9 +1284,9 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect }: 
       </div>
 
       {/* Controls hint */}
-      <div className="absolute bottom-28 left-4 text-[10px] text-orbit-dim/40 tracking-wider pointer-events-none z-10">
+      <div className="absolute bottom-[140px] left-4 text-[10px] text-orbit-dim/40 tracking-wider pointer-events-none z-10">
         <div>DRAG to rotate · SCROLL to zoom</div>
-        <div>CLICK spacecraft or planet</div>
+        <div>CLICK planet or spacecraft</div>
         {simSpeed > 1 && (
           <div className="mt-1 text-amber-400/50">SIM SPEED {simSpeed}×</div>
         )}
@@ -963,7 +1295,7 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect }: 
   );
 }
 
-// ─── Mission Popup ────────────────────────────────────────────────────────────
+// ─── MissionPopup ─────────────────────────────────────────────────────────────
 
 interface MissionPopupProps {
   obj: SceneObject; mission: Mission;
@@ -972,72 +1304,46 @@ interface MissionPopupProps {
 }
 
 function MissionPopup({ obj, mission, x, y, onClose }: MissionPopupProps) {
-  const STATUS: Record<string, { text: string; dot: string; color: string }> = {
-    active:    { text: 'ACTIVE',      dot: 'bg-emerald-400 animate-pulse', color: 'text-emerald-400' },
-    science:   { text: 'SCIENCE OPS', dot: 'bg-purple-400 animate-pulse',  color: 'text-purple-400' },
-    surface:   { text: 'SURFACE OPS', dot: 'bg-amber-400 animate-pulse',   color: 'text-amber-400' },
-    planned:   { text: 'PLANNED',     dot: 'bg-sky-400',                   color: 'text-sky-400' },
-    completed: { text: 'COMPLETED',   dot: 'bg-slate-500',                 color: 'text-slate-400' },
+  const statusLabels: Record<string, string> = {
+    active: 'ACTIVE', science: 'SCIENCE OPS', surface: 'SURFACE OPS',
+    planned: 'PLANNED', completed: 'COMPLETED',
   };
-  const sc = STATUS[obj.status] || STATUS.active;
+  const statusColors: Record<string, string> = {
+    active: 'text-emerald-400 border-emerald-400/30 bg-emerald-400/10',
+    science: 'text-blue-400 border-blue-400/30 bg-blue-400/10',
+    surface: 'text-amber-400 border-amber-400/30 bg-amber-400/10',
+    planned: 'text-sky-400 border-sky-400/30 bg-sky-400/10',
+    completed: 'text-slate-400 border-slate-400/30 bg-slate-400/10',
+  };
 
-  const W = 228, H = 190;
-  const vw = typeof window !== 'undefined' ? window.innerWidth  : 1200;
-  const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
-  const left = Math.min(Math.max(x - W / 2, 8), vw - W - 8);
-  const top  = Math.min(Math.max(y - H - 18, 8), vh - H - 8);
+  const left = Math.max(320, Math.min(x - 110, window.innerWidth - 240));
+  const top  = Math.max(160, y - 10);
 
-  const params = ORBITAL_PARAMS[obj.missionId];
-
+  
   return (
-    <div className="absolute z-30 animate-slide-up" style={{ left, top, width: W }}>
-      <div className="glass border border-space-border rounded-xl p-4 shadow-2xl">
-        <div className="flex items-start justify-between mb-2">
-          <div>
-            <div className="text-[8px] text-orbit-dim tracking-widest mb-0.5 capitalize">
-              {obj.objectType} · {obj.destination}
-            </div>
-            <div className="text-sm font-semibold text-orbit-white leading-tight">{obj.shortName}</div>
-            <div className="text-[10px] text-orbit-dim mt-0.5">{obj.agency}</div>
-          </div>
-          <button onClick={onClose} className="text-orbit-dim hover:text-orbit-white mt-0.5"><X size={12} /></button>
+    <div className="absolute z-30 animate-slide-up"
+      style={{ left, top, width: 220 }}>
+      <div className="glass border border-space-border rounded-xl p-4 shadow-xl">
+        <button onClick={onClose}
+          className="absolute top-2.5 right-2.5 text-orbit-dim hover:text-orbit-white transition-colors">
+          <X size={12} />
+        </button>
+        <div className="text-[9px] text-orbit-dim tracking-widest mb-1">{obj.agency}</div>
+        <div className="text-[13px] font-semibold text-orbit-white tracking-wide mb-1">{obj.name}</div>
+        <div className={`inline-flex items-center px-1.5 py-0.5 rounded border text-[8px] tracking-widest mb-2 ${statusColors[obj.status] ?? statusColors.active}`}>
+          {statusLabels[obj.status] ?? obj.status.toUpperCase()}
         </div>
-
-        <div className="flex items-center gap-2 mb-2">
-          <div className={`w-1.5 h-1.5 rounded-full ${sc.dot}`} />
-          <span className={`text-[9px] font-medium tracking-widest ${sc.color}`}>{sc.text}</span>
-        </div>
-
-        <div className="text-[10px] text-orbit-dim leading-snug mb-2">{obj.statusNote}</div>
-
-        {params && (
-          <div className="mb-3 space-y-0.5 border-t border-space-border/30 pt-2">
-            <div className="flex justify-between text-[9px]">
-              <span className="text-orbit-dim tracking-wider">PERIOD</span>
-              <span className="text-orbit-white font-mono">
-                {params.periodMin >= 60
-                  ? `${(params.periodMin / 60).toFixed(1)} hr`
-                  : `${Math.round(params.periodMin)} min`}
-              </span>
-            </div>
-            <div className="flex justify-between text-[9px]">
-              <span className="text-orbit-dim tracking-wider">INCLINATION</span>
-              <span className="text-orbit-white font-mono">{params.incDeg.toFixed(1)}°</span>
-            </div>
-            <div className="flex justify-between text-[9px]">
-              <span className="text-orbit-dim tracking-wider">SOURCE</span>
-              <span className={`font-medium tracking-wider ${params.source === 'DERIVED' ? 'text-blue-400' : 'text-amber-400'}`}>
-                {params.source}
-              </span>
-            </div>
+        <div className="text-[11px] text-orbit-dim leading-relaxed mb-3">{obj.statusNote}</div>
+        {mission.description && (
+          <div className="text-[10px] text-orbit-dim/70 leading-relaxed mb-3 line-clamp-3">
+            {mission.description}
           </div>
         )}
-
         <Link
           href={`/missions/${mission.id}`}
-          className="block w-full text-center px-3 py-2 rounded-lg bg-orbit-blue/10 border border-orbit-blue/30 text-orbit-blue hover:bg-orbit-blue/20 transition-colors text-[10px] tracking-widest font-medium"
+          className="flex items-center justify-center gap-1.5 w-full px-3 py-1.5 rounded-lg bg-orbit-blue/10 border border-orbit-blue/30 text-orbit-blue text-[10px] tracking-wider hover:bg-orbit-blue/20 transition-colors"
         >
-          VIEW MISSION →
+          VIEW MISSION
         </Link>
       </div>
     </div>

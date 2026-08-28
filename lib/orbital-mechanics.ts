@@ -12,6 +12,8 @@
  *   - "Fundamentals of Astrodynamics" — Bate, Mueller, White
  */
 
+import type { PlanetaryElements, MoonElements } from './solar-system';
+
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 /** Seconds per minute */
@@ -290,4 +292,198 @@ export function formatSimTime(d: Date): string {
   const pad = (n: number, w = 2) => String(n).padStart(w, '0');
   return `${pad(d.getUTCDate())} ${months[d.getUTCMonth()]} ${d.getUTCFullYear()} ` +
          `${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())} UTC`;
+}
+
+// ─── JPL Planetary Propagation ────────────────────────────────────────────────
+// Added to support heliocentric solar-system visualization.
+// Reference: E.M. Standish, "Keplerian Elements for Approximate Positions of
+// the Major Planets", JPL/Caltech (valid 1800–2050 AD).
+
+/** Convert a Date to Julian Date (JD) */
+export function dateToJD(date: Date): number {
+  return date.getTime() / 86400000 + 2440587.5;
+}
+
+/** Julian centuries from J2000.0 (JD 2451545.0) */
+export function jdToT(jd: number): number {
+  return (jd - 2451545.0) / 36525;
+}
+
+/**
+ * Compute heliocentric ecliptic position of a planet (in AU) from JPL
+ * Keplerian elements at Julian centuries T from J2000.
+ * Returns { x, y, z } in heliocentric ecliptic J2000 frame.
+ */
+export function jplPlanetPosition(
+  el: PlanetaryElements,
+  T: number
+): { x: number; y: number; z: number } {
+  const deg = Math.PI / 180;
+
+  // Compute elements at epoch T
+  const a  = el.a  + el.ad  * T;
+  const e  = el.e  + el.ed  * T;
+  const I  = el.I  + el.Id  * T;
+  const L  = el.L  + el.Ld  * T;
+  const wp = el.wp + el.wpd * T; // longitude of perihelion
+  const O  = el.O  + el.Od  * T; // longitude of ascending node
+
+  // Argument of perihelion and mean anomaly from mean longitude
+  const w = wp - O;                      // argument of perihelion (deg)
+  let M   = L  - wp;                     // mean anomaly (deg)
+
+  // Extra correction terms for outer planets (Jupiter–Neptune)
+  if (el.b !== undefined && el.c !== undefined && el.s !== undefined && el.f !== undefined) {
+    M += el.b * T * T
+       + el.c * Math.cos(el.f * T * deg)
+       + el.s * Math.sin(el.f * T * deg);
+  }
+
+  // Normalise M to [−180, 180]
+  M = ((M % 360) + 360) % 360;
+  if (M > 180) M -= 360;
+
+  // Solve Kepler's equation (Newton-Raphson)
+  const Mrad = M * deg;
+  let E = Mrad + e * Math.sin(Mrad) * (1 + e * Math.cos(Mrad));
+  for (let i = 0; i < 10; i++) {
+    const dE = (E - e * Math.sin(E) - Mrad) / (1 - e * Math.cos(E));
+    E -= dE;
+    if (Math.abs(dE) < 1e-10) break;
+  }
+
+  // Heliocentric position in orbit plane (ecliptic frame)
+  const xh = a * (Math.cos(E) - e);
+  const yh = a * Math.sqrt(1 - e * e) * Math.sin(E);
+
+  // Rotate to ecliptic J2000 frame
+  const wRad = w * deg;
+  const ORad = O * deg;
+  const IRad = I * deg;
+  const cosO = Math.cos(ORad), sinO = Math.sin(ORad);
+  const cosI = Math.cos(IRad), sinI = Math.sin(IRad);
+  const cosw = Math.cos(wRad), sinw = Math.sin(wRad);
+
+  const x = (cosO * cosw - sinO * sinw * cosI) * xh + (-cosO * sinw - sinO * cosw * cosI) * yh;
+  const y = (sinO * cosw + cosO * sinw * cosI) * xh + (-sinO * sinw + cosO * cosw * cosI) * yh;
+  const z = (sinI * sinw)                       * xh + (sinI * cosw)                       * yh;
+
+  return { x, y, z };
+}
+
+/**
+ * Compute moon (or small satellite) position relative to its parent body centre
+ * from simple two-body Keplerian elements.
+ * Returns { x, y, z } offset in km (parent-relative, ecliptic-aligned).
+ *
+ * @param el   Moon orbital elements
+ * @param date Simulation date
+ */
+export function moonPosition(
+  el: MoonElements,
+  date: Date
+): { x: number; y: number; z: number } {
+  const deg = Math.PI / 180;
+  const jd  = dateToJD(date);
+  const t0  = 2451545.0; // J2000 JD
+
+  // Elapsed days from J2000
+  const dtDays = jd - t0;
+  const n = 360 / el.periodDays; // mean motion deg/day
+
+  let M = (el.m0Deg + n * dtDays) % 360;
+  if (M < 0) M += 360;
+
+  // Solve Kepler
+  const Mrad = M * deg;
+  let E = Mrad + el.ecc * Math.sin(Mrad);
+  for (let i = 0; i < 10; i++) {
+    const dE = (E - el.ecc * Math.sin(E) - Mrad) / (1 - el.ecc * Math.cos(E));
+    E -= dE;
+    if (Math.abs(dE) < 1e-10) break;
+  }
+
+  const r = el.smaKm * (1 - el.ecc * Math.cos(E));
+  const sinv = (Math.sqrt(1 - el.ecc ** 2) * Math.sin(E)) / (1 - el.ecc * Math.cos(E));
+  const cosv = (Math.cos(E) - el.ecc) / (1 - el.ecc * Math.cos(E));
+  const nu = Math.atan2(sinv, cosv);
+
+  const px = r * Math.cos(nu);
+  const py = r * Math.sin(nu);
+
+  // Rotate to ecliptic-aligned frame via Ω, i, ω
+  const ORad = el.raanDeg * deg;
+  const IRad = el.incDeg  * deg;
+  const wRad = el.aopDeg  * deg;
+  const cosO = Math.cos(ORad), sinO = Math.sin(ORad);
+  const cosI = Math.cos(IRad), sinI = Math.sin(IRad);
+  const cosw = Math.cos(wRad), sinw = Math.sin(wRad);
+
+  const x = (cosO * cosw - sinO * sinw * cosI) * px + (-cosO * sinw - sinO * cosw * cosI) * py;
+  const y = (sinO * cosw + cosO * sinw * cosI) * px + (-sinO * sinw + cosO * cosw * cosI) * py;
+  const z = (sinI * sinw)                       * px + (sinI * cosw)                       * py;
+
+  return { x, y, z };
+}
+
+/**
+ * Build a static orbital-path point array for a heliocentric planet.
+ * Returns `steps` evenly-spaced eccentric anomaly samples (AU, ecliptic).
+ */
+export function planetOrbitPath(
+  el: PlanetaryElements,
+  T: number,
+  steps = 256
+): Array<{ x: number; y: number; z: number }> {
+  const deg = Math.PI / 180;
+  const a  = el.a  + el.ad  * T;
+  const e  = el.e  + el.ed  * T;
+  const I  = el.I  + el.Id  * T;
+  const wp = el.wp + el.wpd * T;
+  const O  = el.O  + el.Od  * T;
+  const w  = wp - O;
+  const IRad = I * deg, ORad = O * deg, wRad = w * deg;
+  const cosO = Math.cos(ORad), sinO = Math.sin(ORad);
+  const cosI = Math.cos(IRad), sinI = Math.sin(IRad);
+  const cosw = Math.cos(wRad), sinw = Math.sin(wRad);
+  const pts: Array<{ x: number; y: number; z: number }> = [];
+  for (let i = 0; i < steps; i++) {
+    const E  = (i / steps) * 2 * Math.PI;
+    const xh = a * (Math.cos(E) - e);
+    const yh = a * Math.sqrt(1 - e * e) * Math.sin(E);
+    pts.push({
+      x: (cosO * cosw - sinO * sinw * cosI) * xh + (-cosO * sinw - sinO * cosw * cosI) * yh,
+      y: (sinO * cosw + cosO * sinw * cosI) * xh + (-sinO * sinw + cosO * cosw * cosI) * yh,
+      z: (sinI * sinw)                       * xh + (sinI * cosw)                       * yh,
+    });
+  }
+  return pts;
+}
+
+/**
+ * Build a static orbital-path point array for a moon around its parent.
+ * Returns positions in km (parent-relative).
+ */
+export function moonOrbitPath(
+  el: MoonElements,
+  steps = 128
+): Array<{ x: number; y: number; z: number }> {
+  const deg = Math.PI / 180;
+  const ORad = el.raanDeg * deg, IRad = el.incDeg * deg, wRad = el.aopDeg * deg;
+  const cosO = Math.cos(ORad), sinO = Math.sin(ORad);
+  const cosI = Math.cos(IRad), sinI = Math.sin(IRad);
+  const cosw = Math.cos(wRad), sinw = Math.sin(wRad);
+  const a = el.smaKm, e = el.ecc;
+  const pts: Array<{ x: number; y: number; z: number }> = [];
+  for (let i = 0; i < steps; i++) {
+    const E  = (i / steps) * 2 * Math.PI;
+    const xh = a * (Math.cos(E) - e);
+    const yh = a * Math.sqrt(1 - e * e) * Math.sin(E);
+    pts.push({
+      x: (cosO * cosw - sinO * sinw * cosI) * xh + (-cosO * sinw - sinO * cosw * cosI) * yh,
+      y: (sinO * cosw + cosO * sinw * cosI) * xh + (-sinO * sinw + cosO * cosw * cosI) * yh,
+      z: (sinI * sinw)                       * xh + (sinI * cosw)                       * yh,
+    });
+  }
+  return pts;
 }
