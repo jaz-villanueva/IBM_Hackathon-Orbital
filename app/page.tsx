@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef, Suspense } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { Navigation } from '@/components/Navigation';
 import { MissionPulse } from '@/components/MissionPulse';
 import { MissionCard } from '@/components/MissionCard';
@@ -30,12 +31,30 @@ const PLANET_LABELS: Record<string, { title: string; desc: string; color: string
   mars: { title: 'MARS', desc: 'Rovers · Orbiters · Sample Caching', color: 'text-orange-400', href: '/missions?dest=mars' },
 };
 
-export default function HomePage() {
+function HomePageInner() {
+  const searchParams   = useSearchParams();
+  const planetParam    = searchParams.get('planet');
+
   const [selectedPlanet, setSelectedPlanet] = useState<string | null>(null);
   const [selectedMission, setSelectedMission] = useState<Mission | null>(null);
   const [aiOpen, setAiOpen] = useState(false);
   /** Ref to the hero / 3D-map section so we can scroll back to it. */
   const heroRef = useRef<HTMLElement>(null);
+
+  /**
+   * When arriving via /?planet=earth (i.e. from the top nav on another route),
+   * auto-select the requested planet so the camera transitions to it immediately.
+   * We only fire this once per navigation — the effect re-runs only when planetParam
+   * changes (i.e. a new navigation to this page).
+   */
+  useEffect(() => {
+    if (planetParam && ['earth', 'moon', 'mars'].includes(planetParam)) {
+      setSelectedPlanet(planetParam);
+      setSelectedMission(null);
+      // Scroll hero into view so the map is visible
+      heroRef.current?.scrollIntoView({ behavior: 'auto', block: 'start' });
+    }
+  }, [planetParam]);
 
   const earthMissions = useMemo(() => getMissionsByDestination('earth'), []);
   const moonMissions = useMemo(() => getMissionsByDestination('moon'), []);
@@ -187,19 +206,20 @@ export default function HomePage() {
               </div>
 
               {/* Active missions — scrollable, clickable, selects mission on the 3D map.
-                  onWheel stops propagation so the page doesn't scroll while the user
-                  is scrolling within this list. */}
+                  max-h shows ~3 rows; remaining missions reachable by scrolling.
+                  onWheel/onTouchMove stop propagation so the page doesn't scroll while
+                  the user is scrolling within this list. */}
               <div
-                className="space-y-1.5 mb-3 overflow-y-auto max-h-[5.5rem] pr-1 scrollbar-thin scrollbar-thumb-space-muted/40 scrollbar-track-transparent"
+                className="mb-3 overflow-y-auto pr-1"
                 role="list"
                 aria-label="Active missions"
                 tabIndex={0}
-                style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(100,116,139,0.4) transparent' }}
+                style={{
+                  maxHeight: '4.75rem',
+                  scrollbarWidth: 'thin',
+                  scrollbarColor: 'rgba(100,116,139,0.4) transparent',
+                }}
                 onWheel={(e) => {
-                  // Prevent the page from scrolling while the pointer is over this
-                  // list. When the list is already at its scroll boundary we still
-                  // stop propagation so the page doesn't move during an intentional
-                  // widget-scroll gesture.
                   e.stopPropagation();
                 }}
               >
@@ -208,10 +228,13 @@ export default function HomePage() {
                   .map((m) => (
                     <button
                       key={m.id}
-                      onClick={() => handleWidgetMissionSelect(m)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleWidgetMissionSelect(m);
+                      }}
                       role="listitem"
-                      className={`w-full flex items-center gap-2 text-[11px] text-left rounded px-1 py-0.5 -mx-1 transition-colors hover:bg-white/5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-orbit-blue/50 ${
-                        selectedMission?.id === m.id ? 'text-orbit-white' : 'text-orbit-dim'
+                      className={`w-full flex items-center gap-2 text-[11px] text-left rounded px-1 py-1 -mx-1 transition-colors hover:bg-white/5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-orbit-blue/50 ${
+                        selectedMission?.id === m.id ? 'text-orbit-white' : 'text-orbit-dim hover:text-orbit-white'
                       }`}
                       aria-label={`Select ${m.shortName || m.name} on the 3D map`}
                     >
@@ -256,15 +279,16 @@ export default function HomePage() {
           })}
         </div>
 
-        {/* Scroll-down floating button */}
-        <button
-          onClick={handleScrollDown}
-          aria-label="Scroll down to see more content"
-          className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center w-8 h-8 glass rounded-full border border-space-border/50 text-orbit-dim hover:text-orbit-white hover:border-space-muted transition-colors pointer-events-auto"
-          style={{ marginBottom: '-0.5rem' }}
-        >
-          <ChevronDown size={15} />
-        </button>
+        {/* Scroll-down floating button — centered via fixed full-width container */}
+        <div className="fixed bottom-6 left-0 right-0 flex justify-center pointer-events-none z-20">
+          <button
+            onClick={handleScrollDown}
+            aria-label="Scroll down to see more content"
+            className="flex items-center justify-center w-8 h-8 glass rounded-full border border-space-border/50 text-orbit-dim hover:text-orbit-white hover:border-space-muted transition-colors pointer-events-auto"
+          >
+            <ChevronDown size={15} />
+          </button>
+        </div>
 
         {/* AI Analyst button — kept for deep conversation mode */}
         <button
@@ -384,5 +408,13 @@ export default function HomePage() {
       {/* AI Analyst Panel */}
       <AIAnalyst context={aiContext} isOpen={aiOpen} onClose={() => setAiOpen(false)} />
     </div>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={null}>
+      <HomePageInner />
+    </Suspense>
   );
 }
