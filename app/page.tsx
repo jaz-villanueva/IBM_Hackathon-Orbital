@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { Navigation } from '@/components/Navigation';
@@ -9,7 +9,7 @@ import { MissionCard } from '@/components/MissionCard';
 import { AIAnalyst } from '@/components/AIAnalyst';
 import { MISSIONS, getMissionsByDestination } from '@/lib/missions';
 import { Mission, AIContext } from '@/lib/types';
-import { Sparkles, ChevronRight, ArrowRight, Database } from 'lucide-react';
+import { Sparkles, ChevronRight, ArrowRight, Database, ChevronDown } from 'lucide-react';
 
 // Dynamically import ThreeJS scene to avoid SSR issues
 const SpaceScene = dynamic(() => import('@/components/SpaceScene').then((m) => ({ default: m.SpaceScene })), {
@@ -31,9 +31,11 @@ const PLANET_LABELS: Record<string, { title: string; desc: string; color: string
 };
 
 export default function HomePage() {
-  const [selectedPlanet, setSelectedPlanet] = useState('');
+  const [selectedPlanet, setSelectedPlanet] = useState<string | null>(null);
   const [selectedMission, setSelectedMission] = useState<Mission | null>(null);
   const [aiOpen, setAiOpen] = useState(false);
+  /** Ref to the hero / 3D-map section so we can scroll back to it. */
+  const heroRef = useRef<HTMLElement>(null);
 
   const earthMissions = useMemo(() => getMissionsByDestination('earth'), []);
   const moonMissions = useMemo(() => getMissionsByDestination('moon'), []);
@@ -49,23 +51,90 @@ export default function HomePage() {
 
   const aiContext: AIContext = {
     selectedMission: selectedMission || undefined,
-    selectedPlanet: selectedPlanet as AIContext['selectedPlanet'],
+    selectedPlanet: (selectedPlanet ?? '') as AIContext['selectedPlanet'],
     visibleMissions: selectedPlanet
       ? getMissionsByDestination(selectedPlanet)
       : MISSIONS.filter((m) => ['active', 'science-operations', 'surface-operations'].includes(m.status)),
   };
 
-  const handlePlanetSelect = (planet: string) => {
-    setSelectedPlanet(planet);
-    setSelectedMission(null);
-  };
+  /**
+   * Toggle-select a planet. Clicking the already-selected planet deselects it.
+   * Switching to a different planet clears the selected mission.
+   * Passing '' or 'home' deselects (used by deep-space search results).
+   */
+  const handlePlanetSelect = useCallback((planet: string) => {
+    const dest = planet === '' || planet === 'home' ? null : planet;
+    setSelectedPlanet(prev => {
+      if (dest !== null && prev === dest) {
+        setSelectedMission(null);
+        return null;
+      }
+      setSelectedMission(null);
+      return dest;
+    });
+  }, []);
+
+  /**
+   * Select a mission from the Active Missions widget.
+   * Sets the mission in parent state so SpaceScene can respond via prop.
+   * Does NOT navigate to /missions/[id].
+   */
+  const handleWidgetMissionSelect = useCallback((mission: Mission) => {
+    const dest = mission.destination === 'deep-space' ? null : mission.destination;
+    if (dest) setSelectedPlanet(dest);
+    setSelectedMission(mission);
+  }, []);
+
+  /** Space bar → deselect everything and return to overview */
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.repeat) return;
+      if (e.code !== 'Space') return;
+      const tag = (e.target as HTMLElement)?.tagName ?? '';
+      if (['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON'].includes(tag)) return;
+      e.preventDefault();
+      setSelectedPlanet(null);
+      setSelectedMission(null);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
+
+  /** Scroll-down floating button handler */
+  const handleScrollDown = useCallback(() => {
+    const hero = heroRef.current;
+    if (!hero) return;
+    const heroBottom = hero.offsetTop + hero.offsetHeight;
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    window.scrollTo({
+      top: heroBottom,
+      behavior: prefersReduced ? 'auto' : 'smooth',
+    });
+  }, []);
+
+  /**
+   * Scroll the page back to the 3D map hero section.
+   * Called by the top-nav Earth/Moon/Mars buttons so that clicking them from
+   * anywhere below the map first returns the user to the map, then the camera
+   * transitions to the selected body.
+   */
+  const handleScrollToMap = useCallback(() => {
+    const hero = heroRef.current;
+    if (!hero) return;
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    hero.scrollIntoView({ behavior: prefersReduced ? 'auto' : 'smooth', block: 'start' });
+  }, []);
 
   return (
     <div className="min-h-screen bg-space-black">
-      <Navigation selectedPlanet={selectedPlanet} onPlanetSelect={handlePlanetSelect} />
+      <Navigation
+        selectedPlanet={selectedPlanet ?? ''}
+        onPlanetSelect={handlePlanetSelect}
+        onScrollToMap={handleScrollToMap}
+      />
 
       {/* Hero Section — 3D Visualization */}
-      <section className="relative h-[calc(100vh-3.5rem)] mt-14 overflow-hidden">
+      <section ref={heroRef} className="relative h-[calc(100vh-3.5rem)] mt-14 overflow-hidden">
         {/* Scene */}
         <div className="absolute inset-0">
           <SpaceScene
@@ -117,16 +186,40 @@ export default function HomePage() {
                 </span>
               </div>
 
-              {/* Recent missions */}
-              <div className="space-y-1.5 mb-3">
-                {getMissionsByDestination(selectedPlanet)
+              {/* Active missions — scrollable, clickable, selects mission on the 3D map.
+                  onWheel stops propagation so the page doesn't scroll while the user
+                  is scrolling within this list. */}
+              <div
+                className="space-y-1.5 mb-3 overflow-y-auto max-h-[5.5rem] pr-1 scrollbar-thin scrollbar-thumb-space-muted/40 scrollbar-track-transparent"
+                role="list"
+                aria-label="Active missions"
+                tabIndex={0}
+                style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(100,116,139,0.4) transparent' }}
+                onWheel={(e) => {
+                  // Prevent the page from scrolling while the pointer is over this
+                  // list. When the list is already at its scroll boundary we still
+                  // stop propagation so the page doesn't move during an intentional
+                  // widget-scroll gesture.
+                  e.stopPropagation();
+                }}
+              >
+                {getMissionsByDestination(selectedPlanet!)
                   .filter((m) => ['active', 'science-operations', 'surface-operations'].includes(m.status))
-                  .slice(0, 3)
                   .map((m) => (
-                    <div key={m.id} className="flex items-center gap-2 text-[11px]">
-                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                      <span className="text-orbit-dim">{m.shortName || m.name}</span>
-                    </div>
+                    <button
+                      key={m.id}
+                      onClick={() => handleWidgetMissionSelect(m)}
+                      role="listitem"
+                      className={`w-full flex items-center gap-2 text-[11px] text-left rounded px-1 py-0.5 -mx-1 transition-colors hover:bg-white/5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-orbit-blue/50 ${
+                        selectedMission?.id === m.id ? 'text-orbit-white' : 'text-orbit-dim'
+                      }`}
+                      aria-label={`Select ${m.shortName || m.name} on the 3D map`}
+                    >
+                      <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                        selectedMission?.id === m.id ? 'bg-orbit-blue animate-pulse' : 'bg-emerald-400 animate-pulse'
+                      }`} />
+                      <span className="truncate">{m.shortName || m.name}</span>
+                    </button>
                   ))}
               </div>
 
@@ -149,6 +242,7 @@ export default function HomePage() {
               <button
                 key={p}
                 onClick={() => handlePlanetSelect(p)}
+                aria-pressed={selectedPlanet === p}
                 className={`flex items-center gap-2 px-4 py-2.5 glass rounded-lg border transition-all text-xs tracking-wider ${
                   selectedPlanet === p
                     ? `border-orbit-blue/50 ${cfg.color} bg-white/5`
@@ -161,6 +255,16 @@ export default function HomePage() {
             );
           })}
         </div>
+
+        {/* Scroll-down floating button */}
+        <button
+          onClick={handleScrollDown}
+          aria-label="Scroll down to see more content"
+          className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center w-8 h-8 glass rounded-full border border-space-border/50 text-orbit-dim hover:text-orbit-white hover:border-space-muted transition-colors pointer-events-auto"
+          style={{ marginBottom: '-0.5rem' }}
+        >
+          <ChevronDown size={15} />
+        </button>
 
         {/* AI Analyst button — kept for deep conversation mode */}
         <button

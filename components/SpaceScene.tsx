@@ -59,7 +59,7 @@ import type { Mission } from '@/lib/types';
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 interface SpaceSceneProps {
-  selectedPlanet: string;
+  selectedPlanet: string | null;
   missions: Mission[];
   onPlanetSelect: (planet: string) => void;
   onMissionSelect: (mission: Mission) => void;
@@ -83,6 +83,26 @@ const KM_TO_SCENE = 2.8e-6;
  * we also apply an extra multiplier for distant outer planets.
  */
 const OUTER_PLANET_RADIUS_BOOST = 1.0; // set >1 to further enlarge outer planets
+
+/**
+ * Multiplier applied to the Moon's semi-major axis when converting km → scene units.
+ * The base mapping (KM_TO_SCENE) places Luna at ~1.08 scene units from Earth, which
+ * can visually intersect Earth's body at close zoom.  1.25 pushes it 25% farther out.
+ * Change this single value to adjust the Moon's visual orbital distance from Earth.
+ */
+const MOON_ORBIT_VISUAL_DISTANCE_MULTIPLIER = 1.25;
+
+/**
+ * Camera distance (scene units) below which mission sprites are hidden and replaced
+ * by 3D spacecraft models.  Increasing this value makes sprites disappear SOONER
+ * (at greater distances from the camera); decreasing it keeps them visible longer
+ * during close zoom-ins.
+ *
+ * At typical Earth/Moon/Mars zoom-in distances (~2–5 scene units from body centre)
+ * a value of 2.5 keeps sprites visible until the camera is very close, while still
+ * switching to the 3D model for very tight inspections.
+ */
+const MISSION_SPRITE_HIDE_DISTANCE = 2.5;
 
 /**
  * Home camera: framed to show the inner solar system clearly while
@@ -289,9 +309,9 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect }: 
    * Transition the orbit controller to a new target body (or home).
    * We set the TARGET values; the animation loop smoothly lerps toward them.
    */
-  const goToDestination = useCallback((dest: string) => {
+  const goToDestination = useCallback((dest: string | null) => {
     const o = orbitRef.current;
-    if (dest === '' || dest === 'home') {
+    if (!dest || dest === '' || dest === 'home') {
       o.tTarget.set(...HOME_CAMERA.target);
       o.tAzimuth   = HOME_CAMERA.azimuth;
       o.tElevation = HOME_CAMERA.elevation;
@@ -307,7 +327,7 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect }: 
   }, []);
 
   useEffect(() => {
-    goToDestination(selectedPlanet === '' ? 'home' : selectedPlanet);
+    goToDestination(selectedPlanet);
   }, [selectedPlanet, goToDestination]);
 
   // ─── Sim speed changes ─────────────────────────────────────────────────────
@@ -560,7 +580,8 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect }: 
       // Moon orbital path (if shown) — built relative to parent's current pos
       if (body.showOrbit) {
         const moonPathPts = moonOrbitPath(body.moonElements, 128);
-        const scale = KM_TO_SCENE;
+        // Apply MOON_ORBIT_VISUAL_DISTANCE_MULTIPLIER only for Earth's Moon
+        const scale = KM_TO_SCENE * (body.id === 'moon' ? MOON_ORBIT_VISUAL_DISTANCE_MULTIPLIER : 1);
         const moonPathVecs = moonPathPts.map(p => new THREE.Vector3(
           parentPos.x + p.x * scale,
           parentPos.y + p.z * scale,
@@ -597,10 +618,12 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect }: 
 
       // Compute initial moon position
       const moonOff = moonPosition(body.moonElements, initDate);
+      // Apply MOON_ORBIT_VISUAL_DISTANCE_MULTIPLIER only for Earth's Moon
+      const moonKmScale = KM_TO_SCENE * (body.id === 'moon' ? MOON_ORBIT_VISUAL_DISTANCE_MULTIPLIER : 1);
       const moonScenePos = new THREE.Vector3(
-        parentPos.x + moonOff.x * KM_TO_SCENE,
-        parentPos.y + moonOff.z * KM_TO_SCENE,
-        parentPos.z - moonOff.y * KM_TO_SCENE,
+        parentPos.x + moonOff.x * moonKmScale,
+        parentPos.y + moonOff.z * moonKmScale,
+        parentPos.z - moonOff.y * moonKmScale,
       );
       moonMesh.position.copy(moonScenePos);
       scene.add(moonMesh);
@@ -805,10 +828,12 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect }: 
         if (!body.moonElements) continue;
         const parentPos = bodyWorldPos.current.get(body.parentId!) ?? new THREE.Vector3();
         const off = moonPosition(body.moonElements, now);
+        // Apply MOON_ORBIT_VISUAL_DISTANCE_MULTIPLIER only for Earth's Moon
+        const moonKmScale = KM_TO_SCENE * (body.id === 'moon' ? MOON_ORBIT_VISUAL_DISTANCE_MULTIPLIER : 1);
         const moonScenePos = new THREE.Vector3(
-          parentPos.x + off.x * KM_TO_SCENE,
-          parentPos.y + off.z * KM_TO_SCENE,
-          parentPos.z - off.y * KM_TO_SCENE,
+          parentPos.x + off.x * moonKmScale,
+          parentPos.y + off.z * moonKmScale,
+          parentPos.z - off.y * moonKmScale,
         );
         const mesh = planetsRef.current.get(body.id);
         if (mesh) {
@@ -821,7 +846,8 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect }: 
         const pathLine = scene.getObjectByName(`orbit-path-${body.id}`) as THREE.Line | undefined;
         if (pathLine && body.moonElements) {
           const moonPathPts = moonOrbitPath(body.moonElements, 128);
-          const scale = KM_TO_SCENE;
+          // Apply MOON_ORBIT_VISUAL_DISTANCE_MULTIPLIER only for Earth's Moon
+          const scale = KM_TO_SCENE * (body.id === 'moon' ? MOON_ORBIT_VISUAL_DISTANCE_MULTIPLIER : 1);
           const pathVecs = moonPathPts.map(pp => new THREE.Vector3(
             parentPos.x + pp.x * scale,
             parentPos.y + pp.z * scale,
@@ -864,7 +890,7 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect }: 
           if (ring) ring.position.copy(pPos);
 
           const camDist = camera.position.distanceTo(new THREE.Vector3(wx, wy, wz));
-          const showModel = camDist < 4;
+          const showModel = camDist < MISSION_SPRITE_HIDE_DISTANCE;
           sprite.visible = !showModel;
           model.visible  = showModel;
           if (showModel) { model.rotation.y += 0.005; model.lookAt(pPos); }
