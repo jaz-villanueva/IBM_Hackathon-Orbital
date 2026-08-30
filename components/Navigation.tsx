@@ -78,9 +78,13 @@ export function Navigation({ selectedPlanet, onPlanetSelect, onScrollToMap }: Na
   }, [searchQuery, handleSearch]);
 
   const planets = [
-    { id: 'earth', label: 'EARTH', color: 'text-blue-400' },
-    { id: 'moon', label: 'MOON', color: 'text-slate-300' },
-    { id: 'mars', label: 'MARS', color: 'text-orange-400' },
+    { id: 'earth',   label: 'EARTH',   color: 'text-blue-400' },
+    { id: 'moon',    label: 'MOON',    color: 'text-slate-300' },
+    { id: 'mars',    label: 'MARS',    color: 'text-orange-400' },
+    { id: 'jupiter', label: 'JUPITER', color: 'text-orange-300' },
+    { id: 'saturn',  label: 'SATURN',  color: 'text-yellow-300' },
+    { id: 'uranus',  label: 'URANUS',  color: 'text-cyan-300' },
+    { id: 'neptune', label: 'NEPTUNE', color: 'text-blue-300' },
   ];
 
   const navLinks = [

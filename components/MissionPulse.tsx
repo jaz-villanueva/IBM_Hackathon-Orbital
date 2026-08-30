@@ -8,6 +8,10 @@ interface MissionPulseProps {
   earthMissions: Mission[];
   moonMissions: Mission[];
   marsMissions: Mission[];
+  jupiterMissions: Mission[];
+  saturnMissions: Mission[];
+  uranusMissions: Mission[];
+  neptuneMissions: Mission[];
 }
 
 const DEST_CONFIG = {
@@ -47,6 +51,54 @@ const DEST_CONFIG = {
       'Multiple orbiters conducting atmospheric science and relay.',
     ],
   },
+  jupiter: {
+    label: 'JUPITER',
+    emoji: '🟠',
+    color: 'text-orange-300',
+    bg: 'bg-orange-300/10',
+    border: 'border-orange-300/20',
+    dotColor: 'bg-orange-300',
+    highlights: [
+      'Juno orbiting Jupiter — studying interior, magnetic field, and aurora.',
+      'Europa Clipper and JUICE both en route, targeting 2030–2031 arrival.',
+    ],
+  },
+  saturn: {
+    label: 'SATURN',
+    emoji: '🪐',
+    color: 'text-yellow-300',
+    bg: 'bg-yellow-300/10',
+    border: 'border-yellow-300/20',
+    dotColor: 'bg-yellow-300',
+    highlights: [
+      'Cassini–Huygens completed the most comprehensive Saturn survey ever.',
+      'Dragonfly rotorcraft lander to Titan planned for 2028 launch.',
+    ],
+  },
+  uranus: {
+    label: 'URANUS',
+    emoji: '🔵',
+    color: 'text-cyan-300',
+    bg: 'bg-cyan-300/10',
+    border: 'border-cyan-300/20',
+    dotColor: 'bg-cyan-300',
+    highlights: [
+      'Voyager 2 remains the only spacecraft to have visited Uranus (1986).',
+      'Uranus Orbiter and Probe ranked top flagship priority by Decadal Survey.',
+    ],
+  },
+  neptune: {
+    label: 'NEPTUNE',
+    emoji: '💙',
+    color: 'text-blue-300',
+    bg: 'bg-blue-300/10',
+    border: 'border-blue-300/20',
+    dotColor: 'bg-blue-300',
+    highlights: [
+      'Voyager 2 completed the only flyby of Neptune in 1989.',
+      'Triton\'s nitrogen geysers make it a priority target for future missions.',
+    ],
+  },
 };
 
 function countActive(missions: Mission[]) {
@@ -55,11 +107,15 @@ function countActive(missions: Mission[]) {
   ).length;
 }
 
-export function MissionPulse({ earthMissions, moonMissions, marsMissions }: MissionPulseProps) {
+export function MissionPulse({ earthMissions, moonMissions, marsMissions, jupiterMissions, saturnMissions, uranusMissions, neptuneMissions }: MissionPulseProps) {
   const destData = [
     { key: 'earth' as const, missions: earthMissions, cfg: DEST_CONFIG.earth },
     { key: 'moon' as const, missions: moonMissions, cfg: DEST_CONFIG.moon },
     { key: 'mars' as const, missions: marsMissions, cfg: DEST_CONFIG.mars },
+    { key: 'jupiter' as const, missions: jupiterMissions, cfg: DEST_CONFIG.jupiter },
+    { key: 'saturn' as const, missions: saturnMissions, cfg: DEST_CONFIG.saturn },
+    { key: 'uranus' as const, missions: uranusMissions, cfg: DEST_CONFIG.uranus },
+    { key: 'neptune' as const, missions: neptuneMissions, cfg: DEST_CONFIG.neptune },
   ];
 
   const totalActive = destData.reduce((acc, d) => acc + countActive(d.missions), 0);
@@ -83,7 +139,7 @@ export function MissionPulse({ earthMissions, moonMissions, marsMissions }: Miss
       </div>
 
       {/* Destination cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
         {destData.map(({ key, missions, cfg }) => {
           const active = countActive(missions);
           const total = missions.length;
@@ -147,10 +203,10 @@ export function MissionPulse({ earthMissions, moonMissions, marsMissions }: Miss
         <div>
           <div className="text-[9px] text-purple-400 tracking-widest mb-1">AI GENERATED · MISSION INTELLIGENCE</div>
           <p className="text-[12px] text-orbit-dim leading-relaxed">
-            Current Mars operations center on two active rovers exploring different ancient lake environments — 
-            Perseverance in Jezero Crater hunting for biosignatures, Curiosity reading climate history from Mt. Sharp stratigraphy. 
-            Six active Mars orbiters provide global atmospheric monitoring and surface communications relay. 
-            At the Moon, Artemis II preparation continues as humanity prepares its first crewed deep-space journey since 1972.
+            Current Mars operations center on two active rovers exploring different ancient lake environments —
+            Perseverance in Jezero Crater hunting for biosignatures, Curiosity reading climate history from Mt. Sharp stratigraphy.
+            At the outer solar system, humanity&apos;s only direct observations of Uranus and Neptune remain the brief Voyager 2 flybys of 1986 and 1989.
+            Saturn&apos;s system saw transformative science from Cassini–Huygens (1997–2017), with Dragonfly en route to Titan in 2028.
           </p>
         </div>
       </div>

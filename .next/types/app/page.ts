@@ -1,4 +1,4 @@
-// File: C:\Users\Ron\Desktop\COLLEJ\misc\IBM hacka_orbital_myidea\orbital\app\page.tsx
+// File: D:\IBM Bob\Projects\orbital\app\page.tsx
 import * as entry from '../../../app/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

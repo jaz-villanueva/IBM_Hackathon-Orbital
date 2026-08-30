@@ -26,9 +26,13 @@ const SpaceScene = dynamic(() => import('@/components/SpaceScene').then((m) => (
 });
 
 const PLANET_LABELS: Record<string, { title: string; desc: string; color: string; href: string }> = {
-  earth: { title: 'EARTH', desc: 'Low Earth Orbit · Observation · Crewed', color: 'text-blue-400', href: '/missions?dest=earth' },
-  moon: { title: 'MOON', desc: 'Lunar Orbit · Artemis · Surface', color: 'text-slate-300', href: '/missions?dest=moon' },
-  mars: { title: 'MARS', desc: 'Rovers · Orbiters · Sample Caching', color: 'text-orange-400', href: '/missions?dest=mars' },
+  earth:   { title: 'EARTH',   desc: 'Low Earth Orbit · Observation · Crewed',       color: 'text-blue-400',   href: '/missions?dest=earth' },
+  moon:    { title: 'MOON',    desc: 'Lunar Orbit · Artemis · Surface',               color: 'text-slate-300',  href: '/missions?dest=moon' },
+  mars:    { title: 'MARS',    desc: 'Rovers · Orbiters · Sample Caching',            color: 'text-orange-400', href: '/missions?dest=mars' },
+  jupiter: { title: 'JUPITER', desc: 'Juno · Europa Clipper · JUICE · Galilean Moons', color: 'text-orange-300', href: '/missions?dest=jupiter' },
+  saturn:  { title: 'SATURN',  desc: 'Cassini Legacy · Titan · Ring System',          color: 'text-yellow-300', href: '/missions?dest=saturn' },
+  uranus:  { title: 'URANUS',  desc: 'Ice Giant · Voyager 2 · Future Orbiter',        color: 'text-cyan-300',   href: '/missions?dest=uranus' },
+  neptune: { title: 'NEPTUNE', desc: 'Ice Giant · Voyager 2 · Triton',                color: 'text-blue-300',   href: '/missions?dest=neptune' },
 };
 
 function HomePageInner() {
@@ -48,7 +52,7 @@ function HomePageInner() {
    * changes (i.e. a new navigation to this page).
    */
   useEffect(() => {
-    if (planetParam && ['earth', 'moon', 'mars'].includes(planetParam)) {
+    if (planetParam && ['earth', 'moon', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune'].includes(planetParam)) {
       setSelectedPlanet(planetParam);
       setSelectedMission(null);
       // Scroll hero into view so the map is visible
@@ -56,9 +60,13 @@ function HomePageInner() {
     }
   }, [planetParam]);
 
-  const earthMissions = useMemo(() => getMissionsByDestination('earth'), []);
-  const moonMissions = useMemo(() => getMissionsByDestination('moon'), []);
-  const marsMissions = useMemo(() => getMissionsByDestination('mars'), []);
+  const earthMissions   = useMemo(() => getMissionsByDestination('earth'), []);
+  const moonMissions    = useMemo(() => getMissionsByDestination('moon'), []);
+  const marsMissions    = useMemo(() => getMissionsByDestination('mars'), []);
+  const jupiterMissions = useMemo(() => getMissionsByDestination('jupiter'), []);
+  const saturnMissions  = useMemo(() => getMissionsByDestination('saturn'), []);
+  const uranusMissions  = useMemo(() => getMissionsByDestination('uranus'), []);
+  const neptuneMissions = useMemo(() => getMissionsByDestination('neptune'), []);
 
   const featuredMissions = useMemo(
     () =>
@@ -258,25 +266,30 @@ function HomePageInner() {
         )}
 
         {/* Bottom orbit controls */}
-        <div className="absolute bottom-[64px] left-0 right-0 flex justify-center gap-2 pointer-events-auto">
-          {['earth', 'moon', 'mars'].map((p) => {
-            const cfg = { earth: { emoji: '🌎', label: 'EARTH', color: 'text-blue-400' }, moon: { emoji: '🌙', label: 'MOON', color: 'text-slate-300' }, mars: { emoji: '🔴', label: 'MARS', color: 'text-orange-400' } }[p]!;
-            return (
-              <button
-                key={p}
-                onClick={() => handlePlanetSelect(p)}
-                aria-pressed={selectedPlanet === p}
-                className={`flex items-center gap-2 px-4 py-2.5 glass rounded-lg border transition-all text-xs tracking-wider ${
-                  selectedPlanet === p
-                    ? `border-orbit-blue/50 ${cfg.color} bg-white/5`
-                    : 'border-space-border text-orbit-dim hover:text-orbit-white hover:border-space-muted'
-                }`}
-              >
-                <span>{cfg.emoji}</span>
-                <span>{cfg.label}</span>
-              </button>
-            );
-          })}
+        <div className="absolute bottom-[64px] left-0 right-0 flex justify-center gap-1.5 flex-wrap px-4 pointer-events-auto">
+          {[
+            { id: 'earth',   emoji: '🌎', label: 'EARTH',   color: 'text-blue-400' },
+            { id: 'moon',    emoji: '🌙', label: 'MOON',    color: 'text-slate-300' },
+            { id: 'mars',    emoji: '🔴', label: 'MARS',    color: 'text-orange-400' },
+            { id: 'jupiter', emoji: '🟠', label: 'JUPITER', color: 'text-orange-300' },
+            { id: 'saturn',  emoji: '🪐', label: 'SATURN',  color: 'text-yellow-300' },
+            { id: 'uranus',  emoji: '🔵', label: 'URANUS',  color: 'text-cyan-300' },
+            { id: 'neptune', emoji: '💙', label: 'NEPTUNE', color: 'text-blue-300' },
+          ].map((cfg) => (
+            <button
+              key={cfg.id}
+              onClick={() => handlePlanetSelect(cfg.id)}
+              aria-pressed={selectedPlanet === cfg.id}
+              className={`flex items-center gap-1.5 px-3 py-2 glass rounded-lg border transition-all text-xs tracking-wider ${
+                selectedPlanet === cfg.id
+                  ? `border-orbit-blue/50 ${cfg.color} bg-white/5`
+                  : 'border-space-border text-orbit-dim hover:text-orbit-white hover:border-space-muted'
+              }`}
+            >
+              <span>{cfg.emoji}</span>
+              <span>{cfg.label}</span>
+            </button>
+          ))}
         </div>
 
         {/* Scroll-down floating button — centered via fixed full-width container */}
@@ -308,6 +321,10 @@ function HomePageInner() {
             earthMissions={earthMissions}
             moonMissions={moonMissions}
             marsMissions={marsMissions}
+            jupiterMissions={jupiterMissions}
+            saturnMissions={saturnMissions}
+            uranusMissions={uranusMissions}
+            neptuneMissions={neptuneMissions}
           />
         </section>
 
