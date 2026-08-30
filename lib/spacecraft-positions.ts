@@ -40,7 +40,7 @@ export interface SceneObject {
   agency: string;
   objectType: ObjectType;
   status: SceneStatus;
-  destination: 'earth' | 'moon' | 'mars';
+  destination: 'earth' | 'moon' | 'mars' | 'jupiter' | 'saturn' | 'uranus' | 'neptune';
   /** If true the object orbits its planet */
   isOrbiter: boolean;
   /** Orbit ring radius in scene units (planet-relative) */
@@ -292,8 +292,144 @@ export const MARS_OBJECTS: SceneObject[] = [
   },
 ];
 
+// ─── JUPITER ─────────────────────────────────────────────────────────────────
+
+export const JUPITER_OBJECTS: SceneObject[] = [
+  {
+    missionId: 'juno',
+    name: 'Juno',
+    shortName: 'Juno',
+    agency: 'NASA',
+    objectType: 'orbiter',
+    status: 'science',
+    destination: 'jupiter',
+    isOrbiter: true,
+    orbitRadius: 1.8,
+    orbitInclination: Math.PI * 0.5,
+    orbitPhase: 0,
+    orbitSpeed: 0.8,
+    orbitColor: 0xf97316,
+    statusNote: 'Polar orbit · Studying interior, magnetic field, aurora',
+  },
+  {
+    missionId: 'europa-clipper',
+    name: 'Europa Clipper',
+    shortName: 'Europa Clipper',
+    agency: 'NASA',
+    objectType: 'orbiter',
+    status: 'active',
+    destination: 'jupiter',
+    isOrbiter: true,
+    orbitRadius: 2.2,
+    orbitInclination: Math.PI * 0.35,
+    orbitPhase: Math.PI * 0.8,
+    orbitSpeed: 0.4,
+    orbitColor: 0x60a5fa,
+    statusNote: 'En route to Jupiter · Arrives 2030 · Europa ocean study',
+  },
+  {
+    missionId: 'juice',
+    name: 'JUICE',
+    shortName: 'JUICE',
+    agency: 'ESA',
+    objectType: 'orbiter',
+    status: 'active',
+    destination: 'jupiter',
+    isOrbiter: true,
+    orbitRadius: 2.6,
+    orbitInclination: Math.PI * 0.28,
+    orbitPhase: Math.PI * 1.5,
+    orbitSpeed: 0.35,
+    orbitColor: 0xa855f7,
+    statusNote: 'En route to Jupiter · Arrives 2031 · Icy moons survey',
+  },
+];
+
+// ─── SATURN ──────────────────────────────────────────────────────────────────
+
+export const SATURN_OBJECTS: SceneObject[] = [
+  {
+    missionId: 'cassini',
+    name: 'Cassini–Huygens',
+    shortName: 'Cassini',
+    agency: 'NASA / ESA',
+    objectType: 'orbiter',
+    status: 'completed',
+    destination: 'saturn',
+    isOrbiter: true,
+    orbitRadius: 1.6,
+    orbitInclination: Math.PI * 0.4,
+    orbitPhase: Math.PI * 0.2,
+    orbitSpeed: 0.5,
+    orbitColor: 0xe4d191,
+    statusNote: 'Mission concluded Sep 2017 · Grand Finale atmospheric entry',
+  },
+  {
+    missionId: 'dragonfly',
+    name: 'Dragonfly',
+    shortName: 'Dragonfly',
+    agency: 'NASA',
+    objectType: 'lander',
+    status: 'planned',
+    destination: 'saturn',
+    isOrbiter: true,
+    orbitRadius: 1.3,
+    orbitInclination: Math.PI * 0.3,
+    orbitPhase: Math.PI * 1.2,
+    orbitSpeed: 0.3,
+    orbitColor: 0xf59e0b,
+    statusNote: 'Planned Titan rotorcraft · Launch 2028',
+  },
+];
+
+// ─── URANUS ───────────────────────────────────────────────────────────────────
+
+export const URANUS_OBJECTS: SceneObject[] = [
+  {
+    missionId: 'voyager-2-uranus',
+    name: 'Voyager 2 — Uranus Flyby',
+    shortName: 'Voyager 2',
+    agency: 'NASA',
+    objectType: 'orbiter',
+    status: 'completed',
+    destination: 'uranus',
+    isOrbiter: true,
+    orbitRadius: 1.2,
+    orbitInclination: Math.PI * 0.5,
+    orbitPhase: 0,
+    orbitSpeed: 0.2,
+    orbitColor: 0x7de8e8,
+    statusNote: 'Flyby Jan 1986 · Only Uranus encounter · Now in interstellar space',
+  },
+];
+
+// ─── NEPTUNE ──────────────────────────────────────────────────────────────────
+
+export const NEPTUNE_OBJECTS: SceneObject[] = [
+  {
+    missionId: 'voyager-2-neptune',
+    name: 'Voyager 2 — Neptune Flyby',
+    shortName: 'Voyager 2',
+    agency: 'NASA',
+    objectType: 'orbiter',
+    status: 'completed',
+    destination: 'neptune',
+    isOrbiter: true,
+    orbitRadius: 1.1,
+    orbitInclination: Math.PI * 0.45,
+    orbitPhase: Math.PI * 0.6,
+    orbitSpeed: 0.2,
+    orbitColor: 0x3f54ba,
+    statusNote: 'Flyby Aug 1989 · Only Neptune encounter · Now in interstellar space',
+  },
+];
+
 export const ALL_SCENE_OBJECTS: SceneObject[] = [
   ...EARTH_OBJECTS,
   ...MOON_OBJECTS,
   ...MARS_OBJECTS,
+  ...JUPITER_OBJECTS,
+  ...SATURN_OBJECTS,
+  ...URANUS_OBJECTS,
+  ...NEPTUNE_OBJECTS,
 ];

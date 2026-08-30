@@ -259,6 +259,22 @@ export function computeGlobalPulse(): GlobalPulse {
       highlights.push('ISS maintains continuous crewed presence in low Earth orbit.');
       highlights.push('Multiple Earth observation satellites tracking climate change.');
     }
+    if (dest === 'jupiter') {
+      highlights.push('Juno is actively orbiting Jupiter, studying its deep interior and polar aurora.');
+      highlights.push('Europa Clipper (launched Oct 2024) and JUICE (ESA, launched Apr 2023) are both en route to the Jupiter system.');
+    }
+    if (dest === 'saturn') {
+      highlights.push('Cassini–Huygens completed the most comprehensive Saturn survey ever conducted.');
+      highlights.push('Dragonfly rotorcraft lander to Titan targeted for 2028 launch.');
+    }
+    if (dest === 'uranus') {
+      highlights.push('Voyager 2 remains the only spacecraft to have visited Uranus (1986).');
+      highlights.push('Uranus orbiter and probe mission recommended as top priority by Decadal Survey.');
+    }
+    if (dest === 'neptune') {
+      highlights.push('Voyager 2 completed the only flyby of Neptune in 1989.');
+      highlights.push('Triton, Neptune\'s largest moon, is a candidate for a future orbiter mission.');
+    }
 
     return {
       destination: dest,
@@ -273,6 +289,10 @@ export function computeGlobalPulse(): GlobalPulse {
     earth: buildPulse('earth'),
     moon: buildPulse('moon'),
     mars: buildPulse('mars'),
+    jupiter: buildPulse('jupiter'),
+    saturn: buildPulse('saturn'),
+    uranus: buildPulse('uranus'),
+    neptune: buildPulse('neptune'),
     lastUpdated: new Date().toISOString(),
   };
 }

@@ -101,7 +101,7 @@ export interface CelestialBody {
   /** Whether the user can click to select missions */
   interactive: boolean;
   /** Maps to mission destination key, if this body is a mission destination */
-  missionDestination?: 'earth' | 'moon' | 'mars';
+  missionDestination?: 'earth' | 'moon' | 'mars' | 'jupiter' | 'saturn' | 'uranus' | 'neptune';
   /** JPL elements for heliocentric planets (undefined for Sun and moons) */
   planetaryElements?: PlanetaryElements;
   /** Local moon elements relative to parent (undefined for heliocentric bodies) */
@@ -341,7 +341,8 @@ export const SOLAR_SYSTEM: CelestialBody[] = [
     type: 'planet',
     radiusKm: 69911,
     visualRadius: 0.70,
-    interactive: false,
+    interactive: true,
+    missionDestination: 'jupiter',
     showOrbit: true,
     color: 0xc88b3a,
     emissive: 0x1a0e04,
@@ -354,7 +355,8 @@ export const SOLAR_SYSTEM: CelestialBody[] = [
     type: 'planet',
     radiusKm: 58232,
     visualRadius: 0.58,
-    interactive: false,
+    interactive: true,
+    missionDestination: 'saturn',
     showOrbit: true,
     color: 0xe4d191,
     emissive: 0x1e1804,
@@ -367,7 +369,8 @@ export const SOLAR_SYSTEM: CelestialBody[] = [
     type: 'planet',
     radiusKm: 25362,
     visualRadius: 0.38,
-    interactive: false,
+    interactive: true,
+    missionDestination: 'uranus',
     showOrbit: true,
     color: 0x7de8e8,
     emissive: 0x041818,
@@ -380,7 +383,8 @@ export const SOLAR_SYSTEM: CelestialBody[] = [
     type: 'planet',
     radiusKm: 24622,
     visualRadius: 0.36,
-    interactive: false,
+    interactive: true,
+    missionDestination: 'neptune',
     showOrbit: true,
     color: 0x3f54ba,
     emissive: 0x060a18,

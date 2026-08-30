@@ -1,6 +1,6 @@
 // Core type definitions for ORBITAL AI Mission Atlas
 
-export type Destination = 'earth' | 'moon' | 'mars' | 'deep-space';
+export type Destination = 'earth' | 'moon' | 'mars' | 'jupiter' | 'saturn' | 'uranus' | 'neptune' | 'deep-space';
 
 export type MissionType =
   | 'orbiter'
@@ -171,6 +171,10 @@ export interface GlobalPulse {
   earth: MissionPulse;
   moon: MissionPulse;
   mars: MissionPulse;
+  jupiter: MissionPulse;
+  saturn: MissionPulse;
+  uranus: MissionPulse;
+  neptune: MissionPulse;
   lastUpdated: string;
 }
 

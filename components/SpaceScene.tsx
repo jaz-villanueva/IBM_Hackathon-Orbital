@@ -128,9 +128,13 @@ const HOME_CAMERA = {
 
 /** Zoom-in radius (distance from body) when a planet is selected */
 const PLANET_CAM_RADIUS: Record<string, number> = {
-  earth: 5,
-  moon:  2.5,
-  mars:  4,
+  earth:   5,
+  moon:    2.5,
+  mars:    4,
+  jupiter: 10,
+  saturn:  12,
+  uranus:  9,
+  neptune: 9,
 };
 
 const STATUS_COLOR: Record<string, number> = {
@@ -274,7 +278,7 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
   const [statusFilters, setStatusFilters] = useState({
     active: true, science: true, surface: true, planned: true, completed: true,
   });
-  const [destFilters, setDestFilters] = useState({ earth: true, moon: true, mars: true });
+  const [destFilters, setDestFilters] = useState({ earth: true, moon: true, mars: true, jupiter: true, saturn: true, uranus: true, neptune: true });
 
   // Search
   const [searchQuery,   setSearchQuery]   = useState('');
@@ -285,8 +289,11 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
   const [aiPulseLoading, setAiPulseLoading] = useState(false);
 
   // Visible objects after filtering.
+  // Completed missions are never shown as 3D sprites — they only appear in the
+  // mission catalog (/missions).  All other status-based filters still apply.
   // When a planet/moon is selected, only show missions belonging to that destination.
   const visibleObjects = useMemo(() => ALL_SCENE_OBJECTS.filter(obj => {
+    if (obj.status === 'completed') return false;
     if (!typeFilters[obj.objectType]) return false;
     if (!statusFilters[obj.status as keyof typeof statusFilters]) return false;
     if (!destFilters[obj.destination]) return false;
@@ -296,8 +303,8 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
   }), [typeFilters, statusFilters, destFilters, selectedPlanet]);
 
   const counts = useMemo(() => {
-    const c = { earth: 0, moon: 0, mars: 0 };
-    visibleObjects.forEach(o => { c[o.destination]++; });
+    const c = { earth: 0, moon: 0, mars: 0, jupiter: 0, saturn: 0, uranus: 0, neptune: 0 };
+    visibleObjects.forEach(o => { if (o.destination in c) c[o.destination as keyof typeof c]++; });
     return c;
   }, [visibleObjects]);
 
@@ -1282,7 +1289,7 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
             <div>
               <div className="text-[9px] text-orbit-dim tracking-widest mb-1.5">DESTINATION</div>
               <div className="space-y-1">
-                {(['earth', 'moon', 'mars'] as const).map(d => (
+                {(['earth', 'moon', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune'] as const).map(d => (
                   <label key={d} className="flex items-center gap-2 cursor-pointer group">
                     <input type="checkbox" checked={destFilters[d]} className="w-3 h-3 accent-blue-500"
                       onChange={e => setDestFilters(p => ({ ...p, [d]: e.target.checked }))} />
@@ -1300,9 +1307,13 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
         <div className="glass border border-space-border/50 rounded-lg p-3 text-right">
           <div className="text-[9px] text-orbit-dim tracking-widest mb-2">TRACKED OBJECTS</div>
           {([
-            { key: 'earth', label: '🌎 EARTH', color: 'text-blue-400' },
-            { key: 'moon',  label: '🌙 MOON',  color: 'text-slate-300' },
-            { key: 'mars',  label: '🔴 MARS',  color: 'text-orange-400' },
+            { key: 'earth',   label: '🌎 EARTH',   color: 'text-blue-400' },
+            { key: 'moon',    label: '🌙 MOON',    color: 'text-slate-300' },
+            { key: 'mars',    label: '🔴 MARS',    color: 'text-orange-400' },
+            { key: 'jupiter', label: '🟠 JUPITER', color: 'text-orange-300' },
+            { key: 'saturn',  label: '🪐 SATURN',  color: 'text-yellow-300' },
+            { key: 'uranus',  label: '🔵 URANUS',  color: 'text-cyan-300' },
+            { key: 'neptune', label: '💙 NEPTUNE', color: 'text-blue-300' },
           ] as const).map(({ key, label, color }) => (
             <div key={key} className="flex items-center justify-between gap-4">
               <span className={`text-[9px] ${color} tracking-wider`}>{label}</span>
@@ -1311,7 +1322,7 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
           ))}
           <div className="flex items-center justify-between gap-4 border-t border-space-border/30 pt-1 mt-1">
             <span className="text-[9px] text-orbit-dim tracking-wider">TOTAL</span>
-            <span className="text-[11px] font-semibold text-orbit-white tabular-nums">{counts.earth + counts.moon + counts.mars}</span>
+            <span className="text-[11px] font-semibold text-orbit-white tabular-nums">{counts.earth + counts.moon + counts.mars + counts.jupiter + counts.saturn + counts.uranus + counts.neptune}</span>
           </div>
         </div>
       </div>

@@ -28,6 +28,7 @@ const TYPE_OPTIONS: { value: MissionType | ''; label: string }[] = [
   { value: 'rover', label: 'Rover' },
   { value: 'orbiter', label: 'Orbiter' },
   { value: 'lander', label: 'Lander' },
+  { value: 'flyby', label: 'Flyby' },
   { value: 'crewed', label: 'Crewed' },
   { value: 'earth-observation', label: 'Earth Observation' },
   { value: 'science', label: 'Science' },
@@ -40,6 +41,10 @@ const DEST_OPTIONS: { value: Destination | ''; label: string; emoji: string }[] 
   { value: 'earth', label: 'Earth', emoji: '🌎' },
   { value: 'moon', label: 'Moon', emoji: '🌙' },
   { value: 'mars', label: 'Mars', emoji: '🔴' },
+  { value: 'jupiter', label: 'Jupiter', emoji: '🟠' },
+  { value: 'saturn', label: 'Saturn', emoji: '🪐' },
+  { value: 'uranus', label: 'Uranus', emoji: '🔵' },
+  { value: 'neptune', label: 'Neptune', emoji: '💙' },
 ];
 
 export function MissionCatalog({ missions, onMissionSelect, initialDestination }: MissionCatalogProps) {
