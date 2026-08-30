@@ -62,7 +62,8 @@ interface SpaceSceneProps {
   selectedPlanet: string | null;
   missions: Mission[];
   onPlanetSelect: (planet: string) => void;
-  onMissionSelect: (mission: Mission) => void;
+  /** Called when the scene selects a mission; called with null when deselecting. */
+  onMissionSelect: (mission: Mission | null) => void;
   selectedMission?: Mission | null;
 }
 
@@ -103,6 +104,14 @@ const MOON_ORBIT_VISUAL_DISTANCE_MULTIPLIER = 1.25;
  * switching to the 3D model for very tight inspections.
  */
 const MISSION_SPRITE_HIDE_DISTANCE = 2.5;
+
+/**
+ * Visual size multiplier applied to all mission spacecraft sprites and 3D models.
+ * Increase to make all spacecraft visually larger; decrease to shrink them.
+ * Relative sizing between mission types (station > rover > others) is preserved.
+ * Does NOT affect orbital radii, positions, or any scientific data.
+ */
+const MISSION_MODEL_SCALE = 2.0;
 
 /**
  * Home camera: framed to show the inner solar system clearly while
@@ -202,7 +211,7 @@ function getBodyPos(id: string, bodyWorldPos: Map<string, THREE.Vector3>): THREE
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect }: SpaceSceneProps) {
+export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, selectedMission }: SpaceSceneProps) {
   const mountRef      = useRef<HTMLDivElement>(null);
   const rendererRef   = useRef<THREE.WebGLRenderer | null>(null);
   const sceneRef      = useRef<THREE.Scene | null>(null);
@@ -946,6 +955,37 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect }: 
   useEffect(() => { selectedPlanetRef.current = selectedPlanet; }, [selectedPlanet]);
   useEffect(() => { hoveredBodyRef.current = hoveredBody; }, [hoveredBody]);
 
+  // Track selectedObject in a ref so the selectedMission sync effect below can
+  // guard against re-opening a popup that was just closed internally.
+  const selectedObjectRef = useRef(selectedObject);
+  useEffect(() => { selectedObjectRef.current = selectedObject; }, [selectedObject]);
+
+  /**
+   * Sync the incoming selectedMission prop (set by the Active Missions widget or
+   * other external callers) into the SpaceScene's own selectedObject state so the
+   * popup and orbit path are shown for the correct spacecraft.
+   * We only update if the incoming mission id differs from the current selection
+   * to avoid circular updates triggered by the scene's own onMissionSelect callback.
+   */
+  useEffect(() => {
+    if (!selectedMission) {
+      // Only clear if we haven't already cleared (avoid no-op re-renders)
+      if (selectedObjectRef.current !== null) {
+        setSelectedObject(null);
+        setPopupPos(null);
+      }
+      return;
+    }
+    // Guard: don't re-open if the scene already has this mission selected
+    if (selectedObjectRef.current?.missionId === selectedMission.id) return;
+    const obj = ALL_SCENE_OBJECTS.find(o => o.missionId === selectedMission.id);
+    if (obj) {
+      setSelectedObject(obj);
+      // Position the popup toward the right of the scene canvas
+      setPopupPos({ x: window.innerWidth * 0.65, y: 220 });
+    }
+  }, [selectedMission]);
+
   // ─── Sync visibleObjects → scene mission spacecraft ───────────────────────
 
   useEffect(() => {
@@ -962,7 +1002,7 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect }: 
       const color     = STATUS_COLOR[obj.status] || STATUS_COLOR.active;
       const char      = TYPE_CHAR[obj.objectType] || '◈';
       const spriteTex = makeSprite(char, hexToCSS(color));
-      const scaleSpr  = obj.objectType === 'station' ? 0.28 : obj.objectType === 'rover' ? 0.22 : 0.18;
+      const scaleSpr  = MISSION_MODEL_SCALE * (obj.objectType === 'station' ? 0.28 : obj.objectType === 'rover' ? 0.22 : 0.18);
 
       const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
         map: spriteTex, transparent: true, opacity: 0.92, depthTest: false,
@@ -1060,7 +1100,9 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect }: 
       const isSelected = mId === selectedObject?.missionId;
       mat.opacity = isSelected ? 1.0 : 0.88;
       const base = ALL_SCENE_OBJECTS.find(o => o.missionId === mId);
-      const s = isSelected ? 0.36 : base?.objectType === 'station' ? 0.28 : 0.18;
+      const s = isSelected
+        ? MISSION_MODEL_SCALE * 0.36
+        : MISSION_MODEL_SCALE * (base?.objectType === 'station' ? 0.28 : base?.objectType === 'rover' ? 0.22 : 0.18);
       sprite.scale.set(s, s, s);
     });
   }, [selectedObject]);
@@ -1114,7 +1156,7 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect }: 
           obj={selectedObject}
           mission={selectedMissionData}
           x={popupPos.x} y={popupPos.y}
-          onClose={() => { setSelectedObject(null); setPopupPos(null); }}
+          onClose={() => { setSelectedObject(null); setPopupPos(null); onMissionSelect(null); }}
         />
       )}
 
@@ -1330,6 +1372,8 @@ interface MissionPopupProps {
 }
 
 function MissionPopup({ obj, mission, x, y, onClose }: MissionPopupProps) {
+  const popupRef = useRef<HTMLDivElement>(null);
+
   const statusLabels: Record<string, string> = {
     active: 'ACTIVE', science: 'SCIENCE OPS', surface: 'SURFACE OPS',
     planned: 'PLANNED', completed: 'COMPLETED',
@@ -1345,10 +1389,34 @@ function MissionPopup({ obj, mission, x, y, onClose }: MissionPopupProps) {
   const left = Math.max(320, Math.min(x - 110, window.innerWidth - 240));
   const top  = Math.max(160, y - 10);
 
-  
+  /**
+   * Close the popup when the user clicks anywhere outside it.
+   * We use pointerdown on the document (capture phase) so we intercept
+   * clicks on the Three.js canvas and anywhere else on the page.
+   * Clicks that originate inside the popup element are ignored.
+   */
+  useEffect(() => {
+    const handleOutsideClick = (e: PointerEvent) => {
+      if (popupRef.current && !popupRef.current.contains(e.target as Node)) {
+        onClose();
+      }
+    };
+    // Slight delay so the same click that opened the popup doesn't immediately close it
+    const timer = setTimeout(() => {
+      document.addEventListener('pointerdown', handleOutsideClick, { capture: true });
+    }, 0);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('pointerdown', handleOutsideClick, { capture: true });
+    };
+  }, [onClose]);
+
   return (
-    <div className="absolute z-30 animate-slide-up"
-      style={{ left, top, width: 220 }}>
+    <div
+      ref={popupRef}
+      className="absolute z-30 animate-slide-up"
+      style={{ left, top, width: 220 }}
+    >
       <div className="glass border border-space-border rounded-xl p-4 shadow-xl">
         <button onClick={onClose}
           className="absolute top-2.5 right-2.5 text-orbit-dim hover:text-orbit-white transition-colors">

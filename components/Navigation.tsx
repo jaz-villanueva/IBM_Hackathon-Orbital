@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { Search, Clock, Database, X, Menu, ChevronRight } from 'lucide-react';
 import { Mission } from '@/lib/types';
 
@@ -13,6 +14,24 @@ interface NavProps {
 }
 
 export function Navigation({ selectedPlanet, onPlanetSelect, onScrollToMap }: NavProps) {
+  const router   = useRouter();
+  const pathname = usePathname();
+
+  /**
+   * Handle a planet button click from the top navigation.
+   *
+   * • If we're already on the home page (/), scroll back to the map and select.
+   * • If we're on any other route (e.g. /missions), navigate to /?planet=<id>.
+   *   page.tsx picks up the `planet` search-param on mount and calls handlePlanetSelect.
+   */
+  const handleNavPlanetClick = useCallback((id: string) => {
+    if (pathname === '/') {
+      onScrollToMap?.();
+      onPlanetSelect?.(id);
+    } else {
+      router.push(`/?planet=${id}`);
+    }
+  }, [pathname, router, onScrollToMap, onPlanetSelect]);
   const [utcTime, setUtcTime] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -102,12 +121,7 @@ export function Navigation({ selectedPlanet, onPlanetSelect, onScrollToMap }: Na
             {planets.map((p) => (
               <button
                 key={p.id}
-                onClick={() => {
-                  // Scroll back to the 3D map if the user has navigated away,
-                  // then select the planet — camera will transition to it.
-                  onScrollToMap?.();
-                  onPlanetSelect?.(p.id);
-                }}
+                onClick={() => handleNavPlanetClick(p.id)}
                 className={`px-3 py-1.5 text-xs tracking-widest transition-all rounded ${
                   selectedPlanet === p.id
                     ? `${p.color} bg-white/5 font-medium`
@@ -223,8 +237,7 @@ export function Navigation({ selectedPlanet, onPlanetSelect, onScrollToMap }: Na
               <button
                 key={p.id}
                 onClick={() => {
-                  onScrollToMap?.();
-                  onPlanetSelect?.(p.id);
+                  handleNavPlanetClick(p.id);
                   setMobileOpen(false);
                 }}
                 className={`px-3 py-1.5 text-xs tracking-widest rounded glass-subtle ${p.color}`}

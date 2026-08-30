@@ -1,1 +1,1 @@
-self.__REACT_LOADABLE_MANIFEST="{\"app\\\\page.tsx -> @/components/SpaceScene\":{\"id\":\"app\\\\page.tsx -> @/components/SpaceScene\",\"files\":[\"static/chunks/_app-pages-browser_components_SpaceScene_tsx.js\"]}}"
+self.__REACT_LOADABLE_MANIFEST='{"app\\\\page.tsx -> @/components/SpaceScene":{"id":7932,"files":["static/chunks/b536a0f1.9fac5c0019cf4d98.js","static/chunks/932.63b315f222d4fcfb.js"]}}';
