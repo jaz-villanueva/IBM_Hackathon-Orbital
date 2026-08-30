@@ -91,7 +91,7 @@ const OUTER_PLANET_RADIUS_BOOST = 1.0; // set >1 to further enlarge outer planet
  * can visually intersect Earth's body at close zoom.  1.25 pushes it 25% farther out.
  * Change this single value to adjust the Moon's visual orbital distance from Earth.
  */
-const MOON_ORBIT_VISUAL_DISTANCE_MULTIPLIER = 1.25;
+const MOON_ORBIT_VISUAL_DISTANCE_MULTIPLIER = 2;
 
 /**
  * Camera distance (scene units) below which mission sprites are hidden and replaced
@@ -111,7 +111,7 @@ const MISSION_SPRITE_HIDE_DISTANCE = 2.5;
  * Relative sizing between mission types (station > rover > others) is preserved.
  * Does NOT affect orbital radii, positions, or any scientific data.
  */
-const MISSION_MODEL_SCALE = 2.0;
+const MISSION_MODEL_SCALE = 1.0;
 
 /**
  * Home camera: framed to show the inner solar system clearly while
@@ -230,8 +230,9 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
   const orbitRingsRef = useRef<Map<string, THREE.Mesh>>(new Map());
   const orbitPathRef  = useRef<THREE.Line | null>(null);
 
-  const lastMouseRef  = useRef({ x: 0, y: 0 });
-  const isDraggingRef = useRef(false);
+  const lastMouseRef      = useRef({ x: 0, y: 0 });
+  const pointerDownPosRef = useRef({ x: 0, y: 0 });
+  const isDraggingRef     = useRef(false);
 
   /**
    * Spherical camera orbit state.
@@ -696,15 +697,19 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
     };
 
     const onMouseDown = (e: MouseEvent) => {
-      lastMouseRef.current = { x: e.clientX, y: e.clientY };
+      lastMouseRef.current      = { x: e.clientX, y: e.clientY };
+      pointerDownPosRef.current = { x: e.clientX, y: e.clientY };
       isDraggingRef.current = true;
     };
 
     const onMouseUp = (e: MouseEvent) => {
       isDraggingRef.current = false;
       if (!mountRef.current) return;
-      if (Math.abs(e.clientX - lastMouseRef.current.x) > 4 ||
-          Math.abs(e.clientY - lastMouseRef.current.y) > 4) return;
+      // Use the pointer-DOWN position (not the running drag tracker) so that
+      // releasing after a drag never falsely triggers a click/deselect.
+      const dragDx = Math.abs(e.clientX - pointerDownPosRef.current.x);
+      const dragDy = Math.abs(e.clientY - pointerDownPosRef.current.y);
+      if (dragDx > 4 || dragDy > 4) return;
 
       const rect = mountRef.current.getBoundingClientRect();
       pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
