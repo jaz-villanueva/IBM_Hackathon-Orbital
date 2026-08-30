@@ -258,7 +258,7 @@ function HomePageInner() {
         )}
 
         {/* Bottom orbit controls */}
-        <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-2 pointer-events-auto">
+        <div className="absolute bottom-[64px] left-0 right-0 flex justify-center gap-2 pointer-events-auto">
           {['earth', 'moon', 'mars'].map((p) => {
             const cfg = { earth: { emoji: '🌎', label: 'EARTH', color: 'text-blue-400' }, moon: { emoji: '🌙', label: 'MOON', color: 'text-slate-300' }, mars: { emoji: '🔴', label: 'MARS', color: 'text-orange-400' } }[p]!;
             return (

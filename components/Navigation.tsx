@@ -32,6 +32,7 @@ export function Navigation({ selectedPlanet, onPlanetSelect, onScrollToMap }: Na
       router.push(`/?planet=${id}`);
     }
   }, [pathname, router, onScrollToMap, onPlanetSelect]);
+
   const [utcTime, setUtcTime] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
