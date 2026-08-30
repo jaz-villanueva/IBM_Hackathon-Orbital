@@ -8,9 +8,11 @@ import { Mission } from '@/lib/types';
 interface NavProps {
   selectedPlanet?: string;
   onPlanetSelect?: (planet: string) => void;
+  /** Optional callback: scroll the page back to the 3D map section. */
+  onScrollToMap?: () => void;
 }
 
-export function Navigation({ selectedPlanet, onPlanetSelect }: NavProps) {
+export function Navigation({ selectedPlanet, onPlanetSelect, onScrollToMap }: NavProps) {
   const [utcTime, setUtcTime] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -100,7 +102,12 @@ export function Navigation({ selectedPlanet, onPlanetSelect }: NavProps) {
             {planets.map((p) => (
               <button
                 key={p.id}
-                onClick={() => onPlanetSelect?.(p.id)}
+                onClick={() => {
+                  // Scroll back to the 3D map if the user has navigated away,
+                  // then select the planet — camera will transition to it.
+                  onScrollToMap?.();
+                  onPlanetSelect?.(p.id);
+                }}
                 className={`px-3 py-1.5 text-xs tracking-widest transition-all rounded ${
                   selectedPlanet === p.id
                     ? `${p.color} bg-white/5 font-medium`
@@ -215,7 +222,11 @@ export function Navigation({ selectedPlanet, onPlanetSelect }: NavProps) {
             {planets.map((p) => (
               <button
                 key={p.id}
-                onClick={() => { onPlanetSelect?.(p.id); setMobileOpen(false); }}
+                onClick={() => {
+                  onScrollToMap?.();
+                  onPlanetSelect?.(p.id);
+                  setMobileOpen(false);
+                }}
                 className={`px-3 py-1.5 text-xs tracking-widest rounded glass-subtle ${p.color}`}
               >
                 {p.label}
