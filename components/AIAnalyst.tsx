@@ -49,7 +49,7 @@ function renderMarkdown(text: string) {
         .replace(/^• (.*)/gm, '<li class="ml-4 list-disc">$1</li>')
         .replace(/^- (.*)/gm, '<li class="ml-4 list-disc">$1</li>')
         .replace(/<\/li><li/g, '</li><li')
-        .replace(/(<li.*<\/li>)/s, '<ul class="space-y-0.5">$1</ul>');
+        .replace(/(<li[\s\S]*<\/li>)/, '<ul class="space-y-0.5">$1</ul>');
       return <p key={i} className="text-[13px] text-orbit-dim leading-relaxed mb-2" dangerouslySetInnerHTML={{ __html: formatted }} />;
     });
 }
