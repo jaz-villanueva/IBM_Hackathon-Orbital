@@ -3,8 +3,9 @@
 import { Mission, Spacecraft, DataSource } from '@/lib/types';
 import { MissionTimeline } from './MissionTimeline';
 import { DataProvenance, DataSourcePanel, DataLegend } from './DataProvenance';
+import { getSatelliteCatalogEntryByNoradId } from '@/lib/satellites/catalog';
 import Link from 'next/link';
-import { ArrowLeft, ExternalLink, Globe, Sparkles } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Globe, Sparkles, Radar } from 'lucide-react';
 
 interface MissionDetailProps {
   mission: Mission;
@@ -109,6 +110,15 @@ function SpacecraftCard({ sc }: { sc: Spacecraft }) {
           )}
         </div>
       )}
+      {sc.noradId && getSatelliteCatalogEntryByNoradId(sc.noradId) && (
+        <Link
+          href={`/satellites/${getSatelliteCatalogEntryByNoradId(sc.noradId)!.id}`}
+          className="flex items-center justify-center gap-2 mt-1 py-2 rounded-lg bg-orbit-blue/10 border border-orbit-blue/20 text-orbit-blue hover:bg-orbit-blue/15 transition-colors text-[11px] font-medium tracking-wider"
+        >
+          <Radar size={12} />
+          TRACK {sc.name.toUpperCase()} LIVE
+        </Link>
+      )}
     </div>
   );
 }
@@ -141,6 +151,7 @@ export function MissionDetail({ mission }: MissionDetailProps) {
             src={mission.heroImageUrl}
             alt={mission.name}
             className="w-full h-full object-cover opacity-50"
+            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
           />
         ) : (
           <div className="w-full h-full bg-space-navy" />

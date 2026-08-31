@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateAIResponse } from '@/lib/ai';
 import { getMissionById } from '@/lib/missions';
+import { getSatelliteCatalogEntryByNoradId } from '@/lib/satellites/catalog';
+import { fetchGpData, CelestrakFetchError } from '@/lib/satellites/celestrak';
+import { deriveOrbitalState, toSatelliteAIContext } from '@/lib/satellites/orbital-state';
 import { AIContext, OrbitalRiskContext } from '@/lib/types';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { messages, missionId, planet, riskContext } = body;
+    const { messages, missionId, planet, riskContext, satelliteId } = body;
 
     if (!messages || !Array.isArray(messages)) {
       return NextResponse.json({ error: 'Invalid messages' }, { status: 400 });
@@ -49,6 +52,25 @@ export async function POST(request: NextRequest) {
         explanation:               String(rc.explanation ?? ''),
       };
       context.selectedRisk = safe;
+    }
+
+    // Look up live satellite data server-side — never trust a client-supplied
+    // orbital/telemetry blob for the AI to reason over, only a NORAD id.
+    if (typeof satelliteId === 'string' && satelliteId) {
+      const entry = getSatelliteCatalogEntryByNoradId(satelliteId);
+      if (entry) {
+        try {
+          const gp = await fetchGpData(entry.noradId);
+          const { state } = deriveOrbitalState(gp);
+          context.selectedSatellite = toSatelliteAIContext(state);
+        } catch (err) {
+          if (!(err instanceof CelestrakFetchError)) {
+            console.error('Satellite context lookup error:', err);
+          }
+          // No live data and no cache — leave selectedSatellite unset; the AI
+          // system prompt already instructs it to say so rather than invent data.
+        }
+      }
     }
 
     const response = await generateAIResponse(messages, context);

@@ -134,6 +134,72 @@ export function buildSatellite(scale = 1, color = 0xc0c8d8): THREE.Group {
   return g;
 }
 
+// ─── Communications satellite (large dish, small bus) ─────────────────────────
+// Used by Earth Mode's live satellite marker system for satellites classified
+// as comms-type (see lib/satellites/marker-geometry.ts).
+
+export function buildCommsSatellite(scale = 1, color = 0xc0c8d8): THREE.Group {
+  const g = new THREE.Group();
+
+  const mat = clone(MAT.body);
+  mat.color.setHex(color);
+  const bus = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.05), mat);
+  g.add(bus);
+
+  // One large parabolic dish — the recognisable "comms satellite" silhouette
+  const dish = new THREE.Mesh(new THREE.SphereGeometry(0.045, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2), clone(MAT.dish));
+  dish.position.set(0, 0.05, 0);
+  dish.rotation.x = Math.PI;
+  g.add(dish);
+  const feed = new THREE.Mesh(new THREE.CylinderGeometry(0.002, 0.002, 0.03, 6), clone(MAT.truss));
+  feed.position.set(0, 0.03, 0);
+  g.add(feed);
+
+  // Small solar panels
+  [-1, 1].forEach(side => {
+    const panel = new THREE.Mesh(new THREE.PlaneGeometry(0.08, 0.04), clone(MAT.solar));
+    panel.position.set(side * 0.07, 0, 0);
+    panel.rotation.x = Math.PI / 2;
+    g.add(panel);
+  });
+
+  g.scale.setScalar(scale);
+  return g;
+}
+
+// ─── Navigation satellite (GPS-style twin cross panels) ───────────────────────
+
+export function buildNavSatellite(scale = 1, color = 0xc0c8d8): THREE.Group {
+  const g = new THREE.Group();
+
+  const mat = clone(MAT.body);
+  mat.color.setHex(color);
+  const bus = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.045, 0.045), mat);
+  g.add(bus);
+
+  // Characteristic wide double solar-panel "wings"
+  [-1, 1].forEach(side => {
+    const panel = new THREE.Mesh(new THREE.PlaneGeometry(0.16, 0.045), clone(MAT.solar));
+    panel.position.set(side * 0.12, 0, 0);
+    panel.rotation.x = Math.PI / 2;
+    g.add(panel);
+    const frame = new THREE.LineSegments(
+      new THREE.EdgesGeometry(new THREE.BoxGeometry(0.16, 0.003, 0.045)),
+      new THREE.LineBasicMaterial({ color: 0x2a4a8a })
+    );
+    frame.position.copy(panel.position);
+    g.add(frame);
+  });
+
+  // Small nadir-pointing antenna array
+  const antenna = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.012, 8), clone(MAT.dark));
+  antenna.position.set(0, -0.028, 0);
+  g.add(antenna);
+
+  g.scale.setScalar(scale);
+  return g;
+}
+
 // ─── Orion capsule ────────────────────────────────────────────────────────────
 
 export function buildOrion(scale = 1): THREE.Group {
