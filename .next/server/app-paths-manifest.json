@@ -1,4 +1,5 @@
 {
+  "/api/satellites/fleet/route": "app/api/satellites/fleet/route.js",
   "/api/risk/route": "app/api/risk/route.js",
   "/page": "app/page.js"
 }
