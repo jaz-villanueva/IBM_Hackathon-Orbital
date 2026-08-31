@@ -92,6 +92,7 @@ export function AIAnalyst({ context, isOpen, onClose }: AIAnalystProps) {
           missionId: context.selectedMission?.id,
           planet: context.selectedPlanet,
           riskContext: context.selectedRisk,
+          satelliteId: context.selectedSatellite?.noradId,
         }),
       });
       const data = await res.json();
@@ -141,6 +142,10 @@ export function AIAnalyst({ context, isOpen, onClose }: AIAnalystProps) {
             {!minimized && (context.selectedRisk
               ? <div className="text-[9px] text-purple-300/70 mt-0.5 truncate">
                   Risk: {context.selectedRisk.objectAName} ↔ {context.selectedRisk.objectBName}
+                </div>
+              : context.selectedSatellite
+              ? <div className="text-[9px] text-purple-300/70 mt-0.5 truncate">
+                  Satellite: {context.selectedSatellite.name}
                 </div>
               : context.selectedMission && (
                 <div className="text-[9px] text-orbit-dim mt-0.5 truncate">
