@@ -1,35 +1,43 @@
 'use client';
 
 /**
- * SatelliteDetailPanel — Public-friendly satellite information panel.
+ * SatelliteDetailPanel — Space museum / science education experience.
  *
- * Layout (from top):
- *  1. Back button
- *  2. Satellite name + agency
- *  3. Data quality warning (if stale)
- *  4. Hero stats: altitude, speed, period, inclination — in plain English
- *  5. "What is it doing?" description
- *  6. Fun fact
- *  7. SatNOGS observation data (if available)
- *  8. Live observation / video link (if available)
- *  9. ▶ Technical Details (collapsible): raw orbital elements + provenance
- * 10. View Mission link (if catalog entry links to a mission)
- * 11. Ask AI button
+ * Information hierarchy (public-first):
+ *  1. Back / header
+ *  2. Satellite name + category tagline
+ *  3. Stale-data notice (if applicable)
+ *  4. WHAT IS IT?
+ *  5. WHAT DOES IT DO?
+ *  6. Four large stat cards (altitude / speed / orbit / tilt) — live derived data
+ *  7. ✦ DID YOU KNOW? — curated factual highlight
+ *  8. WHY DOES IT MATTER?
+ *  9. WHERE DOES IT FLY? — ground track map with plain-language caption
+ * 10. CAN WE SEE ITS SIGNALS? — observation / SatNOGS
+ * 11. HOW DOES IT STAY IN SPACE? — educational explainer (collapsible)
+ * 12. TECHNICAL DETAILS (collapsible) — raw orbital elements + provenance
+ * 13. View Mission link
+ * 14. Ask AI button
+ * 15. Sources attribution
  *
- * Philosophy:
- *  - Statistics first for general public, raw data second via progressive disclosure.
- *  - Every derived value is labeled DERIVED.
- *  - No fabricated observations.
- *  - Plain-language labels ("How fast is it moving?") above raw numbers.
+ * Design principles:
+ *  - Sections use question headings ("WHAT IS IT?" not "DESCRIPTION")
+ *  - Large numbers + short sub-captions dominate stats, not tiny label grids
+ *  - Curated "Did You Know?" card is visually distinct — looks like a discovery
+ *  - All live numbers are clearly labeled DERIVED from CelesTrak orbital elements
+ *  - Technical data is preserved but hidden behind progressive disclosure
+ *  - No fabricated facts — every educational statement has a source
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import {
   ArrowLeft, ExternalLink, AlertTriangle, ChevronDown, ChevronUp,
-  Radio, Video, ImageIcon, Sparkles, Satellite, Globe,
+  Radio, Video, ImageIcon, Sparkles, Globe, MapPin, Zap,
+  RotateCcw, Orbit, BookOpen, Signal,
 } from 'lucide-react';
 import { GroundTrackMap } from './GroundTrackMap';
+import { getSatelliteEducationProfile, hasCuratedProfile } from '@/lib/satellites/education';
 import type {
   SatelliteCatalogEntry,
   SatelliteOrbitalState,
@@ -39,7 +47,7 @@ import type {
   SatelliteAIContext,
 } from '@/lib/types';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ─── Local types ──────────────────────────────────────────────────────────────
 
 interface SatNOGSTransmitter {
   description: string;
@@ -75,15 +83,20 @@ interface SatelliteDetailPanelProps {
   onAskAI: (satellite: SatelliteAIContext) => void;
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Formatters ───────────────────────────────────────────────────────────────
 
 function fmtAlt(km: number): string {
+  if (km >= 1000) return `${(km / 1000).toFixed(km >= 10000 ? 0 : 1).replace(/\.0$/, '')}k km`;
+  return `${Math.round(km).toLocaleString()} km`;
+}
+
+function fmtAltFull(km: number): string {
   return `${Math.round(km).toLocaleString()} km`;
 }
 
 function fmtSpeed(kmS: number): string {
-  const kmH = kmS * 3600;
-  return `${Math.round(kmH).toLocaleString()} km/h`;
+  const kmH = Math.round(kmS * 3600);
+  return `${kmH.toLocaleString()} km/h`;
 }
 
 function fmtPeriod(min: number): string {
@@ -99,180 +112,304 @@ function fmtFreq(hz: number): string {
   return `${hz} Hz`;
 }
 
-function orbitsPerDay(periodMin: number): string {
+/** Approximate number of orbits per day, as a friendly string. */
+function orbitsPerDayStr(periodMin: number): string {
   const n = 1440 / periodMin;
-  return `~${n.toFixed(1)}`;
+  if (n < 1.5) return `about once a day`;
+  if (n < 2.5) return `about twice a day`;
+  return `about ${Math.round(n)} times a day`;
 }
 
-/**
- * Fun contextual fact about altitude.
- * Only generates factual statements anchored to the data.
- */
-function altitudeFact(km: number): string {
-  if (km < 500) return `That's roughly the driving distance from Manila to Baguio — straight up.`;
-  if (km < 1000) return `Higher than any commercial aircraft, low enough to see Earth's curvature clearly.`;
-  if (km < 5000) return `In this region, Earth's Van Allen radiation belts begin.`;
-  if (km < 20000) return `Well above low Earth orbit — GPS satellites operate at this altitude.`;
-  return `At geostationary altitude, the satellite appears to hover over one spot on Earth.`;
+/** Short contextual caption for speed. */
+function speedCaption(kmS: number): string {
+  const kmH = kmS * 3600;
+  if (kmH > 25000) return `Fast enough to circle Earth in about 90 minutes.`;
+  if (kmH > 10000) return `That's roughly ${Math.round(kmS)} km every second.`;
+  return `Moving at ${Math.round(kmS)} km every second.`;
 }
 
-/**
- * Contextual note about inclination.
- */
-function inclinationFact(deg: number): string {
-  if (deg < 5) return `Near-equatorial orbit — stays close to Earth's equator.`;
-  if (deg < 30) return `Moderate inclination — covers most of Earth's populated regions.`;
-  if (deg < 60) return `Mid-inclination orbit — like the ISS, covers a broad swath of Earth.`;
-  if (deg < 97) return `High inclination — covers the poles and most of Earth's surface.`;
-  return `Sun-synchronous polar orbit — passes over the same area at the same local time every day.`;
+/** Short plain-English note about orbit tilt. */
+function inclinationCaption(deg: number): string {
+  if (deg < 5) return `Stays near Earth's equator — equatorial orbit.`;
+  if (deg < 15) return `Near-equatorial orbit, covering tropical and subtropical regions.`;
+  if (deg < 40) return `Tilted orbit covering most of Earth's populated areas.`;
+  if (deg < 60) return `Like the ISS — covers a broad band from about ${Math.round(deg)}° south to north.`;
+  if (deg < 97) return `High-inclination orbit covering most of Earth's surface.`;
+  return `Near-polar orbit — passes over nearly every part of Earth each day.`;
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+// ─── Provenance badge ─────────────────────────────────────────────────────────
 
-function ProvenanceBadge({ label }: { label: DataLabel }) {
-  const cfg: Record<DataLabel, { text: string; color: string }> = {
-    OBSERVED: { text: 'OBSERVED', color: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/30' },
-    DERIVED:  { text: 'DERIVED',  color: 'text-blue-400 bg-blue-400/10 border-blue-400/30' },
-    AI:       { text: 'AI',       color: 'text-purple-400 bg-purple-400/10 border-purple-400/30' },
-    ESTIMATED:{ text: 'ESTIMATED',color: 'text-amber-400 bg-amber-400/10 border-amber-400/30' },
+function Badge({ label }: { label: DataLabel }) {
+  const styles: Record<DataLabel, string> = {
+    OBSERVED: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/30',
+    DERIVED:  'text-blue-400/80 bg-blue-400/10 border-blue-400/25',
+    AI:       'text-purple-400 bg-purple-400/10 border-purple-400/30',
+    ESTIMATED:'text-amber-400 bg-amber-400/10 border-amber-400/30',
   };
-  const c = cfg[label] ?? cfg.ESTIMATED;
   return (
-    <span className={`px-1.5 py-0.5 rounded border text-[7px] font-bold tracking-widest ${c.color}`}>
-      {c.text}
+    <span className={`px-1 py-0.5 rounded border text-[7px] font-bold tracking-widest ${styles[label] ?? styles.ESTIMATED}`}>
+      {label}
     </span>
   );
 }
 
-function StatCard({ label, value, sub, badge }: { label: string; value: string; sub?: string; badge?: DataLabel }) {
+// ─── Section heading ──────────────────────────────────────────────────────────
+
+function SectionHeading({ icon: Icon, text }: { icon: React.ElementType; text: string }) {
   return (
-    <div className="glass-subtle rounded-lg p-2.5 flex flex-col gap-0.5">
-      <div className="text-[8px] text-orbit-dim/80 tracking-widest leading-tight">{label.toUpperCase()}</div>
-      <div className="text-[15px] font-light text-orbit-white leading-tight">{value}</div>
-      {sub && <div className="text-[9px] text-orbit-dim/70 leading-snug">{sub}</div>}
-      {badge && <div className="mt-0.5"><ProvenanceBadge label={badge} /></div>}
+    <div className="flex items-center gap-2 mb-2">
+      <Icon size={11} className="text-orbit-blue/80 shrink-0" />
+      <span className="text-[9px] font-semibold text-orbit-dim/80 tracking-[0.18em] uppercase">{text}</span>
     </div>
   );
 }
 
-function DPRow({ label, point, unit }: { label: string; point: DataPoint<number | string>; unit?: string }) {
+// ─── Large stat card ──────────────────────────────────────────────────────────
+
+function StatCard({
+  icon: Icon,
+  label,
+  value,
+  caption,
+  badge,
+}: {
+  icon: React.ElementType;
+  label: string;
+  value: string;
+  caption?: string;
+  badge: DataLabel;
+}) {
   return (
-    <div className="flex items-start justify-between gap-2 py-1 border-b border-space-border/30 last:border-0">
-      <span className="text-[9px] text-orbit-dim/80 leading-tight min-w-0 flex-1">{label}</span>
-      <div className="flex items-center gap-1 shrink-0">
+    <div className="glass-subtle rounded-xl p-3 flex flex-col gap-1 border border-space-border/40">
+      <div className="flex items-center gap-1.5">
+        <Icon size={10} className="text-orbit-blue/60 shrink-0" />
+        <span className="text-[8px] text-orbit-dim/70 tracking-widest font-medium uppercase">{label}</span>
+      </div>
+      <div className="text-[22px] font-light text-orbit-white leading-none tracking-tight">{value}</div>
+      {caption && (
+        <div className="text-[10px] text-orbit-dim/70 leading-snug">{caption}</div>
+      )}
+      <div className="mt-0.5">
+        <Badge label={badge} />
+      </div>
+    </div>
+  );
+}
+
+// ─── Did You Know card ────────────────────────────────────────────────────────
+
+function DidYouKnowCard({ text }: { text: string }) {
+  return (
+    <div className="relative rounded-xl overflow-hidden border border-orbit-blue/25 bg-gradient-to-br from-orbit-blue/8 to-space-deep/60">
+      {/* Decorative corner accent */}
+      <div className="absolute top-0 right-0 w-12 h-12 bg-orbit-blue/6 rounded-bl-full" />
+      <div className="p-4 relative">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-orbit-blue text-base leading-none">✦</span>
+          <span className="text-[10px] font-bold text-orbit-blue tracking-[0.2em] uppercase">Did You Know?</span>
+        </div>
+        <p className="text-[12px] text-orbit-white/90 leading-relaxed">{text}</p>
+      </div>
+    </div>
+  );
+}
+
+// ─── Technical data row ───────────────────────────────────────────────────────
+
+function TechRow({
+  label,
+  point,
+  unit,
+}: {
+  label: string;
+  point: DataPoint<number | string>;
+  unit?: string;
+}) {
+  const val = typeof point.value === 'number'
+    ? (point.value > 100 ? point.value.toFixed(1) : point.value.toFixed(5))
+    : String(point.value);
+  return (
+    <div className="flex items-start justify-between gap-3 py-1.5 border-b border-space-border/20 last:border-0">
+      <span className="text-[10px] text-orbit-dim/70 leading-tight">{label}</span>
+      <div className="flex items-center gap-1.5 shrink-0">
         <span className="text-[10px] text-orbit-white font-mono">
-          {typeof point.value === 'number' ? point.value.toFixed(point.value > 100 ? 1 : 5) : point.value}
+          {val}
           {unit && <span className="text-orbit-dim ml-0.5">{unit}</span>}
         </span>
-        <ProvenanceBadge label={point.label as DataLabel} />
+        <Badge label={point.label as DataLabel} />
       </div>
     </div>
   );
 }
 
-function ObservationCapabilityCard({ catalog }: { catalog: SatelliteCatalogEntry }) {
-  const cap = catalog.obsCapability;
-  if (cap.type === 'NONE') {
-    return (
-      <div className="text-[10px] text-orbit-dim/60 border border-space-border/40 rounded-lg px-3 py-2 flex items-center gap-2">
-        <Satellite size={12} className="shrink-0 text-orbit-dim/40" />
-        <span>No public observation feed for this satellite.</span>
-      </div>
-    );
-  }
-  const Icon = cap.type === 'LIVE_VIDEO' ? Video : cap.type === 'RADIO' ? Radio : ImageIcon;
-  const titles: Record<string, string> = {
-    LIVE_VIDEO: 'Live video available from this satellite',
-    NEAR_REAL_TIME: 'Near-real-time imagery available',
-    RADIO: 'Radio signals observed via SatNOGS',
-  };
+// ─── Ground track section ─────────────────────────────────────────────────────
+
+function GroundTrackSection({ os }: { os: SatelliteOrbitalState }) {
   return (
-    <div className="glass-subtle rounded-lg p-3 flex items-start gap-2.5 border border-orbit-blue/15">
-      <Icon size={14} className="text-orbit-blue shrink-0 mt-0.5" />
-      <div className="min-w-0">
-        <div className="text-[11px] text-orbit-white leading-tight">{titles[cap.type]}</div>
-        {cap.source && <div className="text-[9px] text-orbit-dim mt-0.5">Source: {cap.source}</div>}
-        {cap.url && (
+    <div>
+      <SectionHeading icon={Globe} text="Where does it fly over Earth?" />
+      <GroundTrackMap
+        track={os.derived.groundTrack}
+        current={os.derived.position}
+      />
+      <p className="text-[10px] text-orbit-dim/60 leading-relaxed mt-2">
+        This line shows the path the satellite traces over Earth's surface during one orbit. The green dot marks its current position.
+      </p>
+      <div className="flex items-center justify-between mt-1.5">
+        <span className="text-[9px] text-orbit-dim/50 font-mono">
+          {os.derived.position.lat.toFixed(1)}° lat, {os.derived.position.lon.toFixed(1)}° lon
+        </span>
+        <Badge label="DERIVED" />
+      </div>
+    </div>
+  );
+}
+
+// ─── Signals / observation section ────────────────────────────────────────────
+
+function SignalsSection({
+  catalog,
+  satnogs,
+}: {
+  catalog: SatelliteCatalogEntry;
+  satnogs?: ApiResponse['satnogs'];
+}) {
+  const cap = catalog.obsCapability;
+  const hasVideo = cap.type === 'LIVE_VIDEO';
+  const hasImagery = cap.type === 'NEAR_REAL_TIME';
+  const hasRadio = cap.type === 'RADIO';
+  const hasSatnogsData = satnogs?.available;
+
+  return (
+    <div>
+      <SectionHeading icon={Signal} text="Can we see its signals?" />
+
+      {/* Live video */}
+      {hasVideo && (
+        <div className="glass-subtle rounded-xl p-3 border border-emerald-400/20 mb-2">
+          <div className="flex items-center gap-2 mb-1.5">
+            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+            <span className="text-[11px] font-medium text-emerald-400">Live video available</span>
+          </div>
+          <p className="text-[10px] text-orbit-dim/80 leading-relaxed mb-2">
+            You can watch a live video feed from cameras aboard this spacecraft right now.
+          </p>
+          {cap.url && (
+            <a
+              href={cap.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-[10px] text-emerald-400 hover:text-emerald-300 font-medium group"
+            >
+              <Video size={11} />
+              <span className="group-hover:underline">Watch the live stream</span>
+              <ExternalLink size={9} />
+            </a>
+          )}
+          <div className="mt-1.5 text-[8px] text-orbit-dim/50">Source: {cap.source}</div>
+        </div>
+      )}
+
+      {/* Near-real-time imagery */}
+      {hasImagery && (
+        <div className="glass-subtle rounded-xl p-3 border border-orbit-blue/20 mb-2">
+          <div className="flex items-center gap-2 mb-1.5">
+            <ImageIcon size={11} className="text-orbit-blue shrink-0" />
+            <span className="text-[11px] font-medium text-orbit-white">Near-real-time imagery</span>
+          </div>
+          <p className="text-[10px] text-orbit-dim/80 leading-relaxed mb-2">
+            Images captured by this satellite are made publicly available within hours of being taken.
+          </p>
+          {cap.url && (
+            <a
+              href={cap.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-[10px] text-orbit-blue hover:text-orbit-accent group"
+            >
+              <ExternalLink size={9} />
+              <span className="group-hover:underline">Browse imagery</span>
+            </a>
+          )}
+          <div className="mt-1.5 text-[8px] text-orbit-dim/50">Source: {cap.source}</div>
+        </div>
+      )}
+
+      {/* SatNOGS radio data */}
+      {hasSatnogsData && satnogs && (
+        <div className="glass-subtle rounded-xl p-3 border border-space-border/40 mb-2">
+          <div className="flex items-center gap-2 mb-1.5">
+            <Radio size={11} className="text-orbit-blue/80 shrink-0" />
+            <span className="text-[11px] font-medium text-orbit-white">Radio observations recorded</span>
+            <Badge label="OBSERVED" />
+          </div>
+          <p className="text-[10px] text-orbit-dim/80 leading-relaxed mb-2">
+            Amateur and professional ground stations around the world have recorded radio signals from this satellite via the SatNOGS network.
+          </p>
+          {satnogs.transmitters.length > 0 && (
+            <div className="space-y-1 mb-2">
+              <div className="text-[8px] text-orbit-dim/50 tracking-wider uppercase mb-1">Known signals</div>
+              {satnogs.transmitters.slice(0, 2).map((tx, i) => (
+                <div key={i} className="flex items-center justify-between text-[10px]">
+                  <span className="text-orbit-dim/80 truncate max-w-[130px]">{tx.description}</span>
+                  <span className="text-orbit-white font-mono text-[9px]">{fmtFreq(tx.frequencyHz)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          {satnogs.observations[0] && (
+            <div className="text-[9px] text-orbit-dim/60">
+              Latest observation: {satnogs.observations[0].station}
+              {satnogs.observations[0].signalDbm !== null && ` · ${satnogs.observations[0].signalDbm} dBm`}
+            </div>
+          )}
           <a
-            href={cap.url}
+            href={`https://db.satnogs.org/satellite/${catalog.noradId}/`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-[10px] text-orbit-blue hover:text-orbit-accent mt-1.5 group"
+            className="inline-flex items-center gap-1 text-[9px] text-orbit-blue/60 hover:text-orbit-blue mt-2"
           >
-            <ExternalLink size={10} />
-            <span className="group-hover:underline">
-              {cap.type === 'LIVE_VIDEO' ? 'Watch live stream' : 'Open data portal'}
-            </span>
+            <ExternalLink size={8} />
+            View on SatNOGS DB
           </a>
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* No public signals */}
+      {!hasVideo && !hasImagery && !hasSatnogsData && (
+        <div className="rounded-xl px-3 py-3 border border-dashed border-space-border/40 text-[10px] text-orbit-dim/60 leading-relaxed">
+          No public observation feeds, imagery, or radio recordings are currently available for this satellite.
+          This is normal for many operational satellites — it doesn&apos;t mean anything is wrong.
+        </div>
+      )}
+
+      {/* Radio capability but no satnogs data */}
+      {hasRadio && !hasSatnogsData && (
+        <div className="rounded-xl px-3 py-3 border border-dashed border-orbit-blue/20 text-[10px] text-orbit-dim/60 leading-relaxed">
+          This satellite has known radio transmitters, but no recent SatNOGS observations were found in the public database at this time.
+        </div>
+      )}
     </div>
   );
 }
 
-function SatNOGSPanel({ satnogs }: { satnogs: NonNullable<ApiResponse['satnogs']> }) {
-  if (!satnogs.available) {
-    return (
-      <div className="text-[10px] text-orbit-dim/60 border border-dashed border-space-border/40 rounded-lg px-3 py-2">
-        <div className="font-medium text-orbit-dim/80 mb-0.5">SatNOGS Data</div>
-        No SatNOGS observations available for this satellite.
-      </div>
-    );
-  }
+// ─── How it stays in space ────────────────────────────────────────────────────
 
-  const latestObs = satnogs.observations[0];
-
+function OrbitalMechanicsExplainer() {
   return (
-    <div className="glass-subtle rounded-lg overflow-hidden border border-space-border/40">
-      <div className="px-3 py-2 border-b border-space-border/40">
-        <div className="flex items-center gap-1.5">
-          <Radio size={11} className="text-orbit-blue" />
-          <span className="text-[9px] tracking-widest font-medium text-orbit-dim">SATNOGS OBSERVATIONS</span>
-          <ProvenanceBadge label="OBSERVED" />
-        </div>
-      </div>
-      <div className="px-3 py-2 space-y-2">
-        {satnogs.transmitters.length > 0 && (
-          <div>
-            <div className="text-[8px] text-orbit-dim/60 tracking-wider mb-1">TRANSMITTERS</div>
-            {satnogs.transmitters.slice(0, 2).map((tx, i) => (
-              <div key={i} className="flex items-center justify-between py-1 border-b border-space-border/20 last:border-0">
-                <span className="text-[10px] text-orbit-dim truncate max-w-[120px]">{tx.description}</span>
-                <span className="text-[9px] text-orbit-white font-mono">{fmtFreq(tx.frequencyHz)}</span>
-              </div>
-            ))}
-          </div>
-        )}
-        {latestObs && (
-          <div>
-            <div className="text-[8px] text-orbit-dim/60 tracking-wider mb-1">LATEST OBSERVATION</div>
-            <div className="text-[10px] text-orbit-dim">
-              <div className="flex items-center justify-between">
-                <span className="text-orbit-white/90 truncate">{latestObs.station}</span>
-                <span className={`px-1 py-0.5 rounded text-[8px] ${latestObs.status === 'good' ? 'text-emerald-400' : 'text-red-400'}`}>
-                  {latestObs.status.toUpperCase()}
-                </span>
-              </div>
-              {latestObs.signalDbm !== null && (
-                <div className="text-orbit-dim/70 mt-0.5">
-                  Signal: <span className="font-mono text-orbit-white/80">{latestObs.signalDbm} dBm</span>
-                </div>
-              )}
-              <div className="text-[8px] text-orbit-dim/50 mt-0.5">
-                {new Date(latestObs.time).toUTCString().slice(0, 25)} UTC
-              </div>
-            </div>
-          </div>
-        )}
-        <a
-          href={`https://db.satnogs.org/satellite/${satnogs.observations[0]?.station ?? ''}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-1 text-[9px] text-orbit-blue/70 hover:text-orbit-blue mt-1"
-        >
-          <ExternalLink size={9} />
-          View on SatNOGS DB
-        </a>
+    <div className="glass-subtle rounded-xl p-4 border border-space-border/40 space-y-2">
+      <p className="text-[11px] text-orbit-dim leading-relaxed">
+        Satellites stay in orbit because they are moving sideways extremely fast while Earth's gravity continuously pulls them downward.
+      </p>
+      <p className="text-[11px] text-orbit-dim leading-relaxed">
+        Rather than falling straight down, they are essentially <span className="text-orbit-white/80">falling around Earth</span> — the curve of their fall matches the curve of Earth's surface, so they never hit the ground.
+      </p>
+      <p className="text-[11px] text-orbit-dim leading-relaxed">
+        The higher the orbit, the slower the satellite needs to travel to maintain it. Low Earth orbit satellites travel at around 7–8 km/s; geostationary satellites at ~3 km/s.
+      </p>
+      <div className="text-[8px] text-orbit-dim/50 mt-1">
+        Source: NASA Space Place · spaceplace.nasa.gov
       </div>
     </div>
   );
@@ -284,6 +421,7 @@ export function SatelliteDetailPanel({ id, onBack, onAskAI }: SatelliteDetailPan
   const [data, setData] = useState<ApiResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showOrbitalMechanics, setShowOrbitalMechanics] = useState(false);
   const [showTechnical, setShowTechnical] = useState(false);
 
   useEffect(() => {
@@ -291,6 +429,8 @@ export function SatelliteDetailPanel({ id, onBack, onAskAI }: SatelliteDetailPan
     setLoading(true);
     setError(null);
     setData(null);
+    setShowTechnical(false);
+    setShowOrbitalMechanics(false);
     fetch(`/api/satellites/${encodeURIComponent(id)}`)
       .then(async (res) => {
         const json: ApiResponse = await res.json();
@@ -300,27 +440,54 @@ export function SatelliteDetailPanel({ id, onBack, onAskAI }: SatelliteDetailPan
         }
         setData(json);
       })
-      .catch(() => {
-        if (!cancelled) setError('Could not reach the Orbital server.');
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
+      .catch(() => { if (!cancelled) setError('Could not reach the Orbital server.'); })
+      .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [id]);
+
+  const handleAskAI = useCallback(() => {
+    if (!data?.orbitalState) return;
+    const os = data.orbitalState;
+    const sn = data.satnogs;
+    onAskAI({
+      noradId: os.noradId,
+      name: os.name,
+      altitudeKm: os.derived.altitudeKm.value,
+      velocityKmS: os.derived.velocityKmS.value,
+      periodMin: os.derived.periodMin.value,
+      inclinationDeg: os.elements.inclination.value,
+      eccentricity: os.elements.eccentricity.value,
+      lat: os.derived.position.lat,
+      lon: os.derived.position.lon,
+      epoch: os.epoch,
+      dataQuality: os.dataQuality,
+      hasObservations: !!(sn?.available && sn.observations.length > 0),
+      anomalyFlags: [],
+    });
+  }, [data, onAskAI]);
 
   const os = data?.orbitalState;
   const cat = data?.catalog;
   const sn = data?.satnogs;
 
+  // Derive educational profile once we have live data
+  const edu = (cat && os)
+    ? getSatelliteEducationProfile(
+        cat.id,
+        cat.name,
+        os.derived.altitudeKm.value,
+        os.derived.periodMin.value,
+      )
+    : null;
+
   return (
-    <div className="absolute top-[110px] right-[15px] z-20 w-[300px] animate-slide-up">
+    <div className="absolute top-[110px] right-[15px] z-20 w-[310px] animate-slide-up">
       <div
         className="glass rounded-xl border border-space-border overflow-hidden flex flex-col"
-        style={{ maxHeight: 'min(640px, calc(100vh - 180px))' }}
+        style={{ maxHeight: 'min(680px, calc(100vh - 175px))' }}
       >
-        {/* ── Back header ── */}
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-space-border shrink-0">
+        {/* ── Back button ── */}
+        <div className="flex items-center px-4 py-3 border-b border-space-border/60 shrink-0">
           <button
             onClick={onBack}
             className="flex items-center gap-1.5 text-[10px] text-orbit-dim hover:text-orbit-white tracking-widest transition-colors"
@@ -330,171 +497,247 @@ export function SatelliteDetailPanel({ id, onBack, onAskAI }: SatelliteDetailPan
           </button>
         </div>
 
-        {/* ── Scrollable content ── */}
-        <div className="overflow-y-auto flex-1 p-4 space-y-4">
+        {/* ── Scrollable body ── */}
+        <div className="overflow-y-auto flex-1 space-y-5 p-4">
 
-          {/* Loading */}
+          {/* ── Loading ── */}
           {loading && (
-            <div className="flex flex-col items-center justify-center py-10 gap-3">
+            <div className="flex flex-col items-center justify-center py-12 gap-3">
               <div className="w-6 h-6 rounded-full border border-orbit-blue/30 border-t-orbit-blue animate-spin" />
-              <div className="text-[10px] text-orbit-dim tracking-wider">Loading satellite data…</div>
+              <span className="text-[10px] text-orbit-dim tracking-wider">Loading satellite data…</span>
             </div>
           )}
 
-          {/* Error (no data at all) */}
+          {/* ── Error (no data) ── */}
           {!loading && error && !os && (
-            <div className="p-3 rounded-lg bg-red-400/5 border border-red-400/20 flex items-start gap-2">
-              <AlertTriangle size={13} className="text-red-400 shrink-0 mt-0.5" />
-              <div className="text-[11px] text-red-300 leading-relaxed">{error}</div>
+            <div className="p-3 rounded-xl bg-red-400/5 border border-red-400/20 flex items-start gap-2">
+              <AlertTriangle size={14} className="text-red-400 shrink-0 mt-0.5" />
+              <div className="text-[11px] text-red-300/90 leading-relaxed">{error}</div>
             </div>
           )}
 
-          {/* Content */}
-          {!loading && cat && os && (
+          {/* ── Main content ── */}
+          {!loading && cat && os && edu && (
             <>
-              {/* ── Satellite identity ── */}
+              {/* ── 1. Identity header ── */}
               <div>
-                {cat.agency && (
-                  <div className="text-[9px] text-orbit-dim/70 tracking-widest uppercase mb-0.5">{cat.agency}</div>
+                <div className="text-[9px] text-orbit-blue/70 font-semibold tracking-[0.2em] uppercase mb-0.5">
+                  {edu.category}
+                </div>
+                <h2 className="text-[18px] font-light text-orbit-white leading-tight tracking-wide">
+                  {cat.shortName || cat.name}
+                </h2>
+                {cat.shortName && cat.shortName !== cat.name && (
+                  <div className="text-[10px] text-orbit-dim/60 leading-tight mt-0.5">{cat.name}</div>
                 )}
-                <div className="text-xl font-light text-orbit-white leading-tight">{cat.name}</div>
-                <div className="text-[9px] text-orbit-dim/60 font-mono mt-0.5">NORAD {os.noradId}</div>
-                {cat.description && (
-                  <p className="text-[11px] text-orbit-dim leading-relaxed mt-2">{cat.description}</p>
+                <div className="text-[12px] text-orbit-dim/80 italic mt-1 leading-snug">
+                  {edu.tagline}
+                </div>
+                {cat.agency && (
+                  <div className="text-[9px] text-orbit-dim/50 tracking-wider mt-1.5 font-mono">
+                    {cat.agency} · NORAD {os.noradId}
+                  </div>
                 )}
               </div>
 
-              {/* Stale data warning */}
+              {/* Stale data notice */}
               {os.dataQuality === 'ESTIMATED' && (
                 <div className="p-2.5 rounded-lg bg-amber-400/5 border border-amber-400/20 flex items-start gap-2">
                   <AlertTriangle size={12} className="text-amber-400 shrink-0 mt-0.5" />
-                  <div className="text-[10px] text-amber-300/90 leading-relaxed">{os.fallbackReason}</div>
+                  <div className="text-[10px] text-amber-300/80 leading-relaxed">{os.fallbackReason}</div>
                 </div>
               )}
 
-              {/* ── Hero stats — public-friendly ── */}
-              <div className="space-y-1">
-                <div className="text-[9px] text-orbit-dim/70 tracking-widest">WHERE IS IT · HOW IS IT MOVING</div>
-                <div className="grid grid-cols-2 gap-1.5">
-                  <StatCard
-                    label="Altitude above Earth"
-                    value={fmtAlt(os.derived.altitudeKm.value)}
-                    sub={altitudeFact(os.derived.altitudeKm.value)}
-                    badge="DERIVED"
-                  />
-                  <StatCard
-                    label="Orbital speed"
-                    value={fmtSpeed(os.derived.velocityKmS.value)}
-                    sub="That's fast enough to circle Earth in roughly 90 minutes."
-                    badge="DERIVED"
-                  />
-                  <StatCard
-                    label="Time for one orbit"
-                    value={fmtPeriod(os.derived.periodMin.value)}
-                    sub={`About ${orbitsPerDay(os.derived.periodMin.value)} orbits every day.`}
-                    badge="DERIVED"
-                  />
-                  <StatCard
-                    label="Orbital tilt"
-                    value={`${os.elements.inclination.value.toFixed(1)}°`}
-                    sub={inclinationFact(os.elements.inclination.value)}
-                    badge="OBSERVED"
-                  />
-                </div>
+              {/* ── 2. What is it? ── */}
+              <div>
+                <SectionHeading icon={BookOpen} text="What is it?" />
+                <p className="text-[12px] text-orbit-dim leading-relaxed">{edu.whatIsIt}</p>
               </div>
 
-              {/* ── Ground track ── */}
+              {/* ── 3. What does it do? ── */}
               <div>
-                <div className="text-[9px] text-orbit-dim/70 tracking-widest mb-1.5">GROUND TRACK · DERIVED</div>
-                <GroundTrackMap
-                  track={os.derived.groundTrack}
-                  current={os.derived.position}
+                <SectionHeading icon={Orbit} text="What does it do?" />
+                <p className="text-[12px] text-orbit-dim leading-relaxed">{edu.whatDoesItDo}</p>
+              </div>
+
+              {/* ── 4. Four stat cards ── */}
+              <div className="grid grid-cols-2 gap-2">
+                <StatCard
+                  icon={MapPin}
+                  label="How high is it?"
+                  value={fmtAlt(os.derived.altitudeKm.value)}
+                  caption={`${fmtAltFull(os.derived.altitudeKm.value)} above Earth's surface`}
+                  badge="DERIVED"
                 />
-                <div className="flex items-center justify-between mt-1.5">
-                  <span className="text-[8px] text-orbit-dim/50">
-                    Current: {os.derived.position.lat.toFixed(1)}°, {os.derived.position.lon.toFixed(1)}°
-                  </span>
-                  <ProvenanceBadge label="DERIVED" />
-                </div>
+                <StatCard
+                  icon={Zap}
+                  label="How fast is it?"
+                  value={fmtSpeed(os.derived.velocityKmS.value)}
+                  caption={speedCaption(os.derived.velocityKmS.value)}
+                  badge="DERIVED"
+                />
+                <StatCard
+                  icon={RotateCcw}
+                  label="One orbit takes…"
+                  value={fmtPeriod(os.derived.periodMin.value)}
+                  caption={`Circles Earth ${orbitsPerDayStr(os.derived.periodMin.value)}`}
+                  badge="DERIVED"
+                />
+                <StatCard
+                  icon={Globe}
+                  label="Orbit tilt"
+                  value={`${os.elements.inclination.value.toFixed(1)}°`}
+                  caption={inclinationCaption(os.elements.inclination.value)}
+                  badge="OBSERVED"
+                />
               </div>
 
-              {/* ── Observation capability ── */}
+              {/* ── 5. Did You Know? ── */}
+              <DidYouKnowCard text={edu.didYouKnow} />
+
+              {/* ── 6. Why does it matter? ── */}
               <div>
-                <div className="text-[9px] text-orbit-dim/70 tracking-widest mb-1.5">OBSERVATION CAPABILITY</div>
-                <ObservationCapabilityCard catalog={cat} />
+                <SectionHeading icon={Sparkles} text="Why does it matter?" />
+                <p className="text-[12px] text-orbit-dim leading-relaxed">{edu.whyItMatters}</p>
+                {edu.extraNote && (
+                  <p className="text-[11px] text-orbit-dim/70 leading-relaxed mt-2 italic">{edu.extraNote}</p>
+                )}
               </div>
 
-              {/* ── SatNOGS data ── */}
-              {sn !== undefined && (
-                <div>
-                  <SatNOGSPanel satnogs={sn} />
-                </div>
-              )}
+              {/* ── 7. Ground track ── */}
+              <GroundTrackSection os={os} />
 
-              {/* ── Technical details (collapsible) ── */}
+              {/* ── 8. Signals / observations ── */}
+              <SignalsSection catalog={cat} satnogs={sn} />
+
+              {/* ── 9. How does it stay in space? (collapsible) ── */}
               <div>
                 <button
-                  onClick={() => setShowTechnical((v) => !v)}
-                  className="flex items-center gap-1.5 text-[10px] text-orbit-dim hover:text-orbit-white tracking-widest transition-colors w-full"
+                  onClick={() => setShowOrbitalMechanics(v => !v)}
+                  className="w-full flex items-center justify-between text-[10px] text-orbit-dim hover:text-orbit-white tracking-widest transition-colors py-0.5"
                 >
-                  {showTechnical ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
-                  TECHNICAL ORBITAL DATA
+                  <div className="flex items-center gap-2">
+                    <RotateCcw size={10} className="text-orbit-blue/60" />
+                    <span>HOW DOES IT STAY IN SPACE?</span>
+                  </div>
+                  {showOrbitalMechanics ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
+                </button>
+                {showOrbitalMechanics && (
+                  <div className="mt-2">
+                    <OrbitalMechanicsExplainer />
+                  </div>
+                )}
+              </div>
+
+              {/* ── 10. Technical details (collapsible) ── */}
+              <div>
+                <button
+                  onClick={() => setShowTechnical(v => !v)}
+                  className="w-full flex items-center justify-between text-[10px] text-orbit-dim hover:text-orbit-white tracking-widest transition-colors py-0.5"
+                >
+                  <div className="flex items-center gap-2">
+                    <Signal size={10} className="text-orbit-blue/60" />
+                    <span>TECHNICAL DETAILS</span>
+                  </div>
+                  {showTechnical ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
                 </button>
                 {showTechnical && (
-                  <div className="mt-2 space-y-0 border border-space-border/30 rounded-lg overflow-hidden">
-                    <div className="px-3 py-2 bg-space-deep/30">
-                      <div className="text-[8px] text-orbit-dim/60 tracking-wider mb-0.5">DATA EPOCH</div>
+                  <div className="mt-2 rounded-xl overflow-hidden border border-space-border/30 bg-space-deep/20">
+                    <div className="px-3 py-2 border-b border-space-border/30">
+                      <div className="text-[8px] text-orbit-dim/50 tracking-wider uppercase mb-0.5">Orbital element epoch</div>
                       <div className="text-[9px] text-orbit-dim font-mono">{os.epoch}</div>
                     </div>
                     <div className="px-3 py-2 divide-y divide-space-border/20">
-                      <DPRow label="Eccentricity" point={os.elements.eccentricity} />
-                      <DPRow label="Mean motion" point={os.elements.meanMotion} unit="rev/day" />
-                      <DPRow label="RAAN" point={os.elements.raan} unit="°" />
-                      <DPRow label="Arg. of perigee" point={os.elements.argPerigee} unit="°" />
-                      <DPRow label="Apogee" point={os.derived.apogeeKm} unit="km" />
-                      <DPRow label="Perigee" point={os.derived.perigeeKm} unit="km" />
-                      <DPRow label="Semi-major axis" point={{ value: Math.round(os.derived.apogeeKm.value + os.derived.perigeeKm.value) / 2 + 6371, label: 'DERIVED', source: 'CelesTrak' }} unit="km" />
+                      <TechRow
+                        label="NORAD Catalog ID"
+                        point={{ value: os.noradId, label: 'OBSERVED', source: 'CelesTrak' }}
+                      />
+                      <TechRow
+                        label="Inclination"
+                        point={os.elements.inclination}
+                        unit="°"
+                      />
+                      <TechRow
+                        label="Eccentricity"
+                        point={os.elements.eccentricity}
+                      />
+                      <TechRow
+                        label="Mean motion"
+                        point={os.elements.meanMotion}
+                        unit=" rev/day"
+                      />
+                      <TechRow
+                        label="RAAN (Right ascension of asc. node)"
+                        point={os.elements.raan}
+                        unit="°"
+                      />
+                      <TechRow
+                        label="Argument of perigee"
+                        point={os.elements.argPerigee}
+                        unit="°"
+                      />
+                      <TechRow
+                        label="Apogee (highest point)"
+                        point={os.derived.apogeeKm}
+                        unit=" km"
+                      />
+                      <TechRow
+                        label="Perigee (lowest point)"
+                        point={os.derived.perigeeKm}
+                        unit=" km"
+                      />
+                      <TechRow
+                        label="Orbital period"
+                        point={os.derived.periodMin}
+                        unit=" min"
+                      />
+                      <TechRow
+                        label="Mean altitude"
+                        point={os.derived.altitudeKm}
+                        unit=" km"
+                      />
                     </div>
-                    <div className="px-3 py-2 bg-space-deep/20 text-[8px] text-orbit-dim/50">
-                      Source: CelesTrak General Perturbations data · celestrak.org
+                    <div className="px-3 py-2 text-[8px] text-orbit-dim/40 border-t border-space-border/20">
+                      Source: CelesTrak General Perturbations (GP) data · celestrak.org
                     </div>
                   </div>
                 )}
               </div>
 
-              {/* ── Mission link ── */}
+              {/* ── 11. Mission link ── */}
               {cat.missionId && (
                 <Link
                   href={`/missions/${cat.missionId}`}
-                  className="flex items-center justify-center gap-2 text-[11px] text-orbit-blue hover:text-orbit-accent tracking-wider py-2.5 rounded-lg bg-orbit-blue/10 border border-orbit-blue/20 transition-colors"
+                  className="flex items-center justify-center gap-2 text-[11px] text-orbit-blue hover:text-orbit-accent tracking-wider py-2.5 rounded-xl bg-orbit-blue/10 border border-orbit-blue/20 transition-colors"
                 >
                   <Globe size={12} />
                   VIEW FULL MISSION
                 </Link>
               )}
 
-              {/* ── Ask AI ── */}
+              {/* ── 12. Ask AI ── */}
               <button
-                onClick={() => onAskAI({
-                  noradId: os.noradId,
-                  name: os.name,
-                  altitudeKm: os.derived.altitudeKm.value,
-                  velocityKmS: os.derived.velocityKmS.value,
-                  periodMin: os.derived.periodMin.value,
-                  inclinationDeg: os.elements.inclination.value,
-                  eccentricity: os.elements.eccentricity.value,
-                  lat: os.derived.position.lat,
-                  lon: os.derived.position.lon,
-                  epoch: os.epoch,
-                  dataQuality: os.dataQuality,
-                  hasObservations: !!(sn?.available && sn.observations.length > 0),
-                  anomalyFlags: [],
-                })}
-                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-purple-400/10 border border-purple-400/30 text-purple-400 hover:bg-purple-400/15 transition-colors text-[11px] tracking-wider"
+                onClick={handleAskAI}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-purple-400/10 border border-purple-400/30 text-purple-400 hover:bg-purple-400/15 transition-colors text-[11px] tracking-wider"
               >
                 <Sparkles size={12} />
                 ASK AI ABOUT THIS SATELLITE
               </button>
+
+              {/* ── 13. Sources ── */}
+              <div className="pt-1 pb-2 border-t border-space-border/30">
+                <div className="text-[8px] text-orbit-dim/40 tracking-wider uppercase mb-1.5">Educational sources</div>
+                <div className="space-y-0.5">
+                  {edu.sources.map((src, i) => (
+                    <div key={i} className="text-[9px] text-orbit-dim/50 leading-snug">{src}</div>
+                  ))}
+                  {!hasCuratedProfile(cat.id) && (
+                    <div className="text-[9px] text-orbit-dim/40 leading-snug italic">
+                      Generic profile — detailed curated content not yet available for this satellite.
+                    </div>
+                  )}
+                </div>
+              </div>
             </>
           )}
         </div>
