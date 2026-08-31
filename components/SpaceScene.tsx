@@ -876,7 +876,7 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
           if (ring) ring.position.copy(pPos);
 
           const camDist = camera.position.distanceTo(new THREE.Vector3(wx, wy, wz));
-          const showModel = camDist < 4;
+          const showModel = camDist < 2;
           sprite.visible = !showModel;
           model.visible  = showModel;
           if (showModel) { model.rotation.y += 0.005; model.lookAt(pPos); }
