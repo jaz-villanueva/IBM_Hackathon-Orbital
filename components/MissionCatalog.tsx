@@ -2,6 +2,7 @@
 
 import { Mission, MissionStatus, MissionType, Destination } from '@/lib/types';
 import { MissionCard } from './MissionCard';
+import { PlanetIcon } from './PlanetIcon';
 import { useState, useMemo } from 'react';
 import { Filter, ChevronDown, X } from 'lucide-react';
 
@@ -110,7 +111,10 @@ export function MissionCatalog({ missions, onMissionSelect, initialDestination }
                   : 'text-orbit-dim hover:text-orbit-white glass-subtle border border-transparent'
               }`}
             >
-              {d.emoji} {d.label}
+              <span className="inline-flex items-center gap-1.5">
+                {d.value ? <PlanetIcon planet={d.value} size={12} /> : <span>{d.emoji}</span>}
+                {d.label}
+              </span>
             </button>
           ))}
         </div>
