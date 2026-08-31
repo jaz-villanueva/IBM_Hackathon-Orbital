@@ -15,9 +15,15 @@ interface TimelineItem {
 }
 
 const DEST_COLORS: Record<string, string> = {
-  earth: 'text-blue-400 border-blue-400/30',
-  moon: 'text-slate-300 border-slate-400/30',
-  mars: 'text-orange-400 border-orange-400/30',
+  mercury: 'text-stone-400 border-stone-400/30',
+  venus:   'text-yellow-600 border-yellow-600/30',
+  earth:   'text-blue-400 border-blue-400/30',
+  moon:    'text-slate-300 border-slate-400/30',
+  mars:    'text-orange-400 border-orange-400/30',
+  jupiter: 'text-orange-300 border-orange-300/30',
+  saturn:  'text-yellow-300 border-yellow-300/30',
+  uranus:  'text-cyan-300 border-cyan-300/30',
+  neptune: 'text-blue-300 border-blue-300/30',
 };
 
 const EVENT_TYPE_COLORS: Record<string, string> = {
@@ -31,7 +37,7 @@ const EVENT_TYPE_COLORS: Record<string, string> = {
 };
 
 export default function TimelinePage() {
-  const [filter, setFilter] = useState<'all' | 'earth' | 'moon' | 'mars'>('all');
+  const [filter, setFilter] = useState<'all' | 'mercury' | 'venus' | 'earth' | 'moon' | 'mars' | 'jupiter' | 'saturn' | 'uranus' | 'neptune'>('all');
 
   const timelineItems: TimelineItem[] = useMemo(() => {
     const items: TimelineItem[] = [];
@@ -73,18 +79,29 @@ export default function TimelinePage() {
             <p className="text-orbit-dim text-sm">Key events across all missions — from launches to science discoveries.</p>
 
             {/* Filter */}
-            <div className="flex gap-2 mt-5">
-              {(['all', 'earth', 'moon', 'mars'] as const).map((f) => (
+            <div className="flex gap-2 mt-5 flex-wrap">
+              {([
+                { key: 'all',     label: '🌌 ALL' },
+                { key: 'mercury', label: '☿ MERCURY' },
+                { key: 'venus',   label: '♀ VENUS' },
+                { key: 'earth',   label: '🌎 EARTH' },
+                { key: 'moon',    label: '🌙 MOON' },
+                { key: 'mars',    label: '🔴 MARS' },
+                { key: 'jupiter', label: '🟠 JUPITER' },
+                { key: 'saturn',  label: '🪐 SATURN' },
+                { key: 'uranus',  label: '🔵 URANUS' },
+                { key: 'neptune', label: '💙 NEPTUNE' },
+              ] as const).map(({ key, label }) => (
                 <button
-                  key={f}
-                  onClick={() => setFilter(f)}
+                  key={key}
+                  onClick={() => setFilter(key)}
                   className={`px-3 py-1.5 text-xs tracking-wider rounded transition-colors ${
-                    filter === f
+                    filter === key
                       ? 'bg-orbit-blue/20 text-orbit-blue border border-orbit-blue/30'
                       : 'text-orbit-dim hover:text-orbit-white glass-subtle border border-transparent'
                   }`}
                 >
-                  {f === 'all' ? '🌌 ALL' : f === 'earth' ? '🌎 EARTH' : f === 'moon' ? '🌙 MOON' : '🔴 MARS'}
+                  {label}
                 </button>
               ))}
             </div>

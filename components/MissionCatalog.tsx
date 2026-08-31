@@ -38,6 +38,8 @@ const TYPE_OPTIONS: { value: MissionType | ''; label: string }[] = [
 
 const DEST_OPTIONS: { value: Destination | ''; label: string; emoji: string }[] = [
   { value: '', label: 'All Destinations', emoji: '🌌' },
+  { value: 'mercury', label: 'Mercury', emoji: '☿' },
+  { value: 'venus', label: 'Venus', emoji: '♀' },
   { value: 'earth', label: 'Earth', emoji: '🌎' },
   { value: 'moon', label: 'Moon', emoji: '🌙' },
   { value: 'mars', label: 'Mars', emoji: '🔴' },
