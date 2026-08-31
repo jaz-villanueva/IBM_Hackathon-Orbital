@@ -50,6 +50,7 @@ function HomePageInner() {
 
   const [selectedPlanet, setSelectedPlanet] = useState<string | null>(null);
   const [selectedMission, setSelectedMission] = useState<Mission | null>(null);
+  const [focusedMissionId, setFocusedMissionId] = useState<string | null>(null);
   const [aiOpen, setAiOpen] = useState(false);
   /** Ref to the hero / 3D-map section so we can scroll back to it. */
   const heroRef = useRef<HTMLElement>(null);
@@ -199,6 +200,7 @@ function HomePageInner() {
   const handlePlanetSelect = useCallback((planet: string) => {
     const dest = planet === '' || planet === 'home' ? null : planet;
     setSelectedSatelliteId(null);
+    setFocusedMissionId(null);
     setSelectedPlanet(prev => {
       if (dest !== null && prev === dest) {
         setSelectedMission(null);
@@ -210,14 +212,15 @@ function HomePageInner() {
   }, []);
 
   /**
-   * Select a mission from the Active Missions widget.
-   * Sets the mission in parent state so SpaceScene can respond via prop.
-   * Does NOT navigate to /missions/[id].
+   * Select a mission from the Planet Widget sidebar.
+   * Focuses the mission's spacecraft on the 3D solar map by driving
+   * SpaceScene's focusedMissionId prop — no page navigation.
    */
   const handleWidgetMissionSelect = useCallback((mission: Mission) => {
     const dest = mission.destination === 'deep-space' ? null : mission.destination;
     if (dest) setSelectedPlanet(dest);
     setSelectedMission(mission);
+    setFocusedMissionId(mission.id);
   }, []);
 
   // Called by RiskHUD when user clicks "Analyze with AI" on a conjunction card.
@@ -310,6 +313,7 @@ function HomePageInner() {
             extraOrbiters={extraOrbiters}
             onObjectSelect={handleObjectSelect}
             focusedOrbiterId={selectedPlanet === 'earth' ? selectedSatelliteId : null}
+            focusedMissionId={selectedPlanet !== 'earth' ? focusedMissionId : null}
           />
         </div>
 
@@ -399,7 +403,7 @@ function HomePageInner() {
                       className={`w-full flex items-center gap-2 text-[11px] text-left rounded px-1 py-1 -mx-1 transition-colors hover:bg-white/5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-orbit-blue/50 ${
                         selectedMission?.id === m.id ? 'text-orbit-white' : 'text-orbit-dim hover:text-orbit-white'
                       }`}
-                      aria-label={`Select ${m.shortName || m.name} on the 3D map`}
+                      aria-label={`Focus ${m.shortName || m.name} on the solar map`}
                     >
                       <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${
                         selectedMission?.id === m.id ? 'bg-orbit-blue animate-pulse' : 'bg-emerald-400 animate-pulse'
