@@ -73,13 +73,61 @@ interface SpaceSceneProps {
 // ─── Scene constants ──────────────────────────────────────────────────────────
 
 /**
- * Scale: km → scene units for moon orbit radii.
- * Chosen so Luna's orbit (~384 400 km) maps to ~1.2 scene units around Earth
- * (which sits at ~10 scene units from Sun).
- * 384400 km × KM_TO_SCENE ≈ 1.2 → KM_TO_SCENE ≈ 3.12e-6
- * We use 2.8e-6 for a slightly tighter fit that keeps moons visible.
+ * Fallback scale: km → scene units for moon orbit radii.
+ * Used for Earth's Moon (Luna already sits at a comfortable 2.5× Earth's visual
+ * radius with this value).  All other planets use per-planet overrides below.
  */
 const KM_TO_SCENE = 2.8e-6;
+
+/**
+ * Per-planet km → scene scale for moon orbital distances (Option C).
+ *
+ * Rationale: planets are rendered at heavily exaggerated visual radii, but moon
+ * orbital distances are converted from raw km.  Without compensation, inner moons
+ * of Mars, Jupiter, Saturn and Neptune end up inside their parent planet's mesh.
+ *
+ * Method:
+ *  - Earth:   unchanged (KM_TO_SCENE) — Luna already sits at 2.5× visual radius.
+ *  - Mars:    planet-relative scaling (visualRadius / radiusKm) so every moon
+ *             orbit is expressed in multiples of Mars' own exaggerated radius.
+ *             (Phobos ≈ 4.1×, Deimos ≈ 10.4× the visual radius.)
+ *  - Others:  clearance formula → scale = (visualRadius × 1.8) / innermostMoonKm
+ *             guarantees the innermost moon orbits at ≥ 1.8× the visual radius
+ *             while all relative inter-moon distances remain proportional.
+ *
+ * A soft outer cap (40× the planet's visual radius in scene units) is applied at
+ * render time to prevent distant irregular moons (Himalia, Phoebe, Nereid…) from
+ * drifting so far they overlap neighbouring planet orbits.
+ */
+const MOON_ORBIT_SCALE: Record<string, number> = {
+  earth:   2.800e-6,   // unchanged — Luna at 2.5× Earth visual radius
+  mars:    1.239e-4,   // planet-relative (0.42 / 3390) — Phobos at 4.1×, Deimos at 10.4×
+  jupiter: 6.563e-6,   // 1.8× clearance on Metis  (192 000 km innermost)
+  saturn:  5.210e-6,   // 1.8× clearance on Pan    (200 376 km innermost)
+  uranus:  3.510e-6,   // 1.8× clearance on Miranda (194 850 km innermost)
+  neptune: 8.958e-6,   // 1.8× clearance on Naiad   (72 341 km innermost)
+};
+
+/** Max moon orbit distance = 40× parent visual radius (caps distant irregular moons). */
+const MOON_ORBIT_CAP_MULT = 40;
+
+/**
+ * Return the km→scene scale for a moon's parent planet, then clamp the
+ * resulting scene-unit distance to the outer cap.
+ *
+ * @param parentId  CelestialBody.id of the parent planet
+ * @param parentVisualRadius  parent's visualRadius in scene units
+ * @param kmOffset  scalar distance from parent centre in km (magnitude of offset)
+ * @returns scale factor to multiply the km-space offset vector by
+ */
+function moonKmScale(parentId: string, parentVisualRadius: number, kmOffset: number): number {
+  const baseScale = MOON_ORBIT_SCALE[parentId] ?? KM_TO_SCENE;
+  const raw       = kmOffset * baseScale;
+  const cap       = parentVisualRadius * MOON_ORBIT_CAP_MULT;
+  // If the raw distance exceeds the cap, return a reduced scale so the vector
+  // magnitude stays at the cap while direction is preserved.
+  return raw > cap ? cap / kmOffset : baseScale;
+}
 
 /**
  * Visual radii (scene units) for non-Earth celestial bodies.
@@ -131,19 +179,36 @@ const TYPE_CHAR: Record<ObjectType, string> = {
   telescope: '✦',
 };
 
-// Scene-unit orbit radii for mission spacecraft (planet-relative, unchanged)
+// Scene-unit orbit radii for mission spacecraft.
+// Each value = planet.visualRadius × (smaKm / planet.radiusKm),
+// floored at planet.visualRadius × 1.15 to prevent clipping into the parent mesh.
+// Highly elliptical / flyby missions use a representative value noted in comments.
 const VISUAL_ORBIT_RADIUS: Record<string, number> = {
-  iss:            1.45,
-  terra:          1.72,
-  aqua:           1.72,
-  'landsat-9':    1.74,
-  lro:            0.52,
-  kplo:           0.52,
-  'artemis-2':    0.68,
-  mro:            0.92,
-  maven:          1.12,
-  'mars-express': 1.18,
-  tgo:            0.98,
+  // ── Earth (vR=0.55, rKm=6371) ──────────────────────────────────────────────
+  iss:                  0.72,   // ~408 km  → 1.31× vR
+  terra:                0.78,   // ~705 km  → 1.42× vR
+  aqua:                 0.78,   // ~705 km  → 1.42× vR
+  'landsat-9':          0.78,   // ~705 km  → 1.42× vR
+  // ── Moon (vR=0.19, rKm=1737) ───────────────────────────────────────────────
+  lro:                  0.22,   // ~100 km  → 1.16× vR
+  kplo:                 0.22,   // ~100 km  → 1.16× vR
+  'artemis-2':          0.65,   // wide lunar flyby → 3.42× vR (unchanged)
+  // ── Mars (vR=0.42, rKm=3390) ───────────────────────────────────────────────
+  mro:                  0.50,   // ~300 km  → 1.19× vR
+  tgo:                  0.50,   // ~400 km  → 1.19× vR
+  maven:                0.80,   // elliptical sma ~6500 km → 1.90× vR
+  'mars-express':       1.19,   // highly elliptical sma ~9630 km → 2.83× vR
+  // ── Jupiter (vR=0.70, rKm=69911) ───────────────────────────────────────────
+  juno:                 0.82,   // perijove ~74 100 km → 1.17× vR
+  'europa-clipper':     1.10,   // Europa-vicinity orbit → 1.57× vR
+  juice:                1.30,   // Ganymede-vicinity orbit → 1.86× vR
+  // ── Saturn (vR=0.58, rKm=58232) ────────────────────────────────────────────
+  cassini:              0.68,   // Grand Finale ~62 000 km → 1.17× vR
+  dragonfly:            1.00,   // Titan-vicinity → 1.72× vR
+  // ── Uranus (vR=0.38, rKm=25362) ────────────────────────────────────────────
+  'voyager-2-uranus':   0.55,   // flyby closest approach ~81 500 km → 1.45× vR
+  // ── Neptune (vR=0.36, rKm=24622) ───────────────────────────────────────────
+  'voyager-2-neptune':  0.48,   // flyby closest approach ~29 200 km → 1.33× vR
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -589,16 +654,21 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
 
       const parentPos = bodyWorldPos.current.get(body.parentId!) ?? new THREE.Vector3();
       const r = body.visualRadius;
+      const parentVR = SOLAR_SYSTEM.find(b => b.id === body.parentId)?.visualRadius ?? 1;
 
       // Moon orbital path (if shown) — built relative to parent's current pos
       if (body.showOrbit) {
         const moonPathPts = moonOrbitPath(body.moonElements, 128);
-        const scale = KM_TO_SCENE;
-        const moonPathVecs = moonPathPts.map(p => new THREE.Vector3(
-          parentPos.x + p.x * scale,
-          parentPos.y + p.z * scale,
-          parentPos.z - p.y * scale,
-        ));
+        const moonPathVecs = moonPathPts.map(p => {
+          // Use a representative km distance (semi-major axis) for the cap check
+          const ptKm = Math.sqrt(p.x * p.x + p.y * p.y + p.z * p.z);
+          const s = moonKmScale(body.parentId!, parentVR, ptKm || body.moonElements!.smaKm);
+          return new THREE.Vector3(
+            parentPos.x + p.x * s,
+            parentPos.y + p.z * s,
+            parentPos.z - p.y * s,
+          );
+        });
         moonPathVecs.push(moonPathVecs[0].clone());
         const moonPathLine = new THREE.Line(
           new THREE.BufferGeometry().setFromPoints(moonPathVecs),
@@ -631,10 +701,12 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
 
       // Compute initial moon position
       const moonOff = moonPosition(body.moonElements, initDate);
+      const moonKm  = Math.sqrt(moonOff.x ** 2 + moonOff.y ** 2 + moonOff.z ** 2) || body.moonElements.smaKm;
+      const ms      = moonKmScale(body.parentId!, parentVR, moonKm);
       const moonScenePos = new THREE.Vector3(
-        parentPos.x + moonOff.x * KM_TO_SCENE,
-        parentPos.y + moonOff.z * KM_TO_SCENE,
-        parentPos.z - moonOff.y * KM_TO_SCENE,
+        parentPos.x + moonOff.x * ms,
+        parentPos.y + moonOff.z * ms,
+        parentPos.z - moonOff.y * ms,
       );
       moonMesh.position.copy(moonScenePos);
       scene.add(moonMesh);
@@ -851,11 +923,14 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
       for (const body of SOLAR_SYSTEM) {
         if (!body.moonElements) continue;
         const parentPos = bodyWorldPos.current.get(body.parentId!) ?? new THREE.Vector3();
+        const parentVR  = SOLAR_SYSTEM.find(b => b.id === body.parentId)?.visualRadius ?? 1;
         const off = moonPosition(body.moonElements, now);
+        const offKm = Math.sqrt(off.x ** 2 + off.y ** 2 + off.z ** 2) || body.moonElements.smaKm;
+        const ms    = moonKmScale(body.parentId!, parentVR, offKm);
         const moonScenePos = new THREE.Vector3(
-          parentPos.x + off.x * KM_TO_SCENE,
-          parentPos.y + off.z * KM_TO_SCENE,
-          parentPos.z - off.y * KM_TO_SCENE,
+          parentPos.x + off.x * ms,
+          parentPos.y + off.z * ms,
+          parentPos.z - off.y * ms,
         );
         // moonMeshesRef holds all moons; planetsRef only has interactive ones
         const mesh = moonMeshesRef.current.get(body.id);
@@ -869,12 +944,15 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
         const pathLine = scene.getObjectByName(`orbit-path-${body.id}`) as THREE.Line | undefined;
         if (pathLine && body.moonElements) {
           const moonPathPts = moonOrbitPath(body.moonElements, 128);
-          const scale = KM_TO_SCENE;
-          const pathVecs = moonPathPts.map(pp => new THREE.Vector3(
-            parentPos.x + pp.x * scale,
-            parentPos.y + pp.z * scale,
-            parentPos.z - pp.y * scale,
-          ));
+          const pathVecs = moonPathPts.map(pp => {
+            const ptKm = Math.sqrt(pp.x * pp.x + pp.y * pp.y + pp.z * pp.z);
+            const s = moonKmScale(body.parentId!, parentVR, ptKm || body.moonElements!.smaKm);
+            return new THREE.Vector3(
+              parentPos.x + pp.x * s,
+              parentPos.y + pp.z * s,
+              parentPos.z - pp.y * s,
+            );
+          });
           pathVecs.push(pathVecs[0].clone());
           (pathLine.geometry as THREE.BufferGeometry).setFromPoints(pathVecs);
         }
