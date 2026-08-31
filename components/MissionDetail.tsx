@@ -4,7 +4,8 @@ import { Mission, Spacecraft, DataSource } from '@/lib/types';
 import { MissionTimeline } from './MissionTimeline';
 import { DataProvenance, DataSourcePanel, DataLegend } from './DataProvenance';
 import Link from 'next/link';
-import { ArrowLeft, ExternalLink, Globe, Sparkles } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Globe, Sparkles, ImageOff } from 'lucide-react';
+import { useState } from 'react';
 
 interface MissionDetailProps {
   mission: Mission;
@@ -20,6 +21,103 @@ const STATUS_CONFIG: Record<string, { dot: string; label: string; text: string }
   completed: { dot: 'bg-slate-500', label: 'MISSION COMPLETE', text: 'text-slate-400' },
   unknown: { dot: 'bg-slate-600', label: 'UNKNOWN', text: 'text-slate-500' },
 };
+
+function HeroSection({
+  mission,
+  status,
+}: {
+  mission: Mission;
+  status: { dot: string; label: string; text: string };
+}) {
+  const [imgFailed, setImgFailed] = useState(false);
+  return (
+    <div className="relative h-64 md:h-80 overflow-hidden">
+      {mission.heroImageUrl && !imgFailed ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={mission.heroImageUrl}
+          alt={mission.name}
+          className="w-full h-full object-cover opacity-50"
+          onError={() => setImgFailed(true)}
+        />
+      ) : (
+        <div className="w-full h-full bg-space-navy" />
+      )}
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-space-black/40 to-space-black" />
+      <div className="absolute inset-0 bg-gradient-to-r from-space-black/60 to-transparent" />
+
+      {/* Back button */}
+      <div className="absolute top-6 left-4 md:left-8">
+        <Link
+          href="/missions"
+          className="flex items-center gap-2 text-orbit-dim hover:text-orbit-white text-xs tracking-wider glass px-3 py-1.5 rounded transition-colors"
+        >
+          <ArrowLeft size={12} />
+          ALL MISSIONS
+        </Link>
+      </div>
+
+      {/* Hero content */}
+      <div className="absolute bottom-6 left-4 md:left-8 right-4 md:right-8">
+        <div className="flex items-center gap-2 mb-2">
+          <div className={`w-2 h-2 rounded-full ${status.dot}`} />
+          <span className={`text-[11px] tracking-widest font-medium ${status.text}`}>{status.label}</span>
+        </div>
+        <h1 className="text-3xl md:text-4xl font-light text-orbit-white tracking-wide leading-tight">{mission.name}</h1>
+        <div className="flex flex-wrap items-center gap-3 mt-2">
+          <span className="text-orbit-dim text-sm">{mission.agency}</span>
+          <span className="text-space-border">·</span>
+          <span className="text-orbit-dim text-sm capitalize">
+            {mission.destination} · {mission.missionType}
+          </span>
+          {mission.launchDate && (
+            <>
+              <span className="text-space-border">·</span>
+              <span className="text-orbit-dim text-sm">
+                Launched {new Date(mission.launchDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+              </span>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function GalleryImage({ img }: { img: import('@/lib/types').MissionImage }) {
+  const [failed, setFailed] = useState(false);
+  return (
+    <div className="relative aspect-video overflow-hidden rounded-lg glass border border-space-border group">
+      {!failed ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={img.url}
+          alt={img.title}
+          className="w-full h-full object-cover opacity-75 group-hover:opacity-100 transition-opacity duration-300"
+          loading="lazy"
+          onError={() => setFailed(true)}
+        />
+      ) : (
+        <div className="w-full h-full flex flex-col items-center justify-center gap-1 bg-space-deep">
+          <ImageOff size={20} className="text-space-border" />
+          <span className="text-[9px] text-orbit-dim tracking-wider">IMAGE UNAVAILABLE</span>
+        </div>
+      )}
+      <div className="absolute inset-0 bg-gradient-to-t from-space-black/80 to-transparent pointer-events-none" />
+      <div className="absolute bottom-0 left-0 right-0 p-2">
+        <div className="text-[10px] text-orbit-white line-clamp-2 leading-tight">{img.title}</div>
+        <div className="flex items-center justify-between mt-1">
+          <div className="text-[9px] text-orbit-dim">{img.source} · {img.date?.substring(0, 4)}</div>
+          {img.sourceUrl && (
+            <a href={img.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-orbit-blue/60 hover:text-orbit-blue" aria-label="View image source">
+              <ExternalLink size={9} />
+            </a>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function SpacecraftCard({ sc }: { sc: Spacecraft }) {
   return (
@@ -116,12 +214,22 @@ function SpacecraftCard({ sc }: { sc: Spacecraft }) {
 export function MissionDetail({ mission }: MissionDetailProps) {
   const status = STATUS_CONFIG[mission.status] || STATUS_CONFIG.unknown;
 
+  const agencies = mission.agencies ?? [mission.agency];
   const dataSources: Array<{ source: DataSource; description: string; url?: string }> = [];
-  if (mission.agency.includes('NASA')) {
+  if (agencies.some((a) => a.includes('NASA'))) {
     dataSources.push({ source: 'NASA', description: 'Mission data, imagery, and status', url: mission.sourceUrl });
   }
-  if (mission.agency.includes('ESA')) {
+  if (agencies.some((a) => a.includes('ESA'))) {
     dataSources.push({ source: 'ESA', description: 'Mission data and status', url: mission.sourceUrl });
+  }
+  if (agencies.some((a) => a.includes('JAXA'))) {
+    dataSources.push({ source: 'JAXA', description: 'Mission data and status', url: mission.sourceUrl });
+  }
+  if (agencies.some((a) => a.includes('ISRO'))) {
+    dataSources.push({ source: 'ISRO', description: 'Mission data and status', url: mission.sourceUrl });
+  }
+  if (agencies.some((a) => a.includes('CNSA'))) {
+    dataSources.push({ source: 'CNSA', description: 'Mission data and status', url: mission.sourceUrl });
   }
   if (mission.spacecraft.some((s) => s.noradId)) {
     dataSources.push({ source: 'CelesTrak', description: 'Orbital elements and TLE data', url: 'https://celestrak.org' });
@@ -134,55 +242,7 @@ export function MissionDetail({ mission }: MissionDetailProps) {
   return (
     <div className="min-h-screen bg-space-black">
       {/* Hero */}
-      <div className="relative h-64 md:h-80 overflow-hidden">
-        {mission.heroImageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={mission.heroImageUrl}
-            alt={mission.name}
-            className="w-full h-full object-cover opacity-50"
-          />
-        ) : (
-          <div className="w-full h-full bg-space-navy" />
-        )}
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-space-black/40 to-space-black" />
-        <div className="absolute inset-0 bg-gradient-to-r from-space-black/60 to-transparent" />
-
-        {/* Back button */}
-        <div className="absolute top-6 left-4 md:left-8">
-          <Link
-            href="/missions"
-            className="flex items-center gap-2 text-orbit-dim hover:text-orbit-white text-xs tracking-wider glass px-3 py-1.5 rounded transition-colors"
-          >
-            <ArrowLeft size={12} />
-            ALL MISSIONS
-          </Link>
-        </div>
-
-        {/* Hero content */}
-        <div className="absolute bottom-6 left-4 md:left-8 right-4 md:right-8">
-          <div className="flex items-center gap-2 mb-2">
-            <div className={`w-2 h-2 rounded-full ${status.dot}`} />
-            <span className={`text-[11px] tracking-widest font-medium ${status.text}`}>{status.label}</span>
-          </div>
-          <h1 className="text-3xl md:text-4xl font-light text-orbit-white tracking-wide leading-tight">{mission.name}</h1>
-          <div className="flex flex-wrap items-center gap-3 mt-2">
-            <span className="text-orbit-dim text-sm">{mission.agency}</span>
-            <span className="text-space-border">·</span>
-            <span className="text-orbit-dim text-sm capitalize">
-              {mission.destination} · {mission.missionType}
-            </span>
-            {mission.launchDate && (
-              <>
-                <span className="text-space-border">·</span>
-                <span className="text-orbit-dim text-sm">
-                  Launched {new Date(mission.launchDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
-                </span>
-              </>
-            )}
-          </div>
-        </div>
-      </div>
+      <HeroSection mission={mission} status={status} />
 
       {/* Main content */}
       <div className="max-w-screen-xl mx-auto px-4 md:px-8 py-8">
@@ -267,28 +327,7 @@ export function MissionDetail({ mission }: MissionDetailProps) {
                 <div className="text-[10px] text-orbit-dim tracking-widest">MISSION IMAGERY</div>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   {mission.images.map((img) => (
-                    <div key={img.id} className="relative aspect-video overflow-hidden rounded-lg glass border border-space-border group">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={img.url}
-                        alt={img.title}
-                        className="w-full h-full object-cover opacity-75 group-hover:opacity-100 transition-opacity duration-300"
-                        loading="lazy"
-                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-space-black/80 to-transparent" />
-                      <div className="absolute bottom-0 left-0 right-0 p-2">
-                        <div className="text-[10px] text-orbit-white line-clamp-2 leading-tight">{img.title}</div>
-                        <div className="flex items-center justify-between mt-1">
-                          <div className="text-[9px] text-orbit-dim">{img.source} · {img.date?.substring(0, 4)}</div>
-                          {img.sourceUrl && (
-                            <a href={img.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-orbit-blue/60 hover:text-orbit-blue">
-                              <ExternalLink size={9} />
-                            </a>
-                          )}
-                        </div>
-                      </div>
-                    </div>
+                    <GalleryImage key={img.id} img={img} />
                   ))}
                 </div>
               </section>

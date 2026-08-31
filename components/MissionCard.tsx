@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { Mission } from '@/lib/types';
 import { ArrowRight, Satellite, Globe, Moon } from 'lucide-react';
+import { useState } from 'react';
 
 interface MissionCardProps {
   mission: Mission;
@@ -39,6 +40,40 @@ const TYPE_LABELS: Record<string, string> = {
   flyby: 'FLYBY',
 };
 
+function CardThumbnail({ mission }: { mission: Mission }) {
+  const [imgFailed, setImgFailed] = useState(false);
+  const dest = mission.destination;
+  return (
+    <div className="relative h-32 bg-space-deep overflow-hidden">
+      {mission.thumbnailUrl && !imgFailed ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={mission.thumbnailUrl}
+          alt={mission.name}
+          className="w-full h-full object-cover opacity-70 group-hover:opacity-90 transition-opacity duration-300"
+          loading="lazy"
+          onError={() => setImgFailed(true)}
+        />
+      ) : (
+        <div className="w-full h-full flex items-center justify-center">
+          <Satellite size={32} className="text-space-border" />
+        </div>
+      )}
+      {/* Destination badge */}
+      <div className="absolute top-2 left-2 flex items-center gap-1.5 glass px-2 py-0.5 rounded-full text-[10px] tracking-wider">
+        {DEST_ICON[dest]}
+        <span className="text-orbit-dim uppercase">{dest}</span>
+      </div>
+      {/* Type badge */}
+      <div className="absolute top-2 right-2 glass px-1.5 py-0.5 rounded text-[9px] tracking-widest text-orbit-dim">
+        {TYPE_LABELS[mission.missionType] || mission.missionType.toUpperCase()}
+      </div>
+      {/* Gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-t from-space-panel via-transparent to-transparent" />
+    </div>
+  );
+}
+
 export function MissionCard({ mission, onClick, compact }: MissionCardProps) {
   const status = STATUS_CONFIG[mission.status] || STATUS_CONFIG.unknown;
   const dest = mission.destination;
@@ -67,33 +102,7 @@ export function MissionCard({ mission, onClick, compact }: MissionCardProps) {
       onClick={onClick}
     >
       {/* Image / Hero */}
-      <div className="relative h-32 bg-space-deep overflow-hidden">
-        {mission.thumbnailUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={mission.thumbnailUrl}
-            alt={mission.name}
-            className="w-full h-full object-cover opacity-70 group-hover:opacity-90 transition-opacity duration-300"
-            loading="lazy"
-            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <Satellite size={32} className="text-space-border" />
-          </div>
-        )}
-        {/* Destination badge */}
-        <div className="absolute top-2 left-2 flex items-center gap-1.5 glass px-2 py-0.5 rounded-full text-[10px] tracking-wider">
-          {DEST_ICON[dest]}
-          <span className="text-orbit-dim uppercase">{dest}</span>
-        </div>
-        {/* Type badge */}
-        <div className="absolute top-2 right-2 glass px-1.5 py-0.5 rounded text-[9px] tracking-widest text-orbit-dim">
-          {TYPE_LABELS[mission.missionType] || mission.missionType.toUpperCase()}
-        </div>
-        {/* Gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-space-panel via-transparent to-transparent" />
-      </div>
+      <CardThumbnail mission={mission} />
 
       {/* Content */}
       <div className="p-3 flex flex-col gap-2 flex-1">

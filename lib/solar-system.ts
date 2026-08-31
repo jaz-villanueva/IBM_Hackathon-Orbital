@@ -197,7 +197,7 @@ const NEPTUNE_ELEMENTS: PlanetaryElements = {
 // ─── Moon elements (relative to Earth) ───────────────────────────────────────
 
 const LUNA_ELEMENTS: MoonElements = {
-  smaKm:      500000,
+  smaKm:      450000,
   incDeg:     5.145,
   ecc:        0.0549,
   raanDeg:    125.045,
@@ -209,7 +209,7 @@ const LUNA_ELEMENTS: MoonElements = {
 // ─── Phobos & Deimos (relative to Mars) ──────────────────────────────────────
 
 const PHOBOS_ELEMENTS: MoonElements = {
-  smaKm:       9376,
+  smaKm:       14064,
   incDeg:      1.093,
   ecc:         0.0151,
   raanDeg:     164.931,
@@ -219,7 +219,7 @@ const PHOBOS_ELEMENTS: MoonElements = {
 };
 
 const DEIMOS_ELEMENTS: MoonElements = {
-  smaKm:       23458,
+  smaKm:       35187,
   incDeg:      1.788,
   ecc:         0.0002,
   raanDeg:     339.600,
@@ -231,56 +231,56 @@ const DEIMOS_ELEMENTS: MoonElements = {
 // ─── Jupiter moons (Galilean + inner/irregular major moons) ──────────────────
 // Source: JPL Planetary Satellite Mean Orbital Parameters (2024)
 
-const METIS_ELEMENTS: MoonElements     = { smaKm: 128000, incDeg: 0.019, ecc: 0.0002, raanDeg:  70, aopDeg:  270, m0Deg:  0,   periodDays:  0.29478 };
-const ADRASTEA_ELEMENTS: MoonElements  = { smaKm: 129000, incDeg: 0.054, ecc: 0.0018, raanDeg: 120, aopDeg:   90, m0Deg: 90,   periodDays:  0.29826 };
-const AMALTHEA_ELEMENTS: MoonElements  = { smaKm: 181366, incDeg: 0.380, ecc: 0.0032, raanDeg: 185, aopDeg:   84, m0Deg: 185,  periodDays:  0.49818 };
-const THEBE_ELEMENTS: MoonElements     = { smaKm: 221900, incDeg: 1.076, ecc: 0.0177, raanDeg: 235, aopDeg:  235, m0Deg: 270,  periodDays:  0.67475 };
-const IO_ELEMENTS: MoonElements        = { smaKm: 421700, incDeg: 0.036, ecc: 0.0041, raanDeg:  43, aopDeg:   84, m0Deg:  80,  periodDays:  1.769138 };
-const EUROPA_ELEMENTS: MoonElements    = { smaKm: 671100, incDeg: 0.466, ecc: 0.0094, raanDeg: 219, aopDeg:   88, m0Deg: 130,  periodDays:  3.551181 };
-const GANYMEDE_ELEMENTS: MoonElements  = { smaKm:1070400, incDeg: 0.177, ecc: 0.0011, raanDeg:  63, aopDeg:   192, m0Deg: 250, periodDays:  7.154553 };
-const CALLISTO_ELEMENTS: MoonElements  = { smaKm:1882700, incDeg: 0.192, ecc: 0.0074, raanDeg: 298, aopDeg:   52, m0Deg: 190,  periodDays: 16.689018 };
-const HIMALIA_ELEMENTS: MoonElements   = { smaKm:11461000,incDeg:27.63,  ecc: 0.1620, raanDeg:  50, aopDeg:   29, m0Deg:  20,  periodDays:250.5662 };
-const ELARA_ELEMENTS: MoonElements     = { smaKm:11741000,incDeg:26.63,  ecc: 0.2174, raanDeg: 142, aopDeg:  143, m0Deg:  67,  periodDays:259.6528 };
+const METIS_ELEMENTS: MoonElements     = { smaKm:  192000, incDeg: 0.019, ecc: 0.0002, raanDeg:  70, aopDeg:  270, m0Deg:  0,   periodDays:  0.29478 };
+const ADRASTEA_ELEMENTS: MoonElements  = { smaKm:  193500, incDeg: 0.054, ecc: 0.0018, raanDeg: 120, aopDeg:   90, m0Deg: 90,   periodDays:  0.29826 };
+const AMALTHEA_ELEMENTS: MoonElements  = { smaKm:  272049, incDeg: 0.380, ecc: 0.0032, raanDeg: 185, aopDeg:   84, m0Deg: 185,  periodDays:  0.49818 };
+const THEBE_ELEMENTS: MoonElements     = { smaKm:  332850, incDeg: 1.076, ecc: 0.0177, raanDeg: 235, aopDeg:  235, m0Deg: 270,  periodDays:  0.67475 };
+const IO_ELEMENTS: MoonElements        = { smaKm:  632550, incDeg: 0.036, ecc: 0.0041, raanDeg:  43, aopDeg:   84, m0Deg:  80,  periodDays:  1.769138 };
+const EUROPA_ELEMENTS: MoonElements    = { smaKm: 1006650, incDeg: 0.466, ecc: 0.0094, raanDeg: 219, aopDeg:   88, m0Deg: 130,  periodDays:  3.551181 };
+const GANYMEDE_ELEMENTS: MoonElements  = { smaKm: 1605600, incDeg: 0.177, ecc: 0.0011, raanDeg:  63, aopDeg:   192, m0Deg: 250, periodDays:  7.154553 };
+const CALLISTO_ELEMENTS: MoonElements  = { smaKm: 2824050, incDeg: 0.192, ecc: 0.0074, raanDeg: 298, aopDeg:   52, m0Deg: 190,  periodDays: 16.689018 };
+const HIMALIA_ELEMENTS: MoonElements   = { smaKm:17191500, incDeg:27.63,  ecc: 0.1620, raanDeg:  50, aopDeg:   29, m0Deg:  20,  periodDays:250.5662 };
+const ELARA_ELEMENTS: MoonElements     = { smaKm:17611500, incDeg:26.63,  ecc: 0.2174, raanDeg: 142, aopDeg:  143, m0Deg:  67,  periodDays:259.6528 };
 
 // ─── Saturn moons ─────────────────────────────────────────────────────────────
 // Source: JPL Planetary Satellite Mean Orbital Parameters (2024)
 
-const PAN_ELEMENTS: MoonElements       = { smaKm: 133584, incDeg: 0.001, ecc: 0.0000, raanDeg:   0, aopDeg:   0, m0Deg:   0,  periodDays:  0.57505 };
-const ATLAS_ELEMENTS: MoonElements     = { smaKm: 137670, incDeg: 0.003, ecc: 0.0012, raanDeg: 110, aopDeg: 197, m0Deg:  60,  periodDays:  0.60169 };
-const PROMETHEUS_ELEMENTS: MoonElements= { smaKm: 139380, incDeg: 0.008, ecc: 0.0022, raanDeg: 205, aopDeg:  65, m0Deg: 110,  periodDays:  0.61299 };
-const PANDORA_ELEMENTS: MoonElements   = { smaKm: 141720, incDeg: 0.050, ecc: 0.0042, raanDeg: 280, aopDeg:  90, m0Deg: 180,  periodDays:  0.62850 };
-const JANUS_ELEMENTS: MoonElements     = { smaKm: 151460, incDeg: 0.165, ecc: 0.0068, raanDeg:  73, aopDeg: 178, m0Deg: 220,  periodDays:  0.69466 };
-const EPIMETHEUS_ELEMENTS: MoonElements= { smaKm: 151410, incDeg: 0.351, ecc: 0.0098, raanDeg:  30, aopDeg: 334, m0Deg:  80,  periodDays:  0.69433 };
-const MIMAS_ELEMENTS: MoonElements     = { smaKm: 185540, incDeg: 1.574, ecc: 0.0202, raanDeg: 172, aopDeg: 332, m0Deg:  24,  periodDays:  0.94242 };
-const ENCELADUS_ELEMENTS: MoonElements = { smaKm: 238040, incDeg: 0.009, ecc: 0.0045, raanDeg: 170, aopDeg: 299, m0Deg: 197,  periodDays:  1.37022 };
-const TETHYS_ELEMENTS: MoonElements    = { smaKm: 294670, incDeg: 1.091, ecc: 0.0001, raanDeg: 111, aopDeg: 262, m0Deg: 298,  periodDays:  1.88780 };
-const DIONE_ELEMENTS: MoonElements     = { smaKm: 377420, incDeg: 0.028, ecc: 0.0022, raanDeg: 169, aopDeg: 172, m0Deg:  84,  periodDays:  2.73692 };
-const RHEA_ELEMENTS: MoonElements      = { smaKm: 527070, incDeg: 0.345, ecc: 0.0010, raanDeg: 311, aopDeg: 257, m0Deg: 155,  periodDays:  4.51820 };
-const TITAN_ELEMENTS: MoonElements     = { smaKm:1221870, incDeg: 0.349, ecc: 0.0288, raanDeg:  28, aopDeg: 185, m0Deg: 120,  periodDays: 15.94540 };
-const HYPERION_ELEMENTS: MoonElements  = { smaKm:1481010, incDeg: 0.615, ecc: 0.1230, raanDeg: 287, aopDeg: 205, m0Deg:  39,  periodDays: 21.27660 };
-const IAPETUS_ELEMENTS: MoonElements   = { smaKm:3560840, incDeg:15.470, ecc: 0.0283, raanDeg: 81,  aopDeg: 275, m0Deg: 211,  periodDays: 79.33020 };
-const PHOEBE_ELEMENTS: MoonElements    = { smaKm:12947780,incDeg:175.243,ecc: 0.1635, raanDeg: 244, aopDeg: 355, m0Deg:  64,  periodDays:550.56500 };
+const PAN_ELEMENTS: MoonElements       = { smaKm:  200376, incDeg: 0.001, ecc: 0.0000, raanDeg:   0, aopDeg:   0, m0Deg:   0,  periodDays:  0.57505 };
+const ATLAS_ELEMENTS: MoonElements     = { smaKm:  206505, incDeg: 0.003, ecc: 0.0012, raanDeg: 110, aopDeg: 197, m0Deg:  60,  periodDays:  0.60169 };
+const PROMETHEUS_ELEMENTS: MoonElements= { smaKm:  209070, incDeg: 0.008, ecc: 0.0022, raanDeg: 205, aopDeg:  65, m0Deg: 110,  periodDays:  0.61299 };
+const PANDORA_ELEMENTS: MoonElements   = { smaKm:  212580, incDeg: 0.050, ecc: 0.0042, raanDeg: 280, aopDeg:  90, m0Deg: 180,  periodDays:  0.62850 };
+const JANUS_ELEMENTS: MoonElements     = { smaKm:  227190, incDeg: 0.165, ecc: 0.0068, raanDeg:  73, aopDeg: 178, m0Deg: 220,  periodDays:  0.69466 };
+const EPIMETHEUS_ELEMENTS: MoonElements= { smaKm:  227115, incDeg: 0.351, ecc: 0.0098, raanDeg:  30, aopDeg: 334, m0Deg:  80,  periodDays:  0.69433 };
+const MIMAS_ELEMENTS: MoonElements     = { smaKm:  278310, incDeg: 1.574, ecc: 0.0202, raanDeg: 172, aopDeg: 332, m0Deg:  24,  periodDays:  0.94242 };
+const ENCELADUS_ELEMENTS: MoonElements = { smaKm:  357060, incDeg: 0.009, ecc: 0.0045, raanDeg: 170, aopDeg: 299, m0Deg: 197,  periodDays:  1.37022 };
+const TETHYS_ELEMENTS: MoonElements    = { smaKm:  442005, incDeg: 1.091, ecc: 0.0001, raanDeg: 111, aopDeg: 262, m0Deg: 298,  periodDays:  1.88780 };
+const DIONE_ELEMENTS: MoonElements     = { smaKm:  566130, incDeg: 0.028, ecc: 0.0022, raanDeg: 169, aopDeg: 172, m0Deg:  84,  periodDays:  2.73692 };
+const RHEA_ELEMENTS: MoonElements      = { smaKm:  790605, incDeg: 0.345, ecc: 0.0010, raanDeg: 311, aopDeg: 257, m0Deg: 155,  periodDays:  4.51820 };
+const TITAN_ELEMENTS: MoonElements     = { smaKm: 1832805, incDeg: 0.349, ecc: 0.0288, raanDeg:  28, aopDeg: 185, m0Deg: 120,  periodDays: 15.94540 };
+const HYPERION_ELEMENTS: MoonElements  = { smaKm: 2221515, incDeg: 0.615, ecc: 0.1230, raanDeg: 287, aopDeg: 205, m0Deg:  39,  periodDays: 21.27660 };
+const IAPETUS_ELEMENTS: MoonElements   = { smaKm: 5341260, incDeg:15.470, ecc: 0.0283, raanDeg: 81,  aopDeg: 275, m0Deg: 211,  periodDays: 79.33020 };
+const PHOEBE_ELEMENTS: MoonElements    = { smaKm:19421670, incDeg:175.243,ecc: 0.1635, raanDeg: 244, aopDeg: 355, m0Deg:  64,  periodDays:550.56500 };
 
 // ─── Uranus moons ─────────────────────────────────────────────────────────────
 // Source: JPL Planetary Satellite Mean Orbital Parameters (2024)
 
-const MIRANDA_ELEMENTS: MoonElements   = { smaKm: 129900, incDeg: 4.338, ecc: 0.0013, raanDeg: 326, aopDeg:  68, m0Deg: 311,  periodDays:  1.41348 };
-const ARIEL_ELEMENTS: MoonElements     = { smaKm: 190900, incDeg: 0.041, ecc: 0.0012, raanDeg: 167, aopDeg: 115, m0Deg:  39,  periodDays:  2.52038 };
-const UMBRIEL_ELEMENTS: MoonElements   = { smaKm: 266000, incDeg: 0.128, ecc: 0.0039, raanDeg: 109, aopDeg:  84, m0Deg:  12,  periodDays:  4.14418 };
-const TITANIA_ELEMENTS: MoonElements   = { smaKm: 436300, incDeg: 0.079, ecc: 0.0011, raanDeg: 132, aopDeg: 284, m0Deg: 219,  periodDays:  8.70588 };
-const OBERON_ELEMENTS: MoonElements    = { smaKm: 583500, incDeg: 0.068, ecc: 0.0014, raanDeg: 200, aopDeg: 104, m0Deg: 145,  periodDays: 13.46324 };
+const MIRANDA_ELEMENTS: MoonElements   = { smaKm: 194850, incDeg: 4.338, ecc: 0.0013, raanDeg: 326, aopDeg:  68, m0Deg: 311,  periodDays:  1.41348 };
+const ARIEL_ELEMENTS: MoonElements     = { smaKm: 286350, incDeg: 0.041, ecc: 0.0012, raanDeg: 167, aopDeg: 115, m0Deg:  39,  periodDays:  2.52038 };
+const UMBRIEL_ELEMENTS: MoonElements   = { smaKm: 399000, incDeg: 0.128, ecc: 0.0039, raanDeg: 109, aopDeg:  84, m0Deg:  12,  periodDays:  4.14418 };
+const TITANIA_ELEMENTS: MoonElements   = { smaKm: 654450, incDeg: 0.079, ecc: 0.0011, raanDeg: 132, aopDeg: 284, m0Deg: 219,  periodDays:  8.70588 };
+const OBERON_ELEMENTS: MoonElements    = { smaKm: 875250, incDeg: 0.068, ecc: 0.0014, raanDeg: 200, aopDeg: 104, m0Deg: 145,  periodDays: 13.46324 };
 
 // ─── Neptune moons ────────────────────────────────────────────────────────────
 // Source: JPL Planetary Satellite Mean Orbital Parameters (2024)
 
-const NAIAD_ELEMENTS: MoonElements     = { smaKm:  48227, incDeg: 4.691, ecc: 0.0003, raanDeg: 100, aopDeg: 181, m0Deg:  45,  periodDays:  0.29394 };
-const THALASSA_ELEMENTS: MoonElements  = { smaKm:  50075, incDeg: 0.135, ecc: 0.0002, raanDeg: 212, aopDeg: 156, m0Deg: 190,  periodDays:  0.31148 };
-const DESPINA_ELEMENTS: MoonElements   = { smaKm:  52526, incDeg: 0.068, ecc: 0.0002, raanDeg:  90, aopDeg:  65, m0Deg:  85,  periodDays:  0.33465 };
-const GALATEA_ELEMENTS: MoonElements   = { smaKm:  61953, incDeg: 0.034, ecc: 0.0001, raanDeg: 359, aopDeg: 218, m0Deg: 320,  periodDays:  0.42875 };
-const LARISSA_ELEMENTS: MoonElements   = { smaKm:  73548, incDeg: 0.205, ecc: 0.0014, raanDeg: 271, aopDeg:  44, m0Deg: 177,  periodDays:  0.55465 };
-const PROTEUS_ELEMENTS: MoonElements   = { smaKm: 117647, incDeg: 0.075, ecc: 0.0005, raanDeg: 354, aopDeg: 131, m0Deg: 225,  periodDays:  1.12231 };
-const TRITON_ELEMENTS: MoonElements    = { smaKm: 354759, incDeg:156.865,ecc: 0.0000, raanDeg: 177, aopDeg: 348, m0Deg:  21,  periodDays:  5.87685 };
-const NEREID_ELEMENTS: MoonElements    = { smaKm:5513818, incDeg: 7.090, ecc: 0.7507, raanDeg: 320, aopDeg: 289, m0Deg: 358,  periodDays:360.13619 };
+const NAIAD_ELEMENTS: MoonElements     = { smaKm:   72341, incDeg: 4.691, ecc: 0.0003, raanDeg: 100, aopDeg: 181, m0Deg:  45,  periodDays:  0.29394 };
+const THALASSA_ELEMENTS: MoonElements  = { smaKm:   75113, incDeg: 0.135, ecc: 0.0002, raanDeg: 212, aopDeg: 156, m0Deg: 190,  periodDays:  0.31148 };
+const DESPINA_ELEMENTS: MoonElements   = { smaKm:   78789, incDeg: 0.068, ecc: 0.0002, raanDeg:  90, aopDeg:  65, m0Deg:  85,  periodDays:  0.33465 };
+const GALATEA_ELEMENTS: MoonElements   = { smaKm:   92930, incDeg: 0.034, ecc: 0.0001, raanDeg: 359, aopDeg: 218, m0Deg: 320,  periodDays:  0.42875 };
+const LARISSA_ELEMENTS: MoonElements   = { smaKm:  110322, incDeg: 0.205, ecc: 0.0014, raanDeg: 271, aopDeg:  44, m0Deg: 177,  periodDays:  0.55465 };
+const PROTEUS_ELEMENTS: MoonElements   = { smaKm:  176471, incDeg: 0.075, ecc: 0.0005, raanDeg: 354, aopDeg: 131, m0Deg: 225,  periodDays:  1.12231 };
+const TRITON_ELEMENTS: MoonElements    = { smaKm:  532139, incDeg:156.865,ecc: 0.0000, raanDeg: 177, aopDeg: 348, m0Deg:  21,  periodDays:  5.87685 };
+const NEREID_ELEMENTS: MoonElements    = { smaKm: 8270727, incDeg: 7.090, ecc: 0.7507, raanDeg: 320, aopDeg: 289, m0Deg: 358,  periodDays:360.13619 };
 
 // ─── Solar system catalogue ───────────────────────────────────────────────────
 
@@ -411,7 +411,7 @@ export const SOLAR_SYSTEM: CelestialBody[] = [
   // ─── Earth's Moon ────────────────────────────────────────────────────────
   {
     id: 'moon', name: 'Moon', type: 'moon', parentId: 'earth',
-    radiusKm: 1737, visualRadius: 0.22,
+    radiusKm: 1737, visualRadius: 0.19,
     interactive: true, missionDestination: 'moon',
     showOrbit: true, color: 0x8a8f9e, emissive: 0x1a1e28,
     moonElements: LUNA_ELEMENTS,

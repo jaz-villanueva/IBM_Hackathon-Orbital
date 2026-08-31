@@ -85,8 +85,8 @@ export const MISSIONS: Mission[] = [
       { id: 'e3', missionId: 'iss', eventType: 'milestone', timestamp: '2024-01-01', title: 'Year-Round Operations', description: 'ISS continues ongoing science and operations with rotating crew', source: 'NASA' },
     ],
     images: [
-      { id: 'iss-img-1', missionId: 'iss', url: 'https://images-assets.nasa.gov/image/iss070e016032/iss070e016032~orig.jpg', title: 'ISS from SpaceX Crew Dragon', date: '2023-10-05', source: 'NASA', sourceUrl: 'https://images.nasa.gov/' },
-      { id: 'iss-img-2', missionId: 'iss', url: 'https://images-assets.nasa.gov/image/iss068e025450/iss068e025450~orig.jpg', title: 'ISS in Orbit', date: '2022-11-14', source: 'NASA', sourceUrl: 'https://images.nasa.gov/' },
+      { id: 'iss-img-1', missionId: 'iss', url: 'https://images-assets.nasa.gov/image/iss070e016032/iss070e016032~orig.jpg', title: 'ISS from SpaceX Crew Dragon', date: '2023-10-05', source: 'NASA', sourceUrl: 'https://images.nasa.gov/details/iss070e016032' },
+      { id: 'iss-img-2', missionId: 'iss', url: 'https://images-assets.nasa.gov/image/iss068e025450/iss068e025450~orig.jpg', title: 'ISS in Orbit', date: '2022-11-14', source: 'NASA', sourceUrl: 'https://images.nasa.gov/details/iss068e025450' },
     ],
     sourceUrl: 'https://www.nasa.gov/international-space-station/',
     tags: ['crewed', 'LEO', 'international', 'science', 'active'],
@@ -156,7 +156,7 @@ export const MISSIONS: Mission[] = [
       { id: 'terra-e2', missionId: 'terra', eventType: 'milestone', timestamp: '2019-12-18', title: '20-Year Anniversary', description: 'Terra celebrates 20 years of continuous Earth observation', source: 'NASA' },
     ],
     images: [
-      { id: 'terra-img-1', missionId: 'terra', url: 'https://images-assets.nasa.gov/image/PIA01349/PIA01349~orig.jpg', title: 'Terra MODIS Earth Image', date: '2000-01-01', source: 'NASA', sourceUrl: 'https://images.nasa.gov/' },
+      { id: 'terra-img-1', missionId: 'terra', url: 'https://images-assets.nasa.gov/image/PIA01349/PIA01349~orig.jpg', title: 'Terra MODIS Earth Image', date: '2000-01-01', source: 'NASA', sourceUrl: 'https://images.nasa.gov/details/PIA01349' },
     ],
     sourceUrl: 'https://terra.nasa.gov/',
     tags: ['Earth observation', 'climate', 'MODIS'],
@@ -224,7 +224,9 @@ export const MISSIONS: Mission[] = [
     events: [
       { id: 'aqua-e1', missionId: 'aqua', eventType: 'launch', timestamp: '2002-05-04', title: 'Aqua Launch', description: 'Launched from Vandenberg AFB', source: 'NASA' },
     ],
-    images: [],
+    images: [
+      { id: 'aqua-img-1', missionId: 'aqua', url: 'https://images-assets.nasa.gov/image/0201490/0201490~orig.jpg', title: 'Aqua Satellite Artist Concept', date: '2002-05-04', source: 'NASA', sourceUrl: 'https://images.nasa.gov/details/0201490' },
+    ],
     sourceUrl: 'https://aqua.nasa.gov/',
     tags: ['Earth observation', 'water cycle', 'MODIS'],
     aiInsights: [
@@ -291,7 +293,9 @@ export const MISSIONS: Mission[] = [
       { id: 'l9-e1', missionId: 'landsat-9', eventType: 'launch', timestamp: '2021-09-27', title: 'Landsat 9 Launch', description: 'Launched aboard Atlas V from Vandenberg Space Force Base', source: 'NASA' },
       { id: 'l9-e2', missionId: 'landsat-9', eventType: 'milestone', timestamp: '2022-02-10', title: 'First Science Images', description: 'Landsat 9 begins routine science operations', source: 'NASA' },
     ],
-    images: [],
+    images: [
+      { id: 'l9-img-1', missionId: 'landsat-9', url: 'https://images-assets.nasa.gov/image/GSFC_20171208_Archive_e001925/GSFC_20171208_Archive_e001925~orig.jpg', title: 'Landsat Earth Observation Image', date: '2022-02-10', source: 'NASA', sourceUrl: 'https://images.nasa.gov/details/GSFC_20171208_Archive_e001925' },
+    ],
     sourceUrl: 'https://landsat.gsfc.nasa.gov/satellites/landsat-9/',
     tags: ['Earth observation', 'land imaging', 'USGS'],
     aiInsights: [
@@ -378,7 +382,7 @@ export const MISSIONS: Mission[] = [
       { id: 'a2-e2', missionId: 'artemis-2', eventType: 'milestone', timestamp: '2024-07-09', title: 'Launch Date Target Update', description: 'NASA targets September 2025 for Artemis II launch', source: 'NASA' },
     ],
     images: [
-      { id: 'a2-img-1', missionId: 'artemis-2', url: 'https://images-assets.nasa.gov/image/KSC-20220316-PH-KLS01_0013/KSC-20220316-PH-KLS01_0013~orig.jpg', title: 'Artemis II Orion Spacecraft at KSC', date: '2022-03-16', source: 'NASA', sourceUrl: 'https://images.nasa.gov/' },
+      { id: 'a2-img-1', missionId: 'artemis-2', url: 'https://images-assets.nasa.gov/image/KSC-20220316-PH-KLS01_0013/KSC-20220316-PH-KLS01_0013~orig.jpg', title: 'Artemis II Orion Spacecraft at KSC', date: '2022-03-16', source: 'NASA', sourceUrl: 'https://images.nasa.gov/details/KSC-20220316-PH-KLS01_0013' },
     ],
     sourceUrl: 'https://www.nasa.gov/artemis-ii',
     tags: ['crewed', 'Artemis', 'Orion', 'SLS', 'lunar flyby'],
@@ -457,7 +461,7 @@ export const MISSIONS: Mission[] = [
       { id: 'lro-e3', missionId: 'lro', eventType: 'milestone', timestamp: '2024-01-01', title: 'Ongoing Operations', description: 'LRO continues lunar mapping in extended mission', source: 'NASA' },
     ],
     images: [
-      { id: 'lro-img-1', missionId: 'lro', url: 'https://images-assets.nasa.gov/image/PIA14021/PIA14021~orig.jpg', title: 'Lunar South Pole by LRO LROC', date: '2011-01-01', source: 'NASA', sourceUrl: 'https://images.nasa.gov/' },
+      { id: 'lro-img-1', missionId: 'lro', url: 'https://images-assets.nasa.gov/image/PIA14021/PIA14021~orig.jpg', title: 'Lunar South Pole by LRO LROC', date: '2011-01-01', source: 'NASA', sourceUrl: 'https://images.nasa.gov/details/PIA14021' },
     ],
     sourceUrl: 'https://lunar.gsfc.nasa.gov/',
     tags: ['orbiter', 'lunar mapping', 'ice prospecting'],
@@ -523,7 +527,9 @@ export const MISSIONS: Mission[] = [
       { id: 'kplo-e1', missionId: 'kplo', eventType: 'launch', timestamp: '2022-08-05', title: 'Danuri Launch', description: 'Launched on SpaceX Falcon 9 from Cape Canaveral', source: 'NASA' },
       { id: 'kplo-e2', missionId: 'kplo', eventType: 'milestone', timestamp: '2022-12-27', title: 'Lunar Orbit Insertion', description: 'Danuri enters lunar orbit', source: 'NASA' },
     ],
-    images: [],
+    images: [
+      { id: 'kplo-img-1', missionId: 'kplo', url: 'https://images-assets.nasa.gov/image/KSC-20220803-PH-SPX01_0033/KSC-20220803-PH-SPX01_0033~orig.jpg', title: 'Korea Pathfinder Lunar Orbiter Launch on Falcon 9', date: '2022-08-05', source: 'NASA', sourceUrl: 'https://images.nasa.gov/details/KSC-20220803-PH-SPX01_0033' },
+    ],
     sourceUrl: 'https://www.kari.re.kr/',
     tags: ['orbiter', 'South Korea', 'ShadowCam', 'international'],
     aiInsights: [
@@ -579,7 +585,9 @@ export const MISSIONS: Mission[] = [
     events: [
       { id: 'gw-e1', missionId: 'lunar-gateway', eventType: 'milestone', timestamp: '2019-05-23', title: 'PPE Contract Awarded', description: 'NASA awards PPE contract to Maxar Technologies', source: 'NASA' },
     ],
-    images: [],
+    images: [
+      { id: 'gw-img-1', missionId: 'lunar-gateway', url: 'https://images-assets.nasa.gov/image/KSC-20230920-PH-JBS01_0091/KSC-20230920-PH-JBS01_0091~orig.jpg', title: 'Lunar Gateway Artist Concept', date: '2023-09-20', source: 'NASA', sourceUrl: 'https://images.nasa.gov/details/KSC-20230920-PH-JBS01_0091' },
+    ],
     sourceUrl: 'https://www.nasa.gov/lunar-gateway/',
     tags: ['planned', 'crewed', 'space station', 'Artemis', 'international'],
     aiInsights: [
@@ -616,8 +624,8 @@ export const MISSIONS: Mission[] = [
       'Characterize Martian weather and dust',
       'Support Ingenuity helicopter flight operations',
     ],
-    heroImageUrl: 'https://mars.nasa.gov/system/news_items/main_images/9098_PIA24401-16.jpg',
-    thumbnailUrl: 'https://mars.nasa.gov/system/news_items/main_images/9098_PIA24401-16.jpg',
+    heroImageUrl: 'https://images-assets.nasa.gov/image/PIA24546/PIA24546~orig.jpg',
+    thumbnailUrl: 'https://images-assets.nasa.gov/image/PIA24546/PIA24546~thumb.jpg',
     currentLocation: {
       description: 'Jezero Crater, Mars — exploring the ancient lake delta margin',
       label: 'OBSERVED',
@@ -675,9 +683,9 @@ export const MISSIONS: Mission[] = [
       { id: 'p-e7', missionId: 'perseverance', eventType: 'science', timestamp: '2024-07-01', title: 'Campaign 4 Begins', description: 'Rover begins fourth science campaign exploring crater margin', source: 'NASA' },
     ],
     images: [
-      { id: 'p-img-1', missionId: 'perseverance', url: 'https://mars.nasa.gov/system/news_items/main_images/9098_PIA24401-16.jpg', title: 'Perseverance Rover First Image', date: '2021-02-18', source: 'NASA', sourceUrl: 'https://mars.nasa.gov/' },
-      { id: 'p-img-2', missionId: 'perseverance', url: 'https://images-assets.nasa.gov/image/PIA24546/PIA24546~orig.jpg', title: 'Perseverance at Jezero Crater', date: '2021-03-01', source: 'NASA', sourceUrl: 'https://images.nasa.gov/' },
-      { id: 'p-img-3', missionId: 'perseverance', url: 'https://images-assets.nasa.gov/image/PIA24836/PIA24836~orig.jpg', title: 'Ingenuity in Flight', date: '2021-04-19', source: 'NASA', sourceUrl: 'https://images.nasa.gov/' },
+      { id: 'p-img-1', missionId: 'perseverance', url: 'https://images-assets.nasa.gov/image/PIA24546/PIA24546~orig.jpg', title: 'Perseverance at Jezero Crater', date: '2021-03-01', source: 'NASA', sourceUrl: 'https://images.nasa.gov/details/PIA24546' },
+      { id: 'p-img-2', missionId: 'perseverance', url: 'https://images-assets.nasa.gov/image/PIA24836/PIA24836~orig.jpg', title: 'Ingenuity in Flight over Mars', date: '2021-04-19', source: 'NASA', sourceUrl: 'https://images.nasa.gov/details/PIA24836' },
+      { id: 'p-img-3', missionId: 'perseverance', url: 'https://images-assets.nasa.gov/image/PIA23764/PIA23764~orig.jpg', title: 'Perseverance Rover Artist Concept', date: '2020-07-30', source: 'NASA', sourceUrl: 'https://images.nasa.gov/details/PIA23764' },
     ],
     sourceUrl: 'https://mars.nasa.gov/mars2020/',
     tags: ['rover', 'Jezero', 'astrobiology', 'sample cache', 'Ingenuity'],
@@ -766,8 +774,8 @@ export const MISSIONS: Mission[] = [
       { id: 'c-e5', missionId: 'curiosity', eventType: 'science', timestamp: '2023-07-01', title: 'Organic Molecule Discovery', description: 'Detection of diverse organic molecules in ancient lake sediments', source: 'NASA' },
     ],
     images: [
-      { id: 'c-img-1', missionId: 'curiosity', url: 'https://images-assets.nasa.gov/image/PIA16239/PIA16239~orig.jpg', title: 'Curiosity Self-Portrait in Gale Crater', date: '2012-10-31', source: 'NASA', sourceUrl: 'https://images.nasa.gov/' },
-      { id: 'c-img-2', missionId: 'curiosity', url: 'https://images-assets.nasa.gov/image/PIA20844/PIA20844~orig.jpg', title: 'Murray Buttes', date: '2016-09-08', source: 'NASA', sourceUrl: 'https://images.nasa.gov/' },
+      { id: 'c-img-1', missionId: 'curiosity', url: 'https://images-assets.nasa.gov/image/PIA16239/PIA16239~orig.jpg', title: 'Curiosity Self-Portrait in Gale Crater', date: '2012-10-31', source: 'NASA', sourceUrl: 'https://images.nasa.gov/details/PIA16239' },
+      { id: 'c-img-2', missionId: 'curiosity', url: 'https://images-assets.nasa.gov/image/PIA20844/PIA20844~orig.jpg', title: 'Murray Buttes', date: '2016-09-08', source: 'NASA', sourceUrl: 'https://images.nasa.gov/details/PIA20844' },
     ],
     sourceUrl: 'https://mars.nasa.gov/msl/',
     tags: ['rover', 'Gale Crater', 'geochemistry', 'Mt. Sharp'],
@@ -838,7 +846,7 @@ export const MISSIONS: Mission[] = [
       { id: 'm-e4', missionId: 'maven', eventType: 'milestone', timestamp: '2024-01-01', title: 'Ongoing Science & Relay', description: 'MAVEN continues atmospheric science and serves as relay for Mars surface missions', source: 'NASA' },
     ],
     images: [
-      { id: 'm-img-1', missionId: 'maven', url: 'https://images-assets.nasa.gov/image/PIA18922/PIA18922~orig.jpg', title: 'MAVEN Artist Concept', date: '2014-01-01', source: 'NASA', sourceUrl: 'https://images.nasa.gov/' },
+      { id: 'm-img-1', missionId: 'maven', url: 'https://images-assets.nasa.gov/image/PIA18922/PIA18922~orig.jpg', title: 'MAVEN Artist Concept at Mars', date: '2014-01-01', source: 'NASA', sourceUrl: 'https://images.nasa.gov/details/PIA18922' },
     ],
     sourceUrl: 'https://lasp.colorado.edu/maven/',
     tags: ['orbiter', 'atmosphere', 'solar wind', 'climate history'],
@@ -909,7 +917,7 @@ export const MISSIONS: Mission[] = [
       { id: 'mro-e3', missionId: 'mro', eventType: 'milestone', timestamp: '2024-01-01', title: 'Ongoing Operations', description: 'MRO continues science and relay operations after nearly 20 years', source: 'NASA' },
     ],
     images: [
-      { id: 'mro-img-1', missionId: 'mro', url: 'https://images-assets.nasa.gov/image/PIA10216/PIA10216~orig.jpg', title: 'Recurring Slope Lineae on Mars (HiRISE)', date: '2011-08-05', source: 'NASA', sourceUrl: 'https://images.nasa.gov/' },
+      { id: 'mro-img-1', missionId: 'mro', url: 'https://images-assets.nasa.gov/image/PIA10216/PIA10216~orig.jpg', title: 'Recurring Slope Lineae on Mars (HiRISE / MRO)', date: '2011-08-05', source: 'NASA', sourceUrl: 'https://images.nasa.gov/details/PIA10216' },
     ],
     sourceUrl: 'https://mars.nasa.gov/mro/',
     tags: ['orbiter', 'HiRISE', 'radar', 'mineralogy', 'relay'],
@@ -979,7 +987,9 @@ export const MISSIONS: Mission[] = [
       { id: 'me-e2', missionId: 'mars-express', eventType: 'milestone', timestamp: '2003-12-25', title: 'Mars Orbit Insertion', description: 'Mars Express enters Martian orbit on Christmas Day', source: 'ESA' },
       { id: 'me-e3', missionId: 'mars-express', eventType: 'science', timestamp: '2018-07-25', title: 'Subglacial Lake Detected', description: 'MARSIS radar detects bright radar reflection suggesting liquid water lake beneath south polar cap', source: 'ESA' },
     ],
-    images: [],
+    images: [
+      { id: 'me-img-1', missionId: 'mars-express', url: 'https://images-assets.nasa.gov/image/PIA19952/PIA19952~orig.jpg', title: 'Mars Express HRSC Color View of Mars', date: '2016-01-01', source: 'ESA', sourceUrl: 'https://images.nasa.gov/details/PIA19952' },
+    ],
     sourceUrl: 'https://www.esa.int/Science_Exploration/Space_Science/Mars_Express',
     tags: ['orbiter', 'ESA', 'radar', 'MARSIS', 'subglacial lake'],
     aiInsights: [
@@ -1049,7 +1059,9 @@ export const MISSIONS: Mission[] = [
       { id: 'tgo-e2', missionId: 'tgo', eventType: 'milestone', timestamp: '2016-10-19', title: 'Mars Orbit Insertion', description: 'TGO enters Mars orbit; Schiaparelli lander crashes during EDL test', source: 'ESA' },
       { id: 'tgo-e3', missionId: 'tgo', eventType: 'science', timestamp: '2021-01-01', title: 'No Methane Detection', description: 'TGO finds no detectable global methane — puzzling given Curiosity\'s detections', source: 'ESA' },
     ],
-    images: [],
+    images: [
+      { id: 'tgo-img-1', missionId: 'tgo', url: 'https://images-assets.nasa.gov/image/PIA21131/PIA21131~orig.jpg', title: 'ExoMars Trace Gas Orbiter at Mars — Artist Concept', date: '2016-10-01', source: 'ESA', sourceUrl: 'https://images.nasa.gov/details/PIA21131' },
+    ],
     sourceUrl: 'https://exploration.esa.int/web/mars/-/48088-mission-overview',
     tags: ['orbiter', 'ESA', 'methane', 'trace gases', 'ExoMars'],
     aiInsights: [
@@ -1128,7 +1140,7 @@ export const MISSIONS: Mission[] = [
       { id: 'ins-e5', missionId: 'insight', eventType: 'milestone', timestamp: '2022-12-21', title: 'End of Mission', description: 'Last contact with InSight as power levels fall below operational threshold', source: 'NASA' },
     ],
     images: [
-      { id: 'ins-img-1', missionId: 'insight', url: 'https://images-assets.nasa.gov/image/PIA22743/PIA22743~orig.jpg', title: 'InSight Lander Artist Concept', date: '2018-01-01', source: 'NASA', sourceUrl: 'https://images.nasa.gov/' },
+      { id: 'ins-img-1', missionId: 'insight', url: 'https://images-assets.nasa.gov/image/PIA22743/PIA22743~orig.jpg', title: 'InSight Lander Artist Concept', date: '2018-01-01', source: 'NASA', sourceUrl: 'https://images.nasa.gov/details/PIA22743' },
     ],
     sourceUrl: 'https://mars.nasa.gov/insight/',
     tags: ['lander', 'seismology', 'interior', 'completed'],
@@ -1367,7 +1379,7 @@ export const MISSIONS: Mission[] = [
       { id: 'jui-e4', missionId: 'juice', eventType: 'milestone', timestamp: '2034-12-01', title: 'Ganymede Orbit Insertion (Planned)', description: 'First spacecraft to orbit a moon other than Earth\'s — Ganymede', source: 'ESA' },
     ],
     images: [
-      { id: 'jui-img-1', missionId: 'juice', url: 'https://images-assets.nasa.gov/image/PIA25977/PIA25977~orig.jpg', title: 'JUICE Artist Concept near Ganymede', date: '2023-04-14', source: 'ESA', sourceUrl: 'https://images.nasa.gov/' },
+      { id: 'jui-img-1', missionId: 'juice', url: 'https://images-assets.nasa.gov/image/PIA25977/PIA25977~orig.jpg', title: 'JUICE Artist Concept near Ganymede', date: '2023-04-14', source: 'ESA', sourceUrl: 'https://images.nasa.gov/details/PIA25977' },
     ],
     sourceUrl: 'https://www.esa.int/Science_Exploration/Space_Science/Juice',
     tags: ['orbiter', 'Jupiter', 'Ganymede', 'Callisto', 'Europa', 'ocean', 'ESA', 'cruise'],
@@ -1778,7 +1790,7 @@ export const MISSIONS: Mission[] = [
       { id: 'msg-e6', missionId: 'messenger', eventType: 'milestone', timestamp: '2015-04-30', title: 'End of Mission', description: 'MESSENGER impacts Mercury surface at ~3.91 km/s after fuel exhaustion', source: 'NASA' },
     ],
     images: [
-      { id: 'msg-img-1', missionId: 'messenger', url: 'https://images-assets.nasa.gov/image/PIA16853/PIA16853~orig.jpg', title: 'Mercury from MESSENGER — Color Global View', date: '2013-02-14', source: 'NASA', sourceUrl: 'https://images.nasa.gov/' },
+      { id: 'msg-img-1', missionId: 'messenger', url: 'https://images-assets.nasa.gov/image/PIA16853/PIA16853~orig.jpg', title: 'Mercury from MESSENGER — Color Global View', date: '2013-02-14', source: 'NASA', sourceUrl: 'https://images.nasa.gov/details/PIA16853' },
     ],
     sourceUrl: 'https://messenger.jhuapl.edu/',
     tags: ['orbiter', 'Mercury', 'completed', 'surface mapping', 'water ice', 'magnetic field'],
@@ -1863,7 +1875,7 @@ export const MISSIONS: Mission[] = [
       { id: 'bep-e5', missionId: 'bepicolombo', eventType: 'milestone', timestamp: '2027-03-01', title: 'Routine Science Operations (Planned)', description: 'Routine science operations from MPO and Mio expected to begin in early 2027', source: 'ESA' },
     ],
     images: [
-      { id: 'bep-img-1', missionId: 'bepicolombo', url: 'https://images-assets.nasa.gov/image/PIA24031/PIA24031~orig.jpg', title: 'BepiColombo Artist Concept at Mercury', date: '2018-10-20', source: 'ESA', sourceUrl: 'https://images.nasa.gov/' },
+      { id: 'bep-img-1', missionId: 'bepicolombo', url: 'https://images-assets.nasa.gov/image/PIA24031/PIA24031~orig.jpg', title: 'BepiColombo Artist Concept at Mercury', date: '2018-10-20', source: 'ESA', sourceUrl: 'https://images.nasa.gov/details/PIA24031' },
     ],
     sourceUrl: 'https://www.esa.int/Science_Exploration/Space_Science/BepiColombo',
     tags: ['orbiter', 'Mercury', 'ESA', 'JAXA', 'cruise', 'magnetosphere'],
@@ -1950,7 +1962,7 @@ export const MISSIONS: Mission[] = [
       { id: 'aka-e5', missionId: 'akatsuki', eventType: 'milestone', timestamp: '2025-09-01', title: 'End of Mission', description: 'JAXA officially ends Akatsuki operations following progressive loss of attitude control capability', source: 'JAXA' },
     ],
     images: [
-      { id: 'aka-img-1', missionId: 'akatsuki', url: 'https://images-assets.nasa.gov/image/PIA23791/PIA23791~orig.jpg', title: 'Venus Ultraviolet — Akatsuki', date: '2018-01-01', source: 'JAXA', sourceUrl: 'https://images.nasa.gov/' },
+      { id: 'aka-img-1', missionId: 'akatsuki', url: 'https://images-assets.nasa.gov/image/PIA23791/PIA23791~orig.jpg', title: 'Venus Ultraviolet View — Akatsuki', date: '2018-01-01', source: 'JAXA', sourceUrl: 'https://images.nasa.gov/details/PIA23791' },
     ],
     sourceUrl: 'https://global.jaxa.jp/projects/sas/planet_c/',
     tags: ['orbiter', 'Venus', 'JAXA', 'atmosphere', 'completed'],
@@ -2025,7 +2037,7 @@ export const MISSIONS: Mission[] = [
       { id: 'mag-e4', missionId: 'magellan', eventType: 'milestone', timestamp: '1994-10-12', title: 'End of Mission', description: 'Magellan intentionally deorbited; last signal received before atmospheric entry', source: 'NASA' },
     ],
     images: [
-      { id: 'mag-img-1', missionId: 'magellan', url: 'https://images-assets.nasa.gov/image/PIA00271/PIA00271~orig.jpg', title: 'Venus Radar Map — Magellan Global View', date: '1996-01-01', source: 'NASA', sourceUrl: 'https://images.nasa.gov/' },
+      { id: 'mag-img-1', missionId: 'magellan', url: 'https://images-assets.nasa.gov/image/PIA00271/PIA00271~orig.jpg', title: 'Venus Radar Map — Magellan Global View', date: '1996-01-01', source: 'NASA', sourceUrl: 'https://images.nasa.gov/details/PIA00271' },
     ],
     sourceUrl: 'https://science.nasa.gov/mission/magellan/',
     tags: ['orbiter', 'Venus', 'radar', 'surface mapping', 'completed', 'NASA'],
@@ -2061,8 +2073,8 @@ export const MISSIONS: Mission[] = [
       'Investigate Venus\'s southern polar vortex',
       'Search for lightning and active volcanism',
     ],
-    heroImageUrl: 'https://images-assets.nasa.gov/image/PIA00107/PIA00107~orig.jpg',
-    thumbnailUrl: 'https://images-assets.nasa.gov/image/PIA00107/PIA00107~thumb.jpg',
+    heroImageUrl: 'https://images-assets.nasa.gov/image/PIA23791/PIA23791~orig.jpg',
+    thumbnailUrl: 'https://images-assets.nasa.gov/image/PIA23791/PIA23791~thumb.jpg',
     currentLocation: {
       description: 'Destroyed in Venus\'s atmosphere — last contact 18 January 2015 after fuel exhaustion',
       label: 'OBSERVED',
@@ -2099,7 +2111,7 @@ export const MISSIONS: Mission[] = [
       { id: 've-e4', missionId: 'venus-express', eventType: 'milestone', timestamp: '2015-01-18', title: 'End of Mission', description: 'Last contact with Venus Express; spacecraft lost after propellant exhaustion following aerobraking', source: 'ESA' },
     ],
     images: [
-      { id: 've-img-1', missionId: 'venus-express', url: 'https://images-assets.nasa.gov/image/PIA00107/PIA00107~orig.jpg', title: 'Venus Ultraviolet — Pioneer Venus', date: '1979-02-26', source: 'NASA', sourceUrl: 'https://images.nasa.gov/' },
+      { id: 've-img-1', missionId: 'venus-express', url: 'https://images-assets.nasa.gov/image/PIA23791/PIA23791~orig.jpg', title: 'Venus Ultraviolet Cloud View', date: '2010-01-01', source: 'ESA', sourceUrl: 'https://images.nasa.gov/details/PIA23791' },
     ],
     sourceUrl: 'https://www.esa.int/Science_Exploration/Space_Science/Venus_Express',
     tags: ['orbiter', 'Venus', 'ESA', 'atmosphere', 'volcanism', 'completed'],
@@ -2177,7 +2189,7 @@ export const MISSIONS: Mission[] = [
       { id: 'dav-e1', missionId: 'davinci', eventType: 'milestone', timestamp: '2021-06-02', title: 'Mission Selected', description: 'NASA selects DAVINCI and VERITAS as two new Discovery missions to Venus — the first dedicated US Venus missions in decades', source: 'NASA', sourceUrl: 'https://www.nasa.gov/solar-system/nasa-selects-2-missions-to-study-lost-habitable-world-of-venus/' },
     ],
     images: [
-      { id: 'dav-img-1', missionId: 'davinci', url: 'https://images-assets.nasa.gov/image/PIA24818/PIA24818~orig.jpg', title: 'DAVINCI Descent Sphere Artist Concept', date: '2021-06-02', source: 'NASA', sourceUrl: 'https://images.nasa.gov/' },
+      { id: 'dav-img-1', missionId: 'davinci', url: 'https://images-assets.nasa.gov/image/PIA24818/PIA24818~orig.jpg', title: 'DAVINCI Descent Sphere Artist Concept', date: '2021-06-02', source: 'NASA', sourceUrl: 'https://images.nasa.gov/details/PIA24818' },
     ],
     sourceUrl: 'https://davincimission.gsfc.nasa.gov/',
     tags: ['lander', 'Venus', 'atmosphere', 'noble gases', 'tessera', 'planned', 'NASA'],
@@ -2245,7 +2257,7 @@ export const MISSIONS: Mission[] = [
       { id: 'ver-e1', missionId: 'veritas', eventType: 'milestone', timestamp: '2021-06-02', title: 'Mission Selected', description: 'NASA selects VERITAS and DAVINCI as two new Discovery missions to Venus', source: 'NASA', sourceUrl: 'https://www.nasa.gov/solar-system/nasa-selects-2-missions-to-study-lost-habitable-world-of-venus/' },
     ],
     images: [
-      { id: 'ver-img-1', missionId: 'veritas', url: 'https://images-assets.nasa.gov/image/PIA24813/PIA24813~orig.jpg', title: 'VERITAS Artist Concept at Venus', date: '2021-06-02', source: 'NASA', sourceUrl: 'https://images.nasa.gov/' },
+      { id: 'ver-img-1', missionId: 'veritas', url: 'https://images-assets.nasa.gov/image/PIA24813/PIA24813~orig.jpg', title: 'VERITAS Artist Concept at Venus', date: '2021-06-02', source: 'NASA', sourceUrl: 'https://images.nasa.gov/details/PIA24813' },
     ],
     sourceUrl: 'https://www.jpl.nasa.gov/missions/veritas',
     tags: ['orbiter', 'Venus', 'radar', 'surface mapping', 'geology', 'planned', 'NASA'],
@@ -2313,7 +2325,7 @@ export const MISSIONS: Mission[] = [
       { id: 'env-e1', missionId: 'envision', eventType: 'milestone', timestamp: '2021-06-10', title: 'Mission Selected', description: 'ESA selects EnVision as its M5 medium-class science mission to Venus', source: 'ESA', sourceUrl: 'https://www.esa.int/Science_Exploration/Space_Science/EnVision' },
     ],
     images: [
-      { id: 'env-img-1', missionId: 'envision', url: 'https://images-assets.nasa.gov/image/PIA24817/PIA24817~orig.jpg', title: 'EnVision Artist Concept at Venus', date: '2021-06-10', source: 'ESA', sourceUrl: 'https://images.nasa.gov/' },
+      { id: 'env-img-1', missionId: 'envision', url: 'https://images-assets.nasa.gov/image/PIA24817/PIA24817~orig.jpg', title: 'EnVision Artist Concept at Venus', date: '2021-06-10', source: 'ESA', sourceUrl: 'https://images.nasa.gov/details/PIA24817' },
     ],
     sourceUrl: 'https://www.esa.int/Science_Exploration/Space_Science/EnVision',
     tags: ['orbiter', 'Venus', 'ESA', 'radar', 'geology', 'atmosphere', 'planned'],
@@ -2389,8 +2401,8 @@ export const MISSIONS: Mission[] = [
       { id: 'v2n-e4', missionId: 'voyager-2-neptune', eventType: 'milestone', timestamp: '1989-08-26', title: '6 New Moons Discovered', description: 'Voyager 2\'s flyby reveals six previously unknown Neptunian moons', source: 'NASA' },
     ],
     images: [
-      { id: 'v2n-img-1', missionId: 'voyager-2-neptune', url: 'https://images-assets.nasa.gov/image/PIA00046/PIA00046~orig.jpg', title: 'Neptune by Voyager 2', date: '1989-08-20', source: 'NASA', sourceUrl: 'https://images.nasa.gov/' },
-      { id: 'v2n-img-2', missionId: 'voyager-2-neptune', url: 'https://images-assets.nasa.gov/image/PIA02210/PIA02210~orig.jpg', title: 'Triton — Voyager 2', date: '1989-08-25', source: 'NASA', sourceUrl: 'https://images.nasa.gov/' },
+      { id: 'v2n-img-1', missionId: 'voyager-2-neptune', url: 'https://images-assets.nasa.gov/image/PIA00046/PIA00046~orig.jpg', title: 'Neptune by Voyager 2', date: '1989-08-20', source: 'NASA', sourceUrl: 'https://images.nasa.gov/details/PIA00046' },
+      { id: 'v2n-img-2', missionId: 'voyager-2-neptune', url: 'https://images-assets.nasa.gov/image/PIA02210/PIA02210~orig.jpg', title: 'Triton — Voyager 2', date: '1989-08-25', source: 'NASA', sourceUrl: 'https://images.nasa.gov/details/PIA02210' },
     ],
     sourceUrl: 'https://voyager.jpl.nasa.gov/',
     tags: ['flyby', 'Neptune', 'Triton', 'Grand Tour', 'Voyager', 'completed'],
