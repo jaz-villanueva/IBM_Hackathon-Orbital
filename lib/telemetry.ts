@@ -79,7 +79,7 @@ export interface OrbiterState {
   /** Human-readable short name */
   name: string;
   /** The gravitational body this spacecraft orbits */
-  destination: 'earth' | 'moon' | 'mars';
+  destination: string;
   /** Spacecraft class from SceneObject */
   objectType: ObjectType;
 
@@ -138,7 +138,7 @@ export interface OrbiterState {
 export interface SurfaceAssetState {
   missionId: string;
   name: string;
-  destination: 'earth' | 'moon' | 'mars';
+  destination: string;
   objectType: ObjectType;
   /** Geodetic latitude, degrees (positive = north) */
   surfaceLat: number;
@@ -171,10 +171,16 @@ export interface TelemetrySnapshot {
  * Used to derive altitude from radius.
  * Sources: NASA Fact Sheets (OBSERVED).
  */
-const BODY_RADIUS_KM: Record<'earth' | 'moon' | 'mars', number> = {
-  earth: 6371,  // km — IAU 2015 nominal
-  moon:  1737,  // km — IAU 2015 nominal
-  mars:  3390,  // km — IAU 2015 nominal mean
+const BODY_RADIUS_KM: Record<string, number> = {
+  mercury:  2440,  // km — IAU 2015 nominal
+  venus:    6051,  // km — IAU 2015 nominal
+  earth:    6371,  // km — IAU 2015 nominal
+  moon:     1737,  // km — IAU 2015 nominal
+  mars:     3390,  // km — IAU 2015 nominal mean
+  jupiter:  69911, // km — IAU 2015 nominal equatorial
+  saturn:   58232, // km — IAU 2015 nominal equatorial
+  uranus:   25362, // km — IAU 2015 nominal
+  neptune:  24622, // km — IAU 2015 nominal
 };
 
 // ─── Internal helpers ─────────────────────────────────────────────────────────

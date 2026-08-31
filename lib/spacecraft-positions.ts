@@ -40,7 +40,7 @@ export interface SceneObject {
   agency: string;
   objectType: ObjectType;
   status: SceneStatus;
-  destination: 'earth' | 'moon' | 'mars' | 'jupiter' | 'saturn' | 'uranus' | 'neptune';
+  destination: 'mercury' | 'venus' | 'earth' | 'moon' | 'mars' | 'jupiter' | 'saturn' | 'uranus' | 'neptune';
   /** If true the object orbits its planet */
   isOrbiter: boolean;
   /** Orbit ring radius in scene units (planet-relative) */
@@ -68,6 +68,32 @@ export interface SceneObject {
   isLiveSatellite?: boolean;
 }
 
+// ─── MERCURY ─────────────────────────────────────────────────────────────────
+
+export const MERCURY_OBJECTS: SceneObject[] = [
+  {
+    missionId: 'bepicolombo',
+    name: 'BepiColombo',
+    shortName: 'BepiColombo',
+    agency: 'ESA / JAXA',
+    objectType: 'orbiter',
+    status: 'active',
+    destination: 'mercury',
+    isOrbiter: true,
+    orbitRadius: 0.45,
+    orbitInclination: Math.PI * 0.35,
+    orbitPhase: Math.PI * 0.5,
+    orbitSpeed: 1.2,
+    orbitColor: 0x8c7a6b,
+    statusNote: 'En route to Mercury · Orbit insertion Nov 2026',
+  },
+];
+
+// ─── VENUS ───────────────────────────────────────────────────────────────────
+// Note: no active Venus spacecraft currently in operation. Planned missions shown.
+
+export const VENUS_OBJECTS: SceneObject[] = [];
+
 // ─── EARTH ───────────────────────────────────────────────────────────────────
 
 export const EARTH_OBJECTS: SceneObject[] = [
@@ -80,7 +106,7 @@ export const EARTH_OBJECTS: SceneObject[] = [
     status: 'active',
     destination: 'earth',
     isOrbiter: true,
-    orbitRadius: 1.45,
+    orbitRadius: 0.72,
     orbitInclination: Math.PI / 3,
     orbitPhase: 0,
     orbitSpeed: 2.2,
@@ -96,7 +122,7 @@ export const EARTH_OBJECTS: SceneObject[] = [
     status: 'active',
     destination: 'earth',
     isOrbiter: true,
-    orbitRadius: 1.72,
+    orbitRadius: 0.78,
     orbitInclination: Math.PI * 0.55,
     orbitPhase: Math.PI * 0.3,
     orbitSpeed: 1.0,
@@ -112,7 +138,7 @@ export const EARTH_OBJECTS: SceneObject[] = [
     status: 'active',
     destination: 'earth',
     isOrbiter: true,
-    orbitRadius: 1.72,
+    orbitRadius: 0.78,
     orbitInclination: Math.PI * 0.55,
     orbitPhase: Math.PI * 0.9,
     orbitSpeed: 1.0,
@@ -128,7 +154,7 @@ export const EARTH_OBJECTS: SceneObject[] = [
     status: 'active',
     destination: 'earth',
     isOrbiter: true,
-    orbitRadius: 1.72,
+    orbitRadius: 0.78,
     orbitInclination: Math.PI * 0.56,
     orbitPhase: Math.PI * 1.5,
     orbitSpeed: 0.9,
@@ -149,7 +175,7 @@ export const MOON_OBJECTS: SceneObject[] = [
     status: 'active',
     destination: 'moon',
     isOrbiter: true,
-    orbitRadius: 0.52,
+    orbitRadius: 0.22,
     orbitInclination: Math.PI * 0.5,
     orbitPhase: 0,
     orbitSpeed: 1.8,
@@ -165,7 +191,7 @@ export const MOON_OBJECTS: SceneObject[] = [
     status: 'active',
     destination: 'moon',
     isOrbiter: true,
-    orbitRadius: 0.52,
+    orbitRadius: 0.22,
     orbitInclination: Math.PI * 0.48,
     orbitPhase: Math.PI,
     orbitSpeed: 1.6,
@@ -186,7 +212,7 @@ export const MOON_OBJECTS: SceneObject[] = [
     orbitPhase: Math.PI * 0.5,
     orbitSpeed: 0.4,
     orbitColor: 0x60a5fa,
-    statusNote: 'Planned lunar flyby · 2025 target',
+    statusNote: 'Planned lunar flyby · 2025 target',  // wide orbit, unchanged
   },
 ];
 
@@ -203,7 +229,7 @@ export const MARS_OBJECTS: SceneObject[] = [
     status: 'science',
     destination: 'mars',
     isOrbiter: true,
-    orbitRadius: 0.92,
+    orbitRadius: 0.50,
     orbitInclination: Math.PI * 0.52,
     orbitPhase: 0,
     orbitSpeed: 1.5,
@@ -219,7 +245,7 @@ export const MARS_OBJECTS: SceneObject[] = [
     status: 'science',
     destination: 'mars',
     isOrbiter: true,
-    orbitRadius: 1.05,
+    orbitRadius: 0.80,
     orbitInclination: Math.PI * 0.42,
     orbitPhase: Math.PI * 0.7,
     orbitSpeed: 0.9,
@@ -235,7 +261,7 @@ export const MARS_OBJECTS: SceneObject[] = [
     status: 'science',
     destination: 'mars',
     isOrbiter: true,
-    orbitRadius: 1.15,
+    orbitRadius: 1.19,
     orbitInclination: Math.PI * 0.48,
     orbitPhase: Math.PI * 1.3,
     orbitSpeed: 0.7,
@@ -251,7 +277,7 @@ export const MARS_OBJECTS: SceneObject[] = [
     status: 'science',
     destination: 'mars',
     isOrbiter: true,
-    orbitRadius: 0.98,
+    orbitRadius: 0.50,
     orbitInclination: Math.PI * 0.41,
     orbitPhase: Math.PI * 1.8,
     orbitSpeed: 1.1,
@@ -312,7 +338,7 @@ export const JUPITER_OBJECTS: SceneObject[] = [
     status: 'science',
     destination: 'jupiter',
     isOrbiter: true,
-    orbitRadius: 1.8,
+    orbitRadius: 0.82,
     orbitInclination: Math.PI * 0.5,
     orbitPhase: 0,
     orbitSpeed: 0.8,
@@ -328,7 +354,7 @@ export const JUPITER_OBJECTS: SceneObject[] = [
     status: 'active',
     destination: 'jupiter',
     isOrbiter: true,
-    orbitRadius: 2.2,
+    orbitRadius: 1.10,
     orbitInclination: Math.PI * 0.35,
     orbitPhase: Math.PI * 0.8,
     orbitSpeed: 0.4,
@@ -344,7 +370,7 @@ export const JUPITER_OBJECTS: SceneObject[] = [
     status: 'active',
     destination: 'jupiter',
     isOrbiter: true,
-    orbitRadius: 2.6,
+    orbitRadius: 1.30,
     orbitInclination: Math.PI * 0.28,
     orbitPhase: Math.PI * 1.5,
     orbitSpeed: 0.35,
@@ -365,7 +391,7 @@ export const SATURN_OBJECTS: SceneObject[] = [
     status: 'completed',
     destination: 'saturn',
     isOrbiter: true,
-    orbitRadius: 1.6,
+    orbitRadius: 0.68,
     orbitInclination: Math.PI * 0.4,
     orbitPhase: Math.PI * 0.2,
     orbitSpeed: 0.5,
@@ -381,7 +407,7 @@ export const SATURN_OBJECTS: SceneObject[] = [
     status: 'planned',
     destination: 'saturn',
     isOrbiter: true,
-    orbitRadius: 1.3,
+    orbitRadius: 1.00,
     orbitInclination: Math.PI * 0.3,
     orbitPhase: Math.PI * 1.2,
     orbitSpeed: 0.3,
@@ -402,7 +428,7 @@ export const URANUS_OBJECTS: SceneObject[] = [
     status: 'completed',
     destination: 'uranus',
     isOrbiter: true,
-    orbitRadius: 1.2,
+    orbitRadius: 0.55,
     orbitInclination: Math.PI * 0.5,
     orbitPhase: 0,
     orbitSpeed: 0.2,
@@ -423,7 +449,7 @@ export const NEPTUNE_OBJECTS: SceneObject[] = [
     status: 'completed',
     destination: 'neptune',
     isOrbiter: true,
-    orbitRadius: 1.1,
+    orbitRadius: 0.48,
     orbitInclination: Math.PI * 0.45,
     orbitPhase: Math.PI * 0.6,
     orbitSpeed: 0.2,
@@ -433,6 +459,8 @@ export const NEPTUNE_OBJECTS: SceneObject[] = [
 ];
 
 export const ALL_SCENE_OBJECTS: SceneObject[] = [
+  ...MERCURY_OBJECTS,
+  ...VENUS_OBJECTS,
   ...EARTH_OBJECTS,
   ...MOON_OBJECTS,
   ...MARS_OBJECTS,

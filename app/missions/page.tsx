@@ -24,6 +24,8 @@ function MissionsContent() {
   const stats = useMemo(() => ({
     total: MISSIONS.length,
     active: MISSIONS.filter((m) => ['active', 'science-operations', 'surface-operations', 'extended'].includes(m.status)).length,
+    mercury: getMissionsByDestination('mercury').length,
+    venus: getMissionsByDestination('venus').length,
     earth: getMissionsByDestination('earth').length,
     moon: getMissionsByDestination('moon').length,
     mars: getMissionsByDestination('mars').length,
@@ -40,7 +42,7 @@ function MissionsContent() {
             <div className="text-[10px] text-orbit-dim tracking-widest mb-1">ORBITAL</div>
             <h1 className="text-3xl font-light text-orbit-white tracking-wide mb-2">MISSION CATALOG</h1>
             <p className="text-orbit-dim text-sm">
-              Active and recent space missions across Earth, Moon, and Mars.
+              Active and recent space missions across the Solar System.
             </p>
 
             {/* Stats row */}
@@ -48,6 +50,8 @@ function MissionsContent() {
               {[
                 { label: 'TOTAL MISSIONS', value: stats.total },
                 { label: 'ACTIVE', value: stats.active, dot: 'bg-emerald-400' },
+                { label: '☿ MERCURY', value: stats.mercury },
+                { label: '♀ VENUS', value: stats.venus },
                 { label: '🌎 EARTH', value: stats.earth },
                 { label: '🌙 MOON', value: stats.moon },
                 { label: '🔴 MARS', value: stats.mars },

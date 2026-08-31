@@ -241,6 +241,14 @@ export function computeGlobalPulse(): GlobalPulse {
     );
 
     const highlights: string[] = [];
+    if (dest === 'mercury') {
+      highlights.push('BepiColombo (ESA/JAXA) is en route — Mercury orbit insertion targeted November 2026.');
+      highlights.push('MESSENGER completed the first orbital survey of Mercury (2011–2015), confirming water ice at the poles.');
+    }
+    if (dest === 'venus') {
+      highlights.push('Three future missions selected: DAVINCI and VERITAS (NASA) and EnVision (ESA), targeting early 2030s.');
+      highlights.push('Akatsuki (JAXA) concluded Venus operations in September 2025 after a decade studying cloud dynamics.');
+    }
     if (dest === 'mars') {
       const rovers = missions.filter((m) => m.missionType === 'rover' && m.status !== 'completed');
       if (rovers.length >= 2) {
@@ -286,6 +294,8 @@ export function computeGlobalPulse(): GlobalPulse {
   };
 
   return {
+    mercury: buildPulse('mercury'),
+    venus: buildPulse('venus'),
     earth: buildPulse('earth'),
     moon: buildPulse('moon'),
     mars: buildPulse('mars'),

@@ -32,13 +32,15 @@ const SpaceScene = dynamic(() => import('@/components/SpaceScene').then((m) => (
 });
 
 const PLANET_LABELS: Record<string, { title: string; desc: string; color: string; href: string }> = {
-  earth:   { title: 'EARTH',   desc: 'Low Earth Orbit · Observation · Crewed',       color: 'text-blue-400',   href: '/missions?dest=earth' },
-  moon:    { title: 'MOON',    desc: 'Lunar Orbit · Artemis · Surface',               color: 'text-slate-300',  href: '/missions?dest=moon' },
-  mars:    { title: 'MARS',    desc: 'Rovers · Orbiters · Sample Caching',            color: 'text-orange-400', href: '/missions?dest=mars' },
-  jupiter: { title: 'JUPITER', desc: 'Juno · Europa Clipper · JUICE · Galilean Moons', color: 'text-orange-300', href: '/missions?dest=jupiter' },
-  saturn:  { title: 'SATURN',  desc: 'Cassini Legacy · Titan · Ring System',          color: 'text-yellow-300', href: '/missions?dest=saturn' },
-  uranus:  { title: 'URANUS',  desc: 'Ice Giant · Voyager 2 · Future Orbiter',        color: 'text-cyan-300',   href: '/missions?dest=uranus' },
-  neptune: { title: 'NEPTUNE', desc: 'Ice Giant · Voyager 2 · Triton',                color: 'text-blue-300',   href: '/missions?dest=neptune' },
+  mercury: { title: 'MERCURY', desc: 'MESSENGER · BepiColombo en route · Inner Planet', color: 'text-stone-400',   href: '/missions?dest=mercury' },
+  venus:   { title: 'VENUS',   desc: 'Akatsuki · DAVINCI · VERITAS · EnVision',          color: 'text-yellow-600',  href: '/missions?dest=venus' },
+  earth:   { title: 'EARTH',   desc: 'Low Earth Orbit · Observation · Crewed',           color: 'text-blue-400',    href: '/missions?dest=earth' },
+  moon:    { title: 'MOON',    desc: 'Lunar Orbit · Artemis · Surface',                  color: 'text-slate-300',   href: '/missions?dest=moon' },
+  mars:    { title: 'MARS',    desc: 'Rovers · Orbiters · Sample Caching',               color: 'text-orange-400',  href: '/missions?dest=mars' },
+  jupiter: { title: 'JUPITER', desc: 'Juno · Europa Clipper · JUICE · Galilean Moons',   color: 'text-orange-300',  href: '/missions?dest=jupiter' },
+  saturn:  { title: 'SATURN',  desc: 'Cassini Legacy · Titan · Ring System',             color: 'text-yellow-300',  href: '/missions?dest=saturn' },
+  uranus:  { title: 'URANUS',  desc: 'Ice Giant · Voyager 2 · Future Orbiter',           color: 'text-cyan-300',    href: '/missions?dest=uranus' },
+  neptune: { title: 'NEPTUNE', desc: 'Ice Giant · Voyager 2 · Triton',                   color: 'text-blue-300',    href: '/missions?dest=neptune' },
 };
 
 function HomePageInner() {
@@ -147,7 +149,7 @@ function HomePageInner() {
    * changes (i.e. a new navigation to this page).
    */
   useEffect(() => {
-    if (planetParam && ['earth', 'moon', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune'].includes(planetParam)) {
+    if (planetParam && ['mercury', 'venus', 'earth', 'moon', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune'].includes(planetParam)) {
       setSelectedPlanet(planetParam);
       setSelectedMission(null);
       // Scroll hero into view so the map is visible
@@ -155,6 +157,8 @@ function HomePageInner() {
     }
   }, [planetParam]);
 
+  const mercuryMissions = useMemo(() => getMissionsByDestination('mercury'), []);
+  const venusMissions   = useMemo(() => getMissionsByDestination('venus'), []);
   const earthMissions   = useMemo(() => getMissionsByDestination('earth'), []);
   const moonMissions    = useMemo(() => getMissionsByDestination('moon'), []);
   const marsMissions    = useMemo(() => getMissionsByDestination('mars'), []);
@@ -326,7 +330,7 @@ function HomePageInner() {
             IN SPACE.
           </h1>
           <p className="text-orbit-dim text-sm mt-4 max-w-[260px] leading-relaxed hidden md:block">
-            An AI-powered atlas of active missions across Earth, Moon, and Mars.
+            An AI-powered atlas of active missions across the Solar System.
           </p>
         </div>
 
@@ -419,6 +423,8 @@ function HomePageInner() {
         {/* Bottom orbit controls */}
         <div className="absolute bottom-[64px] left-0 right-0 flex justify-center gap-1.5 flex-wrap px-4 pointer-events-auto">
           {[
+            { id: 'mercury', label: 'MERCURY', color: 'text-stone-400' },
+            { id: 'venus',   label: 'VENUS',   color: 'text-yellow-600' },
             { id: 'earth',   label: 'EARTH',   color: 'text-blue-400' },
             { id: 'moon',    label: 'MOON',    color: 'text-slate-300' },
             { id: 'mars',    label: 'MARS',    color: 'text-orange-400' },
@@ -469,6 +475,8 @@ function HomePageInner() {
         {/* Mission Pulse */}
         <section className="max-w-screen-xl mx-auto px-4 md:px-8 py-16">
           <MissionPulse
+            mercuryMissions={mercuryMissions}
+            venusMissions={venusMissions}
             earthMissions={earthMissions}
             moonMissions={moonMissions}
             marsMissions={marsMissions}
