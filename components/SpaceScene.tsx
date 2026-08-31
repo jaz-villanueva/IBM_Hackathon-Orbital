@@ -1671,7 +1671,7 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
       </div>
 
       {/* ── Bottom legend ── */}
-      <div className="absolute bottom-[100px] left-4 space-y-1 pointer-events-none z-10">
+      <div className={`absolute bottom-[100px] left-4 space-y-1 pointer-events-none z-10 transition-opacity duration-300 ${selectedPlanet === 'earth' ? 'opacity-0' : 'opacity-100'}`}>
         <div className="text-[8px] text-orbit-dim/50 tracking-widest mb-1">LEGEND</div>
         {[
           { color: '#22c55e', label: 'Active' },
@@ -1693,7 +1693,7 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
       </div>
 
       {/* Controls hint */}
-      <div className="absolute bottom-[220px] left-4 text-[10px] text-orbit-dim/40 tracking-wider pointer-events-none z-10">
+      <div className={`absolute bottom-[220px] left-4 text-[10px] text-orbit-dim/40 tracking-wider pointer-events-none z-10 transition-opacity duration-300 ${selectedPlanet === 'earth' ? 'opacity-0' : 'opacity-100'}`}>
         <div>DRAG to rotate · SCROLL to zoom</div>
         <div>CLICK planet or spacecraft</div>
         {simSpeed > 1 && (

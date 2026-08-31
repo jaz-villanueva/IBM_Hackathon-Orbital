@@ -36,7 +36,7 @@ export function EarthTelemetryHUD({ satellites, totals, loading, error, onSelect
         // bottom orbit-control row. Desktop (sm+): the original fixed-width
         // left-side panel, unchanged.
         'absolute z-20 left-3 right-3 bottom-[124px] top-auto max-h-[42vh]',
-        'sm:left-4 sm:right-auto sm:top-[110px] sm:bottom-auto sm:w-72 sm:max-h-[calc(100vh-190px)]',
+        'sm:left-4 sm:right-auto sm:top-8 sm:bottom-auto sm:w-72 sm:max-h-[calc(100vh-60px)]',
         'animate-slide-up flex flex-col'
       )}
     >
@@ -101,7 +101,7 @@ export function EarthTelemetryHUD({ satellites, totals, loading, error, onSelect
 
         {/* List — min-h-0 lets this actually shrink to its flex share and scroll,
             instead of the panel's overflow-hidden silently clipping the bottom rows. */}
-        <div className="overflow-y-auto min-h-0 flex-1">
+        <div className="overflow-y-auto min-h-0 flex-1 max-h-[484px]">
           {loading && (
             <div className="p-4 text-center text-[12px] text-orbit-dim">Loading live satellite data…</div>
           )}

@@ -418,7 +418,7 @@ export function RiskHUD({ simulationTimeSec, onAnalyzeWithAI }: RiskHUDProps) {
   // bring it back. Replaces the old separate minimize+dismiss states,
   // which used to have a dead end (dismissed had no way back without a
   // page reload).
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const [pairsInfoOpen, setPairsInfoOpen] = useState(false);
 
   // Keep the latest simulationTimeSec in a ref so the interval callback

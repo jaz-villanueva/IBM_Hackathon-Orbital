@@ -327,8 +327,8 @@ function HomePageInner() {
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-space-black pointer-events-none" />
         <div className="absolute inset-0 bg-gradient-to-r from-space-black/20 via-transparent to-space-black/20 pointer-events-none" />
 
-        {/* Top-left hero copy */}
-        <div className="absolute top-8 left-6 md:left-10 pointer-events-none">
+        {/* Top-left hero copy — hidden when Earth is selected (satellite widget occupies this space) */}
+        <div className={`absolute top-8 left-6 md:left-10 pointer-events-none transition-opacity duration-300 ${selectedPlanet === 'earth' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
           <div className="text-[9px] text-orbit-dim tracking-widest mb-2 font-mono">ORBITAL · AI MISSION ATLAS</div>
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-extralight text-orbit-white tracking-wider leading-none">
             SEE WHAT
