@@ -21,16 +21,6 @@
       "static/chunks/main-app.js",
       "static/chunks/app/api/risk/route.js"
     ],
-    "/missions/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/missions/page.js"
-    ],
-    "/timeline/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/timeline/page.js"
-    ],
     "/missions/[id]/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",

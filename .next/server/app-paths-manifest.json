@@ -1,7 +1,5 @@
 {
   "/api/risk/route": "app/api/risk/route.js",
   "/page": "app/page.js",
-  "/missions/page": "app/missions/page.js",
-  "/timeline/page": "app/timeline/page.js",
   "/missions/[id]/page": "app/missions/[id]/page.js"
 }
