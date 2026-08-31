@@ -309,8 +309,12 @@ export function snapshotOrbitalState(elapsedSeconds: number): TelemetrySnapshot 
   }
 
   // ── Surface assets: scene objects NOT in ORBITAL_PARAMS ───────────────────
+  // This telemetry/risk engine only models Earth, Moon, and Mars (see
+  // OrbiterState/SurfaceAssetState.destination) — outer-planet scene objects
+  // (Jupiter, Saturn, ...) are out of scope here and intentionally excluded.
   for (const obj of ALL_SCENE_OBJECTS) {
     if (obj.missionId in ORBITAL_PARAMS) continue; // already handled above
+    if (obj.destination !== 'earth' && obj.destination !== 'moon' && obj.destination !== 'mars') continue;
     if (!obj.isOrbiter && obj.surfaceLat !== undefined && obj.surfaceLon !== undefined) {
       surfaceAssets.push({
         missionId:     obj.missionId,

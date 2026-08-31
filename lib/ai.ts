@@ -14,7 +14,7 @@
  * All credentials remain server-side only. Never expose AI_API_KEY to the client.
  */
 
-import { Mission, AIContext, AIMessage, OrbitalRiskContext } from './types';
+import { Mission, AIContext, AIMessage, OrbitalRiskContext, SatelliteAIContext } from './types';
 
 export interface AIProvider {
   generateResponse(
@@ -151,6 +151,47 @@ function buildRiskContext(risk: OrbitalRiskContext): string {
   return parts.join('\n');
 }
 
+// ─── Satellite context formatter ───────────────────────────────────────────────
+// Converts a SatelliteAIContext into a structured text block. Only values
+// already present in the context are surfaced — the AI must not recompute
+// or invent orbital/signal values.
+
+function buildSatelliteContext(sat: SatelliteAIContext): string {
+  const parts: string[] = [];
+
+  parts.push('── SATELLITE CONTEXT ──');
+  parts.push(`Satellite: ${sat.name} (NORAD ${sat.noradId})`);
+  parts.push(`Data quality: ${sat.dataQuality}`);
+  parts.push('');
+  parts.push(`Altitude (DERIVED): ${sat.altitudeKm} km`);
+  parts.push(`Velocity (DERIVED): ${sat.velocityKmS} km/s`);
+  parts.push(`Orbital period (DERIVED): ${sat.periodMin} min`);
+  parts.push(`Inclination (OBSERVED, from CelesTrak elements): ${sat.inclinationDeg}°`);
+  parts.push(`Eccentricity (OBSERVED, from CelesTrak elements): ${sat.eccentricity}`);
+  parts.push(`Current sub-satellite point (DERIVED): ${sat.lat.toFixed(2)}°, ${sat.lon.toFixed(2)}°`);
+  parts.push(`Element epoch: ${sat.epoch}`);
+  parts.push('');
+
+  if (sat.hasObservations && sat.latestObservation) {
+    const o = sat.latestObservation;
+    parts.push(`Latest SatNOGS observation (OBSERVED): ${o.station}, ${o.time}, ${o.frequencyMHz} MHz, ${o.mode}, ${o.signalDbm ?? 'unknown'} dBm`);
+  } else {
+    parts.push('No public SatNOGS observation data is available for this satellite in this session.');
+  }
+
+  if (sat.anomalyFlags.length > 0) {
+    parts.push('');
+    parts.push('DERIVED anomaly flags (deterministic threshold-based, NOT AI-generated):');
+    sat.anomalyFlags.forEach((f) => parts.push(`- ${f}`));
+  }
+
+  parts.push('');
+  parts.push('No engineering telemetry (battery, temperature, attitude) is available from public sources for this satellite. Do not invent any.');
+  parts.push('── END SATELLITE CONTEXT ──');
+
+  return parts.join('\n');
+}
+
 const MOCK_RESPONSES: Record<string, string> = {
   artemis: `**Artemis II** is NASA's first crewed mission to the vicinity of the Moon since 1972 — a critical test before humans land on the Moon again.
 
@@ -206,6 +247,11 @@ class MockAIProvider implements AIProvider {
     // ── Risk-aware mode: respond grounded on pre-computed risk data only ──────
     if (context.selectedRisk) {
       return this.generateRiskResponse(context.selectedRisk, lastUserMessage);
+    }
+
+    // ── Satellite-aware mode: respond grounded on pre-computed satellite data ─
+    if (context.selectedSatellite) {
+      return this.generateSatelliteResponse(context.selectedSatellite, lastUserMessage);
     }
 
     // Check for mission-specific keywords
@@ -344,6 +390,39 @@ ${qualityCaveat}
 
 *Context data provided by ORBITAL's deterministic risk engine. All values sourced from public orbital element sets.*`;
   }
+
+  // ── Satellite-grounded response generator ───────────────────────────────────
+  // Interprets ONLY the pre-computed values from lib/satellites. Never fabricates
+  // engineering telemetry, signal values, or orbital elements not supplied.
+
+  private generateSatelliteResponse(sat: SatelliteAIContext, userQuestion: string): string {
+    const q = userQuestion.toLowerCase();
+    const qualityNote = sat.dataQuality === 'ESTIMATED'
+      ? `\n\n**Data quality note:** This satellite's data is currently **ESTIMATED** — live CelesTrak data was unavailable, so the last known orbital elements are shown instead.`
+      : `\n\n*Position and derived values are DERIVED from OBSERVED CelesTrak orbital elements (epoch ${sat.epoch}) using simplified two-body propagation — not a full SGP4 solution.*`;
+
+    if (/inclin/.test(q)) {
+      return `**${sat.name}**'s orbital inclination is **${sat.inclinationDeg}°** — the angle between its orbital plane and Earth's equator. This value is OBSERVED, taken directly from CelesTrak's published orbital elements. An inclination near 51.6° (like the ISS) means the satellite's ground track ranges roughly that far north and south of the equator each orbit.${qualityNote}`;
+    }
+
+    if (/fall|why.*(stay|not).*(fall|crash)|orbit.*work/.test(q)) {
+      return `**${sat.name}** doesn't fall into Earth because it's moving forward fast enough (~${sat.velocityKmS} km/s) that the curve of its fall matches the curve of the Earth falling away beneath it — it's continuously "falling around" the planet rather than into it. At its altitude of ~${sat.altitudeKm} km, this balance produces an orbital period of about ${sat.periodMin} minutes.${qualityNote}`;
+    }
+
+    if (/fast|speed|velocity/.test(q)) {
+      return `**${sat.name}** is moving at approximately **${sat.velocityKmS} km/s** (DERIVED from its orbital elements). Satellites in low Earth orbit must travel this fast — several kilometers per second — so that their forward motion continuously "outruns" the pull of Earth's gravity, keeping them in a stable orbit rather than falling back down.${qualityNote}`;
+    }
+
+    if (/where|position|location|right now|currently/.test(q)) {
+      return `As of the last update (epoch ${sat.epoch}), **${sat.name}** is at approximately **${sat.lat.toFixed(1)}°, ${sat.lon.toFixed(1)}°** — DERIVED from its OBSERVED CelesTrak orbital elements via simplified propagation, not a live tracking fix. Altitude: ~${sat.altitudeKm} km.${qualityNote}`;
+    }
+
+    if (sat.anomalyFlags.length > 0 && /unusual|anomaly|normal|flag/.test(q)) {
+      return `AI-interpreted assessment for **${sat.name}**: ${sat.anomalyFlags.length} deterministic flag(s) were raised from orbital-element or signal deviation:\n${sat.anomalyFlags.map((f) => `- ${f}`).join('\n')}\n\nThese are threshold-based DERIVED classifications, not an official operator report or spacecraft health data.${qualityNote}`;
+    }
+
+    return `**${sat.name}** (NORAD ${sat.noradId}):\n\n- Altitude: ~${sat.altitudeKm} km (DERIVED)\n- Velocity: ~${sat.velocityKmS} km/s (DERIVED)\n- Orbital period: ~${sat.periodMin} min (DERIVED)\n- Inclination: ${sat.inclinationDeg}° (OBSERVED)\n\n${sat.hasObservations ? 'Public SatNOGS radio observations are available for this satellite.' : 'No public SatNOGS radio observations are available for this satellite in this session.'} No engineering telemetry (battery, temperature, attitude) is available from public sources.${qualityNote}`;
+  }
 }
 
 // ─── Watsonx Provider ─────────────────────────────────────────────────────────
@@ -450,9 +529,11 @@ class WatsonxProvider implements AIProvider {
     context: AIContext,
     systemPrompt: string
   ): Promise<string> {
-    // Build the effective system prompt — extend with risk grounding when needed.
+    // Build the effective system prompt — extend with risk/satellite grounding when needed.
     const effectiveSystem = context.selectedRisk
       ? `${systemPrompt}\n\n${RISK_GROUNDING_ADDENDUM}\n\n${buildRiskContext(context.selectedRisk)}`
+      : context.selectedSatellite
+      ? `${systemPrompt}\n\n${SATELLITE_GROUNDING_ADDENDUM}\n\n${buildSatelliteContext(context.selectedSatellite)}`
       : context.selectedMission
       ? `${systemPrompt}\n\n${buildMissionContext(context)}`
       : systemPrompt;
@@ -719,6 +800,33 @@ assessment. For authoritative conjunction screening, consult NASA's CARA or
 the 18th Space Control Squadron.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
 
+/**
+ * Grounding instructions injected into the system prompt only when a
+ * satellite context is present. Mirrors the intent of RISK_GROUNDING_ADDENDUM:
+ * never let the model invent orbital, signal, or engineering data.
+ */
+const SATELLITE_GROUNDING_ADDENDUM = `\
+── SATELLITE CONTEXT GROUNDING (STRICT) ──────────────────────────────────────
+1. Use ONLY the values in the supplied satellite context. Never invent altitude,
+   velocity, period, inclination, position, or signal values.
+2. NEVER present engineering telemetry (battery charge, temperature, attitude,
+   fuel, power state) — it is not available from public sources for this
+   satellite. If asked, say so explicitly rather than guessing.
+3. Distinguish clearly: raw orbital elements (inclination, eccentricity, mean
+   motion, RAAN, argument of perigee) are OBSERVED, directly from CelesTrak.
+   Altitude, velocity, period, position, and ground track are DERIVED —
+   computed from those elements via simplified two-body Keplerian propagation
+   (not SGP4, no atmospheric drag or J2 perturbation modeling).
+4. If dataQuality is ESTIMATED, say plainly that live data was unavailable and
+   the last known elements are being shown, with their age if given.
+5. Anomaly flags in the context are DERIVED (deterministic threshold checks),
+   never AI-generated — do not describe them as an AI detection or an official
+   spacecraft health assessment.
+6. If asked something the context does not establish (e.g. a future pass time,
+   crew activity, exact real-time position), say plainly that public data does
+   not establish this rather than estimating a number.
+───────────────────────────────────────────────────────────────────────────────`;
+
 // ─── Provider Factory ─────────────────────────────────────────────────────────
 
 function createProvider(): AIProvider {
@@ -847,6 +955,17 @@ SCORE FORMAT (applies to every sentence):
     "These are simplified deterministic indices and not an operational conjunction assessment.
      For authoritative conjunction screening, consult NASA's CARA or the 18th Space Control
      Squadron."
+
+── SATELLITE CONTEXT RULES (when a satellite context is present) ──────────────
+1. Use ONLY supplied altitude/velocity/period/inclination/position/signal values.
+   Never invent them, and never present engineering telemetry (battery, temperature,
+   attitude) — it is not publicly available for these satellites.
+2. Raw orbital elements (inclination, eccentricity, mean motion, RAAN, argument of
+   perigee) are OBSERVED. Altitude, velocity, period, position, and ground track are
+   DERIVED via simplified Keplerian propagation, not SGP4.
+3. If dataQuality is ESTIMATED, say plainly that live data was unavailable.
+4. Anomaly flags are DERIVED threshold checks, never AI-generated — do not call them
+   an "AI detection."
 ───────────────────────────────────────────────────────────────────────────────`;
 
 export async function generateAIResponse(

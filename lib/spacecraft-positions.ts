@@ -58,6 +58,14 @@ export interface SceneObject {
   statusNote: string;
   /** Color accent for orbit ring */
   orbitColor?: number;
+  /**
+   * True for satellites sourced live from Earth Mode's CelesTrak fleet/deep-link
+   * data (see lib/satellites/scene.ts#buildSceneObject) — SpaceScene renders
+   * these with the dedicated SatelliteMarker model (always visible, larger,
+   * with an invisible click-target sphere) instead of the sprite/model swap
+   * used for the static mission catalog.
+   */
+  isLiveSatellite?: boolean;
 }
 
 // ─── EARTH ───────────────────────────────────────────────────────────────────
