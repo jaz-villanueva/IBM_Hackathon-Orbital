@@ -61,7 +61,7 @@ import type { ObjectType } from '@/lib/spacecraft-positions';
 interface SpacecraftSummary {
   missionId: string;
   name: string;
-  destination: 'earth' | 'moon' | 'mars';
+  destination: string;
   objectType: ObjectType;
   /** Altitude above body surface in km (approximate, from telemetry) */
   altitudeKm: number;
@@ -155,7 +155,7 @@ interface RiskApiResponse {
 
 // ─── Validation constants ─────────────────────────────────────────────────────
 
-const VALID_DESTINATIONS = new Set(['earth', 'moon', 'mars']);
+const VALID_DESTINATIONS = new Set(['mercury', 'venus', 'earth', 'moon', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune']);
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT      = 100;
 const MIN_LIMIT      = 1;
@@ -246,16 +246,16 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     // ── Parse and validate: destination ────────────────────────────────────
     const destRaw = searchParams.get('destination');
-    let destination: 'earth' | 'moon' | 'mars' | null = null;
+    let destination: string | null = null;
 
     if (destRaw !== null) {
       if (!VALID_DESTINATIONS.has(destRaw)) {
         return NextResponse.json(
-          { error: `Invalid parameter: destination must be one of earth, moon, mars` },
+          { error: `Invalid parameter: destination must be one of ${[...VALID_DESTINATIONS].join(', ')}` },
           { status: 400 },
         );
       }
-      destination = destRaw as 'earth' | 'moon' | 'mars';
+      destination = destRaw;
     }
 
     // ── Parse and validate: minScore ────────────────────────────────────────

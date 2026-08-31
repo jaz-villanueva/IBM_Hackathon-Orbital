@@ -101,7 +101,7 @@ export interface CelestialBody {
   /** Whether the user can click to select missions */
   interactive: boolean;
   /** Maps to mission destination key, if this body is a mission destination */
-  missionDestination?: 'earth' | 'moon' | 'mars' | 'jupiter' | 'saturn' | 'uranus' | 'neptune';
+  missionDestination?: 'mercury' | 'venus' | 'earth' | 'moon' | 'mars' | 'jupiter' | 'saturn' | 'uranus' | 'neptune';
   /** JPL elements for heliocentric planets (undefined for Sun and moons) */
   planetaryElements?: PlanetaryElements;
   /** Local moon elements relative to parent (undefined for heliocentric bodies) */
@@ -197,7 +197,7 @@ const NEPTUNE_ELEMENTS: PlanetaryElements = {
 // ─── Moon elements (relative to Earth) ───────────────────────────────────────
 
 const LUNA_ELEMENTS: MoonElements = {
-  smaKm:      384400,
+  smaKm:      450000,
   incDeg:     5.145,
   ecc:        0.0549,
   raanDeg:    125.045,
@@ -209,7 +209,7 @@ const LUNA_ELEMENTS: MoonElements = {
 // ─── Phobos & Deimos (relative to Mars) ──────────────────────────────────────
 
 const PHOBOS_ELEMENTS: MoonElements = {
-  smaKm:       9376,
+  smaKm:       14064,
   incDeg:      1.093,
   ecc:         0.0151,
   raanDeg:     164.931,
@@ -219,7 +219,7 @@ const PHOBOS_ELEMENTS: MoonElements = {
 };
 
 const DEIMOS_ELEMENTS: MoonElements = {
-  smaKm:       23458,
+  smaKm:       35187,
   incDeg:      1.788,
   ecc:         0.0002,
   raanDeg:     339.600,
@@ -227,6 +227,60 @@ const DEIMOS_ELEMENTS: MoonElements = {
   m0Deg:       296.230,
   periodDays:  1.2624407,
 };
+
+// ─── Jupiter moons (Galilean + inner/irregular major moons) ──────────────────
+// Source: JPL Planetary Satellite Mean Orbital Parameters (2024)
+
+const METIS_ELEMENTS: MoonElements     = { smaKm:  192000, incDeg: 0.019, ecc: 0.0002, raanDeg:  70, aopDeg:  270, m0Deg:  0,   periodDays:  0.29478 };
+const ADRASTEA_ELEMENTS: MoonElements  = { smaKm:  193500, incDeg: 0.054, ecc: 0.0018, raanDeg: 120, aopDeg:   90, m0Deg: 90,   periodDays:  0.29826 };
+const AMALTHEA_ELEMENTS: MoonElements  = { smaKm:  272049, incDeg: 0.380, ecc: 0.0032, raanDeg: 185, aopDeg:   84, m0Deg: 185,  periodDays:  0.49818 };
+const THEBE_ELEMENTS: MoonElements     = { smaKm:  332850, incDeg: 1.076, ecc: 0.0177, raanDeg: 235, aopDeg:  235, m0Deg: 270,  periodDays:  0.67475 };
+const IO_ELEMENTS: MoonElements        = { smaKm:  632550, incDeg: 0.036, ecc: 0.0041, raanDeg:  43, aopDeg:   84, m0Deg:  80,  periodDays:  1.769138 };
+const EUROPA_ELEMENTS: MoonElements    = { smaKm: 1006650, incDeg: 0.466, ecc: 0.0094, raanDeg: 219, aopDeg:   88, m0Deg: 130,  periodDays:  3.551181 };
+const GANYMEDE_ELEMENTS: MoonElements  = { smaKm: 1605600, incDeg: 0.177, ecc: 0.0011, raanDeg:  63, aopDeg:   192, m0Deg: 250, periodDays:  7.154553 };
+const CALLISTO_ELEMENTS: MoonElements  = { smaKm: 2824050, incDeg: 0.192, ecc: 0.0074, raanDeg: 298, aopDeg:   52, m0Deg: 190,  periodDays: 16.689018 };
+const HIMALIA_ELEMENTS: MoonElements   = { smaKm:17191500, incDeg:27.63,  ecc: 0.1620, raanDeg:  50, aopDeg:   29, m0Deg:  20,  periodDays:250.5662 };
+const ELARA_ELEMENTS: MoonElements     = { smaKm:17611500, incDeg:26.63,  ecc: 0.2174, raanDeg: 142, aopDeg:  143, m0Deg:  67,  periodDays:259.6528 };
+
+// ─── Saturn moons ─────────────────────────────────────────────────────────────
+// Source: JPL Planetary Satellite Mean Orbital Parameters (2024)
+
+const PAN_ELEMENTS: MoonElements       = { smaKm:  200376, incDeg: 0.001, ecc: 0.0000, raanDeg:   0, aopDeg:   0, m0Deg:   0,  periodDays:  0.57505 };
+const ATLAS_ELEMENTS: MoonElements     = { smaKm:  206505, incDeg: 0.003, ecc: 0.0012, raanDeg: 110, aopDeg: 197, m0Deg:  60,  periodDays:  0.60169 };
+const PROMETHEUS_ELEMENTS: MoonElements= { smaKm:  209070, incDeg: 0.008, ecc: 0.0022, raanDeg: 205, aopDeg:  65, m0Deg: 110,  periodDays:  0.61299 };
+const PANDORA_ELEMENTS: MoonElements   = { smaKm:  212580, incDeg: 0.050, ecc: 0.0042, raanDeg: 280, aopDeg:  90, m0Deg: 180,  periodDays:  0.62850 };
+const JANUS_ELEMENTS: MoonElements     = { smaKm:  227190, incDeg: 0.165, ecc: 0.0068, raanDeg:  73, aopDeg: 178, m0Deg: 220,  periodDays:  0.69466 };
+const EPIMETHEUS_ELEMENTS: MoonElements= { smaKm:  227115, incDeg: 0.351, ecc: 0.0098, raanDeg:  30, aopDeg: 334, m0Deg:  80,  periodDays:  0.69433 };
+const MIMAS_ELEMENTS: MoonElements     = { smaKm:  278310, incDeg: 1.574, ecc: 0.0202, raanDeg: 172, aopDeg: 332, m0Deg:  24,  periodDays:  0.94242 };
+const ENCELADUS_ELEMENTS: MoonElements = { smaKm:  357060, incDeg: 0.009, ecc: 0.0045, raanDeg: 170, aopDeg: 299, m0Deg: 197,  periodDays:  1.37022 };
+const TETHYS_ELEMENTS: MoonElements    = { smaKm:  442005, incDeg: 1.091, ecc: 0.0001, raanDeg: 111, aopDeg: 262, m0Deg: 298,  periodDays:  1.88780 };
+const DIONE_ELEMENTS: MoonElements     = { smaKm:  566130, incDeg: 0.028, ecc: 0.0022, raanDeg: 169, aopDeg: 172, m0Deg:  84,  periodDays:  2.73692 };
+const RHEA_ELEMENTS: MoonElements      = { smaKm:  790605, incDeg: 0.345, ecc: 0.0010, raanDeg: 311, aopDeg: 257, m0Deg: 155,  periodDays:  4.51820 };
+const TITAN_ELEMENTS: MoonElements     = { smaKm: 1832805, incDeg: 0.349, ecc: 0.0288, raanDeg:  28, aopDeg: 185, m0Deg: 120,  periodDays: 15.94540 };
+const HYPERION_ELEMENTS: MoonElements  = { smaKm: 2221515, incDeg: 0.615, ecc: 0.1230, raanDeg: 287, aopDeg: 205, m0Deg:  39,  periodDays: 21.27660 };
+const IAPETUS_ELEMENTS: MoonElements   = { smaKm: 5341260, incDeg:15.470, ecc: 0.0283, raanDeg: 81,  aopDeg: 275, m0Deg: 211,  periodDays: 79.33020 };
+const PHOEBE_ELEMENTS: MoonElements    = { smaKm:19421670, incDeg:175.243,ecc: 0.1635, raanDeg: 244, aopDeg: 355, m0Deg:  64,  periodDays:550.56500 };
+
+// ─── Uranus moons ─────────────────────────────────────────────────────────────
+// Source: JPL Planetary Satellite Mean Orbital Parameters (2024)
+
+const MIRANDA_ELEMENTS: MoonElements   = { smaKm: 194850, incDeg: 4.338, ecc: 0.0013, raanDeg: 326, aopDeg:  68, m0Deg: 311,  periodDays:  1.41348 };
+const ARIEL_ELEMENTS: MoonElements     = { smaKm: 286350, incDeg: 0.041, ecc: 0.0012, raanDeg: 167, aopDeg: 115, m0Deg:  39,  periodDays:  2.52038 };
+const UMBRIEL_ELEMENTS: MoonElements   = { smaKm: 399000, incDeg: 0.128, ecc: 0.0039, raanDeg: 109, aopDeg:  84, m0Deg:  12,  periodDays:  4.14418 };
+const TITANIA_ELEMENTS: MoonElements   = { smaKm: 654450, incDeg: 0.079, ecc: 0.0011, raanDeg: 132, aopDeg: 284, m0Deg: 219,  periodDays:  8.70588 };
+const OBERON_ELEMENTS: MoonElements    = { smaKm: 875250, incDeg: 0.068, ecc: 0.0014, raanDeg: 200, aopDeg: 104, m0Deg: 145,  periodDays: 13.46324 };
+
+// ─── Neptune moons ────────────────────────────────────────────────────────────
+// Source: JPL Planetary Satellite Mean Orbital Parameters (2024)
+
+const NAIAD_ELEMENTS: MoonElements     = { smaKm:   72341, incDeg: 4.691, ecc: 0.0003, raanDeg: 100, aopDeg: 181, m0Deg:  45,  periodDays:  0.29394 };
+const THALASSA_ELEMENTS: MoonElements  = { smaKm:   75113, incDeg: 0.135, ecc: 0.0002, raanDeg: 212, aopDeg: 156, m0Deg: 190,  periodDays:  0.31148 };
+const DESPINA_ELEMENTS: MoonElements   = { smaKm:   78789, incDeg: 0.068, ecc: 0.0002, raanDeg:  90, aopDeg:  65, m0Deg:  85,  periodDays:  0.33465 };
+const GALATEA_ELEMENTS: MoonElements   = { smaKm:   92930, incDeg: 0.034, ecc: 0.0001, raanDeg: 359, aopDeg: 218, m0Deg: 320,  periodDays:  0.42875 };
+const LARISSA_ELEMENTS: MoonElements   = { smaKm:  110322, incDeg: 0.205, ecc: 0.0014, raanDeg: 271, aopDeg:  44, m0Deg: 177,  periodDays:  0.55465 };
+const PROTEUS_ELEMENTS: MoonElements   = { smaKm:  176471, incDeg: 0.075, ecc: 0.0005, raanDeg: 354, aopDeg: 131, m0Deg: 225,  periodDays:  1.12231 };
+const TRITON_ELEMENTS: MoonElements    = { smaKm:  532139, incDeg:156.865,ecc: 0.0000, raanDeg: 177, aopDeg: 348, m0Deg:  21,  periodDays:  5.87685 };
+const NEREID_ELEMENTS: MoonElements    = { smaKm: 8270727, incDeg: 7.090, ecc: 0.7507, raanDeg: 320, aopDeg: 289, m0Deg: 358,  periodDays:360.13619 };
 
 // ─── Solar system catalogue ───────────────────────────────────────────────────
 
@@ -248,7 +302,8 @@ export const SOLAR_SYSTEM: CelestialBody[] = [
     type: 'planet',
     radiusKm: 2440,
     visualRadius: 0.22,
-    interactive: false,
+    interactive: true,
+    missionDestination: 'mercury',
     showOrbit: true,
     color: 0x8c7a6b,
     emissive: 0x1a1008,
@@ -260,7 +315,8 @@ export const SOLAR_SYSTEM: CelestialBody[] = [
     type: 'planet',
     radiusKm: 6052,
     visualRadius: 0.40,
-    interactive: false,
+    interactive: true,
+    missionDestination: 'venus',
     showOrbit: true,
     color: 0xddb870,
     emissive: 0x2a1a04,
@@ -282,20 +338,6 @@ export const SOLAR_SYSTEM: CelestialBody[] = [
     planetaryElements: EARTH_ELEMENTS,
   },
   {
-    id: 'moon',
-    name: 'Moon',
-    type: 'moon',
-    parentId: 'earth',
-    radiusKm: 1737,
-    visualRadius: 0.22,
-    interactive: true,
-    missionDestination: 'moon',
-    showOrbit: true,
-    color: 0x8a8f9e,
-    emissive: 0x1a1e28,
-    moonElements: LUNA_ELEMENTS,
-  },
-  {
     id: 'mars',
     name: 'Mars',
     type: 'planet',
@@ -308,32 +350,6 @@ export const SOLAR_SYSTEM: CelestialBody[] = [
     emissive: 0x3a0d02,
     atmosphereColor: 0xe05c30,
     planetaryElements: MARS_ELEMENTS,
-  },
-  {
-    id: 'phobos',
-    name: 'Phobos',
-    type: 'moon',
-    parentId: 'mars',
-    radiusKm: 11,
-    visualRadius: 0.06,
-    interactive: false,
-    showOrbit: false,
-    color: 0x7a6a5a,
-    emissive: 0x0a0808,
-    moonElements: PHOBOS_ELEMENTS,
-  },
-  {
-    id: 'deimos',
-    name: 'Deimos',
-    type: 'moon',
-    parentId: 'mars',
-    radiusKm: 6,
-    visualRadius: 0.05,
-    interactive: false,
-    showOrbit: false,
-    color: 0x6a5a4e,
-    emissive: 0x080806,
-    moonElements: DEIMOS_ELEMENTS,
   },
   {
     id: 'jupiter',
@@ -390,6 +406,265 @@ export const SOLAR_SYSTEM: CelestialBody[] = [
     emissive: 0x060a18,
     atmosphereColor: 0x4060d4,
     planetaryElements: NEPTUNE_ELEMENTS,
+  },
+
+  // ─── Earth's Moon ────────────────────────────────────────────────────────
+  {
+    id: 'moon', name: 'Moon', type: 'moon', parentId: 'earth',
+    radiusKm: 1737, visualRadius: 0.19,
+    interactive: true, missionDestination: 'moon',
+    showOrbit: true, color: 0x8a8f9e, emissive: 0x1a1e28,
+    moonElements: LUNA_ELEMENTS,
+  },
+
+  // ─── Mars moons ──────────────────────────────────────────────────────────
+  {
+    id: 'phobos', name: 'Phobos', type: 'moon', parentId: 'mars',
+    radiusKm: 11, visualRadius: 0.06,
+    interactive: false, showOrbit: false, color: 0x7a6a5a, emissive: 0x0a0808,
+    moonElements: PHOBOS_ELEMENTS,
+  },
+  {
+    id: 'deimos', name: 'Deimos', type: 'moon', parentId: 'mars',
+    radiusKm: 6, visualRadius: 0.05,
+    interactive: false, showOrbit: false, color: 0x6a5a4e, emissive: 0x080806,
+    moonElements: DEIMOS_ELEMENTS,
+  },
+
+  // ─── Jupiter moons ───────────────────────────────────────────────────────
+  {
+    id: 'metis', name: 'Metis', type: 'moon', parentId: 'jupiter',
+    radiusKm: 22, visualRadius: 0.045,
+    interactive: false, showOrbit: false, color: 0x8a7060, emissive: 0x080604,
+    moonElements: METIS_ELEMENTS,
+  },
+  {
+    id: 'adrastea', name: 'Adrastea', type: 'moon', parentId: 'jupiter',
+    radiusKm: 8, visualRadius: 0.040,
+    interactive: false, showOrbit: false, color: 0x807060, emissive: 0x080604,
+    moonElements: ADRASTEA_ELEMENTS,
+  },
+  {
+    id: 'amalthea', name: 'Amalthea', type: 'moon', parentId: 'jupiter',
+    radiusKm: 84, visualRadius: 0.050,
+    interactive: false, showOrbit: false, color: 0x9a5040, emissive: 0x100804,
+    moonElements: AMALTHEA_ELEMENTS,
+  },
+  {
+    id: 'thebe', name: 'Thebe', type: 'moon', parentId: 'jupiter',
+    radiusKm: 50, visualRadius: 0.045,
+    interactive: false, showOrbit: false, color: 0x887060, emissive: 0x080604,
+    moonElements: THEBE_ELEMENTS,
+  },
+  {
+    id: 'io', name: 'Io', type: 'moon', parentId: 'jupiter',
+    radiusKm: 1822, visualRadius: 0.10,
+    interactive: false, showOrbit: false, color: 0xe8c84a, emissive: 0x201800,
+    moonElements: IO_ELEMENTS,
+  },
+  {
+    id: 'europa', name: 'Europa', type: 'moon', parentId: 'jupiter',
+    radiusKm: 1561, visualRadius: 0.09,
+    interactive: false, showOrbit: false, color: 0xc8b898, emissive: 0x181410,
+    moonElements: EUROPA_ELEMENTS,
+  },
+  {
+    id: 'ganymede', name: 'Ganymede', type: 'moon', parentId: 'jupiter',
+    radiusKm: 2634, visualRadius: 0.12,
+    interactive: false, showOrbit: false, color: 0x9a8878, emissive: 0x100c0a,
+    moonElements: GANYMEDE_ELEMENTS,
+  },
+  {
+    id: 'callisto', name: 'Callisto', type: 'moon', parentId: 'jupiter',
+    radiusKm: 2410, visualRadius: 0.11,
+    interactive: false, showOrbit: false, color: 0x787068, emissive: 0x0c0a08,
+    moonElements: CALLISTO_ELEMENTS,
+  },
+  {
+    id: 'himalia', name: 'Himalia', type: 'moon', parentId: 'jupiter',
+    radiusKm: 85, visualRadius: 0.050,
+    interactive: false, showOrbit: false, color: 0x706860, emissive: 0x080808,
+    moonElements: HIMALIA_ELEMENTS,
+  },
+  {
+    id: 'elara', name: 'Elara', type: 'moon', parentId: 'jupiter',
+    radiusKm: 43, visualRadius: 0.045,
+    interactive: false, showOrbit: false, color: 0x686060, emissive: 0x080808,
+    moonElements: ELARA_ELEMENTS,
+  },
+
+  // ─── Saturn moons ────────────────────────────────────────────────────────
+  {
+    id: 'pan', name: 'Pan', type: 'moon', parentId: 'saturn',
+    radiusKm: 14, visualRadius: 0.038,
+    interactive: false, showOrbit: false, color: 0xc8b890, emissive: 0x181408,
+    moonElements: PAN_ELEMENTS,
+  },
+  {
+    id: 'atlas', name: 'Atlas', type: 'moon', parentId: 'saturn',
+    radiusKm: 15, visualRadius: 0.038,
+    interactive: false, showOrbit: false, color: 0xc0b088, emissive: 0x181408,
+    moonElements: ATLAS_ELEMENTS,
+  },
+  {
+    id: 'prometheus', name: 'Prometheus', type: 'moon', parentId: 'saturn',
+    radiusKm: 43, visualRadius: 0.042,
+    interactive: false, showOrbit: false, color: 0xb8a880, emissive: 0x141008,
+    moonElements: PROMETHEUS_ELEMENTS,
+  },
+  {
+    id: 'pandora', name: 'Pandora', type: 'moon', parentId: 'saturn',
+    radiusKm: 42, visualRadius: 0.042,
+    interactive: false, showOrbit: false, color: 0xb8a880, emissive: 0x141008,
+    moonElements: PANDORA_ELEMENTS,
+  },
+  {
+    id: 'janus', name: 'Janus', type: 'moon', parentId: 'saturn',
+    radiusKm: 90, visualRadius: 0.046,
+    interactive: false, showOrbit: false, color: 0xb0a878, emissive: 0x140e06,
+    moonElements: JANUS_ELEMENTS,
+  },
+  {
+    id: 'epimetheus', name: 'Epimetheus', type: 'moon', parentId: 'saturn',
+    radiusKm: 58, visualRadius: 0.044,
+    interactive: false, showOrbit: false, color: 0xb0a878, emissive: 0x140e06,
+    moonElements: EPIMETHEUS_ELEMENTS,
+  },
+  {
+    id: 'mimas', name: 'Mimas', type: 'moon', parentId: 'saturn',
+    radiusKm: 198, visualRadius: 0.055,
+    interactive: false, showOrbit: false, color: 0xc8c0b0, emissive: 0x181610,
+    moonElements: MIMAS_ELEMENTS,
+  },
+  {
+    id: 'enceladus', name: 'Enceladus', type: 'moon', parentId: 'saturn',
+    radiusKm: 252, visualRadius: 0.060,
+    interactive: false, showOrbit: false, color: 0xe8e8f0, emissive: 0x181820,
+    moonElements: ENCELADUS_ELEMENTS,
+  },
+  {
+    id: 'tethys', name: 'Tethys', type: 'moon', parentId: 'saturn',
+    radiusKm: 533, visualRadius: 0.065,
+    interactive: false, showOrbit: false, color: 0xd0c8b8, emissive: 0x181610,
+    moonElements: TETHYS_ELEMENTS,
+  },
+  {
+    id: 'dione', name: 'Dione', type: 'moon', parentId: 'saturn',
+    radiusKm: 561, visualRadius: 0.065,
+    interactive: false, showOrbit: false, color: 0xc8c0b0, emissive: 0x181610,
+    moonElements: DIONE_ELEMENTS,
+  },
+  {
+    id: 'rhea', name: 'Rhea', type: 'moon', parentId: 'saturn',
+    radiusKm: 764, visualRadius: 0.075,
+    interactive: false, showOrbit: false, color: 0xc0b8a8, emissive: 0x181410,
+    moonElements: RHEA_ELEMENTS,
+  },
+  {
+    id: 'titan', name: 'Titan', type: 'moon', parentId: 'saturn',
+    radiusKm: 2575, visualRadius: 0.13,
+    interactive: false, showOrbit: false, color: 0xe8a040, emissive: 0x201408,
+    moonElements: TITAN_ELEMENTS,
+  },
+  {
+    id: 'hyperion', name: 'Hyperion', type: 'moon', parentId: 'saturn',
+    radiusKm: 135, visualRadius: 0.048,
+    interactive: false, showOrbit: false, color: 0xa89880, emissive: 0x141008,
+    moonElements: HYPERION_ELEMENTS,
+  },
+  {
+    id: 'iapetus', name: 'Iapetus', type: 'moon', parentId: 'saturn',
+    radiusKm: 736, visualRadius: 0.072,
+    interactive: false, showOrbit: false, color: 0x988880, emissive: 0x100c0a,
+    moonElements: IAPETUS_ELEMENTS,
+  },
+  {
+    id: 'phoebe', name: 'Phoebe', type: 'moon', parentId: 'saturn',
+    radiusKm: 107, visualRadius: 0.046,
+    interactive: false, showOrbit: false, color: 0x706860, emissive: 0x0c0a0a,
+    moonElements: PHOEBE_ELEMENTS,
+  },
+
+  // ─── Uranus moons ────────────────────────────────────────────────────────
+  {
+    id: 'miranda', name: 'Miranda', type: 'moon', parentId: 'uranus',
+    radiusKm: 236, visualRadius: 0.050,
+    interactive: false, showOrbit: false, color: 0xb8b0a8, emissive: 0x141210,
+    moonElements: MIRANDA_ELEMENTS,
+  },
+  {
+    id: 'ariel', name: 'Ariel', type: 'moon', parentId: 'uranus',
+    radiusKm: 579, visualRadius: 0.062,
+    interactive: false, showOrbit: false, color: 0xb8b8c0, emissive: 0x141418,
+    moonElements: ARIEL_ELEMENTS,
+  },
+  {
+    id: 'umbriel', name: 'Umbriel', type: 'moon', parentId: 'uranus',
+    radiusKm: 585, visualRadius: 0.062,
+    interactive: false, showOrbit: false, color: 0x787880, emissive: 0x0c0c10,
+    moonElements: UMBRIEL_ELEMENTS,
+  },
+  {
+    id: 'titania', name: 'Titania', type: 'moon', parentId: 'uranus',
+    radiusKm: 789, visualRadius: 0.072,
+    interactive: false, showOrbit: false, color: 0xa8a8b0, emissive: 0x101014,
+    moonElements: TITANIA_ELEMENTS,
+  },
+  {
+    id: 'oberon', name: 'Oberon', type: 'moon', parentId: 'uranus',
+    radiusKm: 761, visualRadius: 0.070,
+    interactive: false, showOrbit: false, color: 0x988890, emissive: 0x100c10,
+    moonElements: OBERON_ELEMENTS,
+  },
+
+  // ─── Neptune moons ───────────────────────────────────────────────────────
+  {
+    id: 'naiad', name: 'Naiad', type: 'moon', parentId: 'neptune',
+    radiusKm: 33, visualRadius: 0.040,
+    interactive: false, showOrbit: false, color: 0x4870a8, emissive: 0x080c14,
+    moonElements: NAIAD_ELEMENTS,
+  },
+  {
+    id: 'thalassa', name: 'Thalassa', type: 'moon', parentId: 'neptune',
+    radiusKm: 41, visualRadius: 0.040,
+    interactive: false, showOrbit: false, color: 0x4878b0, emissive: 0x080c14,
+    moonElements: THALASSA_ELEMENTS,
+  },
+  {
+    id: 'despina', name: 'Despina', type: 'moon', parentId: 'neptune',
+    radiusKm: 75, visualRadius: 0.044,
+    interactive: false, showOrbit: false, color: 0x5080b8, emissive: 0x080c18,
+    moonElements: DESPINA_ELEMENTS,
+  },
+  {
+    id: 'galatea', name: 'Galatea', type: 'moon', parentId: 'neptune',
+    radiusKm: 88, visualRadius: 0.044,
+    interactive: false, showOrbit: false, color: 0x5080b8, emissive: 0x080c18,
+    moonElements: GALATEA_ELEMENTS,
+  },
+  {
+    id: 'larissa', name: 'Larissa', type: 'moon', parentId: 'neptune',
+    radiusKm: 97, visualRadius: 0.046,
+    interactive: false, showOrbit: false, color: 0x5888c0, emissive: 0x080e18,
+    moonElements: LARISSA_ELEMENTS,
+  },
+  {
+    id: 'proteus', name: 'Proteus', type: 'moon', parentId: 'neptune',
+    radiusKm: 210, visualRadius: 0.055,
+    interactive: false, showOrbit: false, color: 0x5890c8, emissive: 0x080e18,
+    moonElements: PROTEUS_ELEMENTS,
+  },
+  {
+    id: 'triton', name: 'Triton', type: 'moon', parentId: 'neptune',
+    radiusKm: 1353, visualRadius: 0.10,
+    interactive: false, showOrbit: false, color: 0x80b0d8, emissive: 0x0c1820,
+    moonElements: TRITON_ELEMENTS,
+  },
+  {
+    id: 'nereid', name: 'Nereid', type: 'moon', parentId: 'neptune',
+    radiusKm: 170, visualRadius: 0.050,
+    interactive: false, showOrbit: false, color: 0x6090c0, emissive: 0x081018,
+    moonElements: NEREID_ELEMENTS,
   },
 ];
 

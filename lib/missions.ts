@@ -85,8 +85,8 @@ export const MISSIONS: Mission[] = [
       { id: 'e3', missionId: 'iss', eventType: 'milestone', timestamp: '2024-01-01', title: 'Year-Round Operations', description: 'ISS continues ongoing science and operations with rotating crew', source: 'NASA' },
     ],
     images: [
-      { id: 'iss-img-1', missionId: 'iss', url: 'https://images-assets.nasa.gov/image/0701328/0701328~orig.jpg', title: 'ISS from SpaceX Crew Dragon', date: '2023-10-05', source: 'NASA', sourceUrl: 'https://images.nasa.gov/' },
-      { id: 'iss-img-2', missionId: 'iss', url: 'https://images-assets.nasa.gov/image/KSC-20171017-PH_ISS01_0001/KSC-20171017-PH_ISS01_0001~orig.jpg', title: 'ISS in Orbit', date: '2022-11-14', source: 'NASA', sourceUrl: 'https://images.nasa.gov/' },
+      { id: 'iss-img-1', missionId: 'iss', url: 'https://images-assets.nasa.gov/image/iss070e016032/iss070e016032~orig.jpg', title: 'ISS from SpaceX Crew Dragon', date: '2023-10-05', source: 'NASA', sourceUrl: 'https://images.nasa.gov/details/iss070e016032' },
+      { id: 'iss-img-2', missionId: 'iss', url: 'https://images-assets.nasa.gov/image/iss068e025450/iss068e025450~orig.jpg', title: 'ISS in Orbit', date: '2022-11-14', source: 'NASA', sourceUrl: 'https://images.nasa.gov/details/iss068e025450' },
     ],
     sourceUrl: 'https://www.nasa.gov/international-space-station/',
     tags: ['crewed', 'LEO', 'international', 'science', 'active'],
@@ -156,7 +156,7 @@ export const MISSIONS: Mission[] = [
       { id: 'terra-e2', missionId: 'terra', eventType: 'milestone', timestamp: '2019-12-18', title: '20-Year Anniversary', description: 'Terra celebrates 20 years of continuous Earth observation', source: 'NASA' },
     ],
     images: [
-      { id: 'terra-img-1', missionId: 'terra', url: 'https://images-assets.nasa.gov/image/PIA01349/PIA01349~orig.jpg', title: 'Terra MODIS Earth Image', date: '2000-01-01', source: 'NASA', sourceUrl: 'https://images.nasa.gov/' },
+      { id: 'terra-img-1', missionId: 'terra', url: 'https://images-assets.nasa.gov/image/PIA01349/PIA01349~orig.jpg', title: 'Terra MODIS Earth Image', date: '2000-01-01', source: 'NASA', sourceUrl: 'https://images.nasa.gov/details/PIA01349' },
     ],
     sourceUrl: 'https://terra.nasa.gov/',
     tags: ['Earth observation', 'climate', 'MODIS'],
@@ -224,7 +224,9 @@ export const MISSIONS: Mission[] = [
     events: [
       { id: 'aqua-e1', missionId: 'aqua', eventType: 'launch', timestamp: '2002-05-04', title: 'Aqua Launch', description: 'Launched from Vandenberg AFB', source: 'NASA' },
     ],
-    images: [],
+    images: [
+      { id: 'aqua-img-1', missionId: 'aqua', url: 'https://images-assets.nasa.gov/image/0201490/0201490~orig.jpg', title: 'Aqua Satellite Artist Concept', date: '2002-05-04', source: 'NASA', sourceUrl: 'https://images.nasa.gov/details/0201490' },
+    ],
     sourceUrl: 'https://aqua.nasa.gov/',
     tags: ['Earth observation', 'water cycle', 'MODIS'],
     aiInsights: [
@@ -291,7 +293,9 @@ export const MISSIONS: Mission[] = [
       { id: 'l9-e1', missionId: 'landsat-9', eventType: 'launch', timestamp: '2021-09-27', title: 'Landsat 9 Launch', description: 'Launched aboard Atlas V from Vandenberg Space Force Base', source: 'NASA' },
       { id: 'l9-e2', missionId: 'landsat-9', eventType: 'milestone', timestamp: '2022-02-10', title: 'First Science Images', description: 'Landsat 9 begins routine science operations', source: 'NASA' },
     ],
-    images: [],
+    images: [
+      { id: 'l9-img-1', missionId: 'landsat-9', url: 'https://images-assets.nasa.gov/image/GSFC_20171208_Archive_e001925/GSFC_20171208_Archive_e001925~orig.jpg', title: 'Landsat Earth Observation Image', date: '2022-02-10', source: 'NASA', sourceUrl: 'https://images.nasa.gov/details/GSFC_20171208_Archive_e001925' },
+    ],
     sourceUrl: 'https://landsat.gsfc.nasa.gov/satellites/landsat-9/',
     tags: ['Earth observation', 'land imaging', 'USGS'],
     aiInsights: [
@@ -378,7 +382,7 @@ export const MISSIONS: Mission[] = [
       { id: 'a2-e2', missionId: 'artemis-2', eventType: 'milestone', timestamp: '2024-07-09', title: 'Launch Date Target Update', description: 'NASA targets September 2025 for Artemis II launch', source: 'NASA' },
     ],
     images: [
-      { id: 'a2-img-1', missionId: 'artemis-2', url: 'https://images-assets.nasa.gov/image/KSC-20260320-PH-JBS01_0171/KSC-20260320-PH-JBS01_0171~orig.jpg', title: 'Artemis II Orion Spacecraft at KSC', date: '2022-03-16', source: 'NASA', sourceUrl: 'https://images.nasa.gov/' },
+      { id: 'a2-img-1', missionId: 'artemis-2', url: 'https://images-assets.nasa.gov/image/KSC-20220316-PH-KLS01_0013/KSC-20220316-PH-KLS01_0013~orig.jpg', title: 'Artemis II Orion Spacecraft at KSC', date: '2022-03-16', source: 'NASA', sourceUrl: 'https://images.nasa.gov/details/KSC-20220316-PH-KLS01_0013' },
     ],
     sourceUrl: 'https://www.nasa.gov/artemis-ii',
     tags: ['crewed', 'Artemis', 'Orion', 'SLS', 'lunar flyby'],
@@ -457,7 +461,7 @@ export const MISSIONS: Mission[] = [
       { id: 'lro-e3', missionId: 'lro', eventType: 'milestone', timestamp: '2024-01-01', title: 'Ongoing Operations', description: 'LRO continues lunar mapping in extended mission', source: 'NASA' },
     ],
     images: [
-      { id: 'lro-img-1', missionId: 'lro', url: 'https://images-assets.nasa.gov/image/PIA14021/PIA14021~orig.jpg', title: 'Lunar South Pole by LRO LROC', date: '2011-01-01', source: 'NASA', sourceUrl: 'https://images.nasa.gov/' },
+      { id: 'lro-img-1', missionId: 'lro', url: 'https://images-assets.nasa.gov/image/PIA14021/PIA14021~orig.jpg', title: 'Lunar South Pole by LRO LROC', date: '2011-01-01', source: 'NASA', sourceUrl: 'https://images.nasa.gov/details/PIA14021' },
     ],
     sourceUrl: 'https://lunar.gsfc.nasa.gov/',
     tags: ['orbiter', 'lunar mapping', 'ice prospecting'],
@@ -523,7 +527,9 @@ export const MISSIONS: Mission[] = [
       { id: 'kplo-e1', missionId: 'kplo', eventType: 'launch', timestamp: '2022-08-05', title: 'Danuri Launch', description: 'Launched on SpaceX Falcon 9 from Cape Canaveral', source: 'NASA' },
       { id: 'kplo-e2', missionId: 'kplo', eventType: 'milestone', timestamp: '2022-12-27', title: 'Lunar Orbit Insertion', description: 'Danuri enters lunar orbit', source: 'NASA' },
     ],
-    images: [],
+    images: [
+      { id: 'kplo-img-1', missionId: 'kplo', url: 'https://images-assets.nasa.gov/image/KSC-20220803-PH-SPX01_0033/KSC-20220803-PH-SPX01_0033~orig.jpg', title: 'Korea Pathfinder Lunar Orbiter Launch on Falcon 9', date: '2022-08-05', source: 'NASA', sourceUrl: 'https://images.nasa.gov/details/KSC-20220803-PH-SPX01_0033' },
+    ],
     sourceUrl: 'https://www.kari.re.kr/',
     tags: ['orbiter', 'South Korea', 'ShadowCam', 'international'],
     aiInsights: [
@@ -579,7 +585,9 @@ export const MISSIONS: Mission[] = [
     events: [
       { id: 'gw-e1', missionId: 'lunar-gateway', eventType: 'milestone', timestamp: '2019-05-23', title: 'PPE Contract Awarded', description: 'NASA awards PPE contract to Maxar Technologies', source: 'NASA' },
     ],
-    images: [],
+    images: [
+      { id: 'gw-img-1', missionId: 'lunar-gateway', url: 'https://images-assets.nasa.gov/image/KSC-20230920-PH-JBS01_0091/KSC-20230920-PH-JBS01_0091~orig.jpg', title: 'Lunar Gateway Artist Concept', date: '2023-09-20', source: 'NASA', sourceUrl: 'https://images.nasa.gov/details/KSC-20230920-PH-JBS01_0091' },
+    ],
     sourceUrl: 'https://www.nasa.gov/lunar-gateway/',
     tags: ['planned', 'crewed', 'space station', 'Artemis', 'international'],
     aiInsights: [
@@ -616,8 +624,8 @@ export const MISSIONS: Mission[] = [
       'Characterize Martian weather and dust',
       'Support Ingenuity helicopter flight operations',
     ],
-    heroImageUrl: 'https://images-assets.nasa.gov/image/PIA24401/PIA24401~orig.jpg',
-    thumbnailUrl: 'https://images-assets.nasa.gov/image/PIA24401/PIA24401~thumb.jpg',
+    heroImageUrl: 'https://images-assets.nasa.gov/image/PIA24546/PIA24546~orig.jpg',
+    thumbnailUrl: 'https://images-assets.nasa.gov/image/PIA24546/PIA24546~thumb.jpg',
     currentLocation: {
       description: 'Jezero Crater, Mars — exploring the ancient lake delta margin',
       label: 'OBSERVED',
@@ -675,9 +683,9 @@ export const MISSIONS: Mission[] = [
       { id: 'p-e7', missionId: 'perseverance', eventType: 'science', timestamp: '2024-07-01', title: 'Campaign 4 Begins', description: 'Rover begins fourth science campaign exploring crater margin', source: 'NASA' },
     ],
     images: [
-      { id: 'p-img-1', missionId: 'perseverance', url: 'https://images-assets.nasa.gov/image/PIA24401/PIA24401~orig.jpg', title: 'Perseverance Rover First Image', date: '2021-02-18', source: 'NASA', sourceUrl: 'https://mars.nasa.gov/' },
-      { id: 'p-img-2', missionId: 'perseverance', url: 'https://images-assets.nasa.gov/image/PIA24546/PIA24546~orig.jpg', title: 'Perseverance at Jezero Crater', date: '2021-03-01', source: 'NASA', sourceUrl: 'https://images.nasa.gov/' },
-      { id: 'p-img-3', missionId: 'perseverance', url: 'https://images-assets.nasa.gov/image/PIA24836/PIA24836~orig.jpg', title: 'Ingenuity in Flight', date: '2021-04-19', source: 'NASA', sourceUrl: 'https://images.nasa.gov/' },
+      { id: 'p-img-1', missionId: 'perseverance', url: 'https://images-assets.nasa.gov/image/PIA24546/PIA24546~orig.jpg', title: 'Perseverance at Jezero Crater', date: '2021-03-01', source: 'NASA', sourceUrl: 'https://images.nasa.gov/details/PIA24546' },
+      { id: 'p-img-2', missionId: 'perseverance', url: 'https://images-assets.nasa.gov/image/PIA24836/PIA24836~orig.jpg', title: 'Ingenuity in Flight over Mars', date: '2021-04-19', source: 'NASA', sourceUrl: 'https://images.nasa.gov/details/PIA24836' },
+      { id: 'p-img-3', missionId: 'perseverance', url: 'https://images-assets.nasa.gov/image/PIA23764/PIA23764~orig.jpg', title: 'Perseverance Rover Artist Concept', date: '2020-07-30', source: 'NASA', sourceUrl: 'https://images.nasa.gov/details/PIA23764' },
     ],
     sourceUrl: 'https://mars.nasa.gov/mars2020/',
     tags: ['rover', 'Jezero', 'astrobiology', 'sample cache', 'Ingenuity'],
@@ -766,8 +774,8 @@ export const MISSIONS: Mission[] = [
       { id: 'c-e5', missionId: 'curiosity', eventType: 'science', timestamp: '2023-07-01', title: 'Organic Molecule Discovery', description: 'Detection of diverse organic molecules in ancient lake sediments', source: 'NASA' },
     ],
     images: [
-      { id: 'c-img-1', missionId: 'curiosity', url: 'https://images-assets.nasa.gov/image/PIA16239/PIA16239~orig.jpg', title: 'Curiosity Self-Portrait in Gale Crater', date: '2012-10-31', source: 'NASA', sourceUrl: 'https://images.nasa.gov/' },
-      { id: 'c-img-2', missionId: 'curiosity', url: 'https://images-assets.nasa.gov/image/PIA20844/PIA20844~orig.jpg', title: 'Murray Buttes', date: '2016-09-08', source: 'NASA', sourceUrl: 'https://images.nasa.gov/' },
+      { id: 'c-img-1', missionId: 'curiosity', url: 'https://images-assets.nasa.gov/image/PIA16239/PIA16239~orig.jpg', title: 'Curiosity Self-Portrait in Gale Crater', date: '2012-10-31', source: 'NASA', sourceUrl: 'https://images.nasa.gov/details/PIA16239' },
+      { id: 'c-img-2', missionId: 'curiosity', url: 'https://images-assets.nasa.gov/image/PIA20844/PIA20844~orig.jpg', title: 'Murray Buttes', date: '2016-09-08', source: 'NASA', sourceUrl: 'https://images.nasa.gov/details/PIA20844' },
     ],
     sourceUrl: 'https://mars.nasa.gov/msl/',
     tags: ['rover', 'Gale Crater', 'geochemistry', 'Mt. Sharp'],
@@ -838,7 +846,7 @@ export const MISSIONS: Mission[] = [
       { id: 'm-e4', missionId: 'maven', eventType: 'milestone', timestamp: '2024-01-01', title: 'Ongoing Science & Relay', description: 'MAVEN continues atmospheric science and serves as relay for Mars surface missions', source: 'NASA' },
     ],
     images: [
-      { id: 'm-img-1', missionId: 'maven', url: 'https://images-assets.nasa.gov/image/PIA18922/PIA18922~orig.jpg', title: 'MAVEN Artist Concept', date: '2014-01-01', source: 'NASA', sourceUrl: 'https://images.nasa.gov/' },
+      { id: 'm-img-1', missionId: 'maven', url: 'https://images-assets.nasa.gov/image/PIA18922/PIA18922~orig.jpg', title: 'MAVEN Artist Concept at Mars', date: '2014-01-01', source: 'NASA', sourceUrl: 'https://images.nasa.gov/details/PIA18922' },
     ],
     sourceUrl: 'https://lasp.colorado.edu/maven/',
     tags: ['orbiter', 'atmosphere', 'solar wind', 'climate history'],
@@ -909,7 +917,7 @@ export const MISSIONS: Mission[] = [
       { id: 'mro-e3', missionId: 'mro', eventType: 'milestone', timestamp: '2024-01-01', title: 'Ongoing Operations', description: 'MRO continues science and relay operations after nearly 20 years', source: 'NASA' },
     ],
     images: [
-      { id: 'mro-img-1', missionId: 'mro', url: 'https://images-assets.nasa.gov/image/PIA10216/PIA10216~orig.jpg', title: 'Recurring Slope Lineae on Mars (HiRISE)', date: '2011-08-05', source: 'NASA', sourceUrl: 'https://images.nasa.gov/' },
+      { id: 'mro-img-1', missionId: 'mro', url: 'https://images-assets.nasa.gov/image/PIA10216/PIA10216~orig.jpg', title: 'Recurring Slope Lineae on Mars (HiRISE / MRO)', date: '2011-08-05', source: 'NASA', sourceUrl: 'https://images.nasa.gov/details/PIA10216' },
     ],
     sourceUrl: 'https://mars.nasa.gov/mro/',
     tags: ['orbiter', 'HiRISE', 'radar', 'mineralogy', 'relay'],
@@ -979,7 +987,9 @@ export const MISSIONS: Mission[] = [
       { id: 'me-e2', missionId: 'mars-express', eventType: 'milestone', timestamp: '2003-12-25', title: 'Mars Orbit Insertion', description: 'Mars Express enters Martian orbit on Christmas Day', source: 'ESA' },
       { id: 'me-e3', missionId: 'mars-express', eventType: 'science', timestamp: '2018-07-25', title: 'Subglacial Lake Detected', description: 'MARSIS radar detects bright radar reflection suggesting liquid water lake beneath south polar cap', source: 'ESA' },
     ],
-    images: [],
+    images: [
+      { id: 'me-img-1', missionId: 'mars-express', url: 'https://images-assets.nasa.gov/image/PIA19952/PIA19952~orig.jpg', title: 'Mars Express HRSC Color View of Mars', date: '2016-01-01', source: 'ESA', sourceUrl: 'https://images.nasa.gov/details/PIA19952' },
+    ],
     sourceUrl: 'https://www.esa.int/Science_Exploration/Space_Science/Mars_Express',
     tags: ['orbiter', 'ESA', 'radar', 'MARSIS', 'subglacial lake'],
     aiInsights: [
@@ -1049,7 +1059,9 @@ export const MISSIONS: Mission[] = [
       { id: 'tgo-e2', missionId: 'tgo', eventType: 'milestone', timestamp: '2016-10-19', title: 'Mars Orbit Insertion', description: 'TGO enters Mars orbit; Schiaparelli lander crashes during EDL test', source: 'ESA' },
       { id: 'tgo-e3', missionId: 'tgo', eventType: 'science', timestamp: '2021-01-01', title: 'No Methane Detection', description: 'TGO finds no detectable global methane — puzzling given Curiosity\'s detections', source: 'ESA' },
     ],
-    images: [],
+    images: [
+      { id: 'tgo-img-1', missionId: 'tgo', url: 'https://images-assets.nasa.gov/image/PIA21131/PIA21131~orig.jpg', title: 'ExoMars Trace Gas Orbiter at Mars — Artist Concept', date: '2016-10-01', source: 'ESA', sourceUrl: 'https://images.nasa.gov/details/PIA21131' },
+    ],
     sourceUrl: 'https://exploration.esa.int/web/mars/-/48088-mission-overview',
     tags: ['orbiter', 'ESA', 'methane', 'trace gases', 'ExoMars'],
     aiInsights: [
@@ -1128,7 +1140,7 @@ export const MISSIONS: Mission[] = [
       { id: 'ins-e5', missionId: 'insight', eventType: 'milestone', timestamp: '2022-12-21', title: 'End of Mission', description: 'Last contact with InSight as power levels fall below operational threshold', source: 'NASA' },
     ],
     images: [
-      { id: 'ins-img-1', missionId: 'insight', url: 'https://images-assets.nasa.gov/image/PIA22743/PIA22743~orig.jpg', title: 'InSight Lander Artist Concept', date: '2018-01-01', source: 'NASA', sourceUrl: 'https://images.nasa.gov/' },
+      { id: 'ins-img-1', missionId: 'insight', url: 'https://images-assets.nasa.gov/image/PIA22743/PIA22743~orig.jpg', title: 'InSight Lander Artist Concept', date: '2018-01-01', source: 'NASA', sourceUrl: 'https://images.nasa.gov/details/PIA22743' },
     ],
     sourceUrl: 'https://mars.nasa.gov/insight/',
     tags: ['lander', 'seismology', 'interior', 'completed'],
@@ -1367,7 +1379,7 @@ export const MISSIONS: Mission[] = [
       { id: 'jui-e4', missionId: 'juice', eventType: 'milestone', timestamp: '2034-12-01', title: 'Ganymede Orbit Insertion (Planned)', description: 'First spacecraft to orbit a moon other than Earth\'s — Ganymede', source: 'ESA' },
     ],
     images: [
-      { id: 'jui-img-1', missionId: 'juice', url: 'https://images-assets.nasa.gov/image/PIA25977/PIA25977~orig.jpg', title: 'JUICE Artist Concept near Ganymede', date: '2023-04-14', source: 'ESA', sourceUrl: 'https://images.nasa.gov/' },
+      { id: 'jui-img-1', missionId: 'juice', url: 'https://images-assets.nasa.gov/image/PIA25977/PIA25977~orig.jpg', title: 'JUICE Artist Concept near Ganymede', date: '2023-04-14', source: 'ESA', sourceUrl: 'https://images.nasa.gov/details/PIA25977' },
     ],
     sourceUrl: 'https://www.esa.int/Science_Exploration/Space_Science/Juice',
     tags: ['orbiter', 'Jupiter', 'Ganymede', 'Callisto', 'Europa', 'ocean', 'ESA', 'cruise'],
@@ -1716,6 +1728,621 @@ export const MISSIONS: Mission[] = [
   },
 
   // ============================================================
+  // MERCURY MISSIONS
+  // ============================================================
+  {
+    id: 'messenger',
+    name: 'MESSENGER',
+    shortName: 'MESSENGER',
+    agency: 'NASA',
+    destination: 'mercury',
+    missionType: 'orbiter',
+    status: 'completed',
+    launchDate: '2004-08-03',
+    endDate: '2015-04-30',
+    description:
+      'MESSENGER (MErcury Surface, Space ENvironment, GEochemistry, and Ranging) was NASA\'s first spacecraft to orbit Mercury. Launched in August 2004, it reached Mercury orbit in March 2011 after a 6.6-year journey that included flybys of Earth, Venus, and Mercury itself. MESSENGER mapped the entire surface of Mercury for the first time and made several major discoveries before its intentional impact on the surface on 30 April 2015.',
+    objectives: [
+      'Map the entire surface of Mercury in multiple wavelengths',
+      'Characterize the chemical composition of Mercury\'s surface',
+      'Determine the structure of Mercury\'s core',
+      'Characterize Mercury\'s magnetic field and its interaction with the solar wind',
+      'Determine whether ice exists in permanently shadowed polar craters',
+    ],
+    heroImageUrl: 'https://images-assets.nasa.gov/image/PIA16853/PIA16853~orig.jpg',
+    thumbnailUrl: 'https://images-assets.nasa.gov/image/PIA16853/PIA16853~thumb.jpg',
+    currentLocation: {
+      description: 'Impact site on Mercury\'s surface — intentional deorbit 30 April 2015',
+      label: 'OBSERVED',
+      source: 'NASA',
+    },
+    phases: [
+      { id: 'launch', name: 'Launch & Cruise', description: 'Launched Aug 2004; Earth, Venus, and Mercury gravity assists', isCompleted: true },
+      { id: 'mercury-orbit', name: 'Mercury Orbit Insertion', description: 'Entered Mercury orbit 18 March 2011', isCompleted: true },
+      { id: 'primary', name: 'Primary Mission', description: 'One Earth year of systematic Mercury mapping', isCompleted: true },
+      { id: 'extended', name: 'Extended Mission', description: 'Two extended missions with low-altitude science passes', isCompleted: true },
+      { id: 'eom', name: 'End of Mission', description: 'Fuel exhausted; impacted Mercury surface 30 April 2015', isCompleted: true },
+    ],
+    currentPhase: {
+      id: 'eom',
+      name: 'Mission Concluded',
+      description: 'MESSENGER impacted Mercury at ~3.91 km/s on 30 April 2015 after exhausting all propellant',
+      isCompleted: true,
+    },
+    spacecraft: [
+      {
+        id: 'messenger-sc',
+        missionId: 'messenger',
+        name: 'MESSENGER',
+        type: 'orbiter',
+        description: 'Compact orbiter carrying 7 scientific instruments including MDIS imager, XRS/GRS spectrometers, magnetometer, and laser altimeter. Designed to survive Mercury\'s intense solar environment.',
+        massKg: { value: 1107, label: 'OBSERVED', source: 'NASA' },
+        powerSource: 'Solar arrays with ceramic cloth sunshade',
+        manufacturer: 'Johns Hopkins Applied Physics Laboratory',
+      },
+    ],
+    events: [
+      { id: 'msg-e1', missionId: 'messenger', eventType: 'launch', timestamp: '2004-08-03', title: 'Launch', description: 'Launched aboard Boeing Delta II from Cape Canaveral', source: 'NASA', sourceUrl: 'https://messenger.jhuapl.edu/' },
+      { id: 'msg-e2', missionId: 'messenger', eventType: 'flyby', timestamp: '2008-01-14', title: 'First Mercury Flyby', description: 'First of three Mercury gravity-assist flybys — first spacecraft at Mercury since Mariner 10', source: 'NASA' },
+      { id: 'msg-e3', missionId: 'messenger', eventType: 'milestone', timestamp: '2011-03-18', title: 'Mercury Orbit Insertion', description: 'MESSENGER becomes the first spacecraft to orbit Mercury', source: 'NASA' },
+      { id: 'msg-e4', missionId: 'messenger', eventType: 'science', timestamp: '2012-01-01', title: 'Full Surface Map Complete', description: 'MESSENGER completes first-ever global map of Mercury', source: 'NASA' },
+      { id: 'msg-e5', missionId: 'messenger', eventType: 'science', timestamp: '2012-11-29', title: 'Water Ice Confirmed', description: 'MESSENGER confirms water ice in permanently shadowed polar craters', source: 'NASA' },
+      { id: 'msg-e6', missionId: 'messenger', eventType: 'milestone', timestamp: '2015-04-30', title: 'End of Mission', description: 'MESSENGER impacts Mercury surface at ~3.91 km/s after fuel exhaustion', source: 'NASA' },
+    ],
+    images: [
+      { id: 'msg-img-1', missionId: 'messenger', url: 'https://images-assets.nasa.gov/image/PIA16853/PIA16853~orig.jpg', title: 'Mercury from MESSENGER — Color Global View', date: '2013-02-14', source: 'NASA', sourceUrl: 'https://images.nasa.gov/details/PIA16853' },
+    ],
+    sourceUrl: 'https://messenger.jhuapl.edu/',
+    tags: ['orbiter', 'Mercury', 'completed', 'surface mapping', 'water ice', 'magnetic field'],
+    aiInsights: [
+      {
+        id: 'msg-ai-1',
+        missionId: 'messenger',
+        type: 'summary',
+        content: 'MESSENGER transformed our understanding of Mercury — the most underexplored terrestrial planet. It discovered that Mercury has a surprisingly large iron core comprising ~85% of the planet\'s radius, confirmed water ice in permanently shadowed polar craters despite Mercury being the closest planet to the Sun, and found evidence of past volcanic activity across the entire surface. These findings directly motivate the BepiColombo mission now en route.',
+        confidence: 'high',
+        createdAt: '2024-01-01',
+        basedOn: ['NASA'],
+      },
+    ],
+  },
+
+  {
+    id: 'bepicolombo',
+    name: 'BepiColombo',
+    shortName: 'BepiColombo',
+    agency: 'ESA / JAXA',
+    agencies: ['ESA', 'JAXA'],
+    destination: 'mercury',
+    missionType: 'orbiter',
+    status: 'cruise',
+    launchDate: '2018-10-20',
+    description:
+      'BepiColombo is a joint ESA–JAXA mission to Mercury, the least explored inner planet. The spacecraft stack comprises two orbiters — ESA\'s Mercury Planetary Orbiter (MPO) and JAXA\'s Mercury Magnetospheric Orbiter (Mio) — riding together during a 7-year cruise phase with six Mercury flybys. Mercury orbit insertion is planned for November 2026, with routine science operations beginning in early 2027.',
+    objectives: [
+      'Investigate Mercury\'s origin and evolution',
+      'Study the structure and dynamics of Mercury\'s magnetic field',
+      'Characterize Mercury\'s exosphere and its interaction with the solar wind',
+      'Map Mercury\'s surface composition and geology',
+      'Investigate Mercury\'s internal structure and large iron core',
+    ],
+    heroImageUrl: 'https://images-assets.nasa.gov/image/PIA24031/PIA24031~orig.jpg',
+    thumbnailUrl: 'https://images-assets.nasa.gov/image/PIA24031/PIA24031~thumb.jpg',
+    currentLocation: {
+      description: 'En route to Mercury — sixth Mercury flyby completed Jan 2025; Mercury orbit insertion planned Nov 2026',
+      label: 'DERIVED',
+      source: 'ESA',
+    },
+    phases: [
+      { id: 'launch', name: 'Launch', description: 'Launched 20 Oct 2018 on Ariane 5 from Kourou', isCompleted: true },
+      { id: 'cruise', name: 'Cruise & Flybys', description: 'Earth flyby (Apr 2020), two Venus flybys (Oct 2020, Aug 2021), six Mercury gravity-assist flybys (2021–2025)', isCurrent: true },
+      { id: 'moi', name: 'Mercury Orbit Insertion', description: 'Planned November 2026 — separation of MPO and Mio into their science orbits', isFuture: true },
+      { id: 'science', name: 'Science Operations', description: 'Routine science operations from early 2027', isFuture: true },
+    ],
+    currentPhase: {
+      id: 'cruise',
+      name: 'Cruise',
+      description: 'Sixth Mercury flyby completed January 2025; spacecraft on final approach for Mercury orbit insertion in November 2026',
+      isCurrent: true,
+    },
+    spacecraft: [
+      {
+        id: 'mpo',
+        missionId: 'bepicolombo',
+        name: 'Mercury Planetary Orbiter (MPO)',
+        type: 'orbiter',
+        description: 'ESA\'s three-axis stabilised orbiter carrying 11 scientific instruments including BELA laser altimeter, SIMBIO-SYS camera suite, and MERMAG magnetometer. Will operate in a 480 × 1500 km Mercury orbit.',
+        massKg: { value: 1150, label: 'OBSERVED', source: 'ESA' },
+        powerSource: 'Solar arrays',
+        manufacturer: 'Airbus Defence and Space',
+      },
+      {
+        id: 'mio',
+        missionId: 'bepicolombo',
+        name: 'Mercury Magnetospheric Orbiter (Mio)',
+        type: 'orbiter',
+        description: 'JAXA\'s spin-stabilised orbiter carrying 5 instruments focused on Mercury\'s magnetosphere, exosphere, and solar wind interaction. Will operate in a 590 × 11640 km orbit.',
+        massKg: { value: 255, label: 'OBSERVED', source: 'JAXA' },
+        powerSource: 'Solar arrays',
+        manufacturer: 'NEC Corporation',
+      },
+    ],
+    events: [
+      { id: 'bep-e1', missionId: 'bepicolombo', eventType: 'launch', timestamp: '2018-10-20', title: 'Launch', description: 'Launched on Ariane 5 from Guiana Space Centre', source: 'ESA', sourceUrl: 'https://www.esa.int/Science_Exploration/Space_Science/BepiColombo' },
+      { id: 'bep-e2', missionId: 'bepicolombo', eventType: 'flyby', timestamp: '2021-10-01', title: 'First Mercury Flyby', description: 'BepiColombo conducts its first gravity-assist flyby of Mercury on 1 October 2021', source: 'ESA' },
+      { id: 'bep-e3', missionId: 'bepicolombo', eventType: 'flyby', timestamp: '2025-01-08', title: 'Sixth Mercury Flyby', description: 'Sixth and final Mercury gravity-assist flyby completed 8 January 2025', source: 'ESA' },
+      { id: 'bep-e4', missionId: 'bepicolombo', eventType: 'milestone', timestamp: '2026-11-01', title: 'Mercury Orbit Insertion (Planned)', description: 'Planned Mercury orbit insertion — ESA lists November 2026 as the target date', source: 'ESA' },
+      { id: 'bep-e5', missionId: 'bepicolombo', eventType: 'milestone', timestamp: '2027-03-01', title: 'Routine Science Operations (Planned)', description: 'Routine science operations from MPO and Mio expected to begin in early 2027', source: 'ESA' },
+    ],
+    images: [
+      { id: 'bep-img-1', missionId: 'bepicolombo', url: 'https://images-assets.nasa.gov/image/PIA24031/PIA24031~orig.jpg', title: 'BepiColombo Artist Concept at Mercury', date: '2018-10-20', source: 'ESA', sourceUrl: 'https://images.nasa.gov/details/PIA24031' },
+    ],
+    sourceUrl: 'https://www.esa.int/Science_Exploration/Space_Science/BepiColombo',
+    tags: ['orbiter', 'Mercury', 'ESA', 'JAXA', 'cruise', 'magnetosphere'],
+    aiInsights: [
+      {
+        id: 'bep-ai-1',
+        missionId: 'bepicolombo',
+        type: 'summary',
+        content: 'BepiColombo is Europe and Japan\'s most ambitious inner solar system mission. By flying two complementary orbiters simultaneously — one focused on the surface and interior, the other on the magnetosphere — it will deliver a more complete picture of Mercury than MESSENGER alone could achieve. Its arrival in November 2026 will reopen the book on the solar system\'s most enigmatic terrestrial planet.',
+        confidence: 'high',
+        createdAt: '2024-01-01',
+        basedOn: ['ESA', 'JAXA'],
+      },
+      {
+        id: 'bep-ai-2',
+        missionId: 'bepicolombo',
+        type: 'current-status',
+        content: 'As of 2025, BepiColombo is on its final approach to Mercury following its sixth and last gravity-assist flyby in January 2025. ESA has confirmed Mercury orbit insertion for November 2026, with MPO and Mio separating into their individual science orbits. Routine science operations are expected to begin in early 2027. The spacecraft is healthy and all instruments are nominal.',
+        confidence: 'high',
+        createdAt: '2025-01-01',
+        basedOn: ['ESA'],
+      },
+    ],
+  },
+
+  // ============================================================
+  // VENUS MISSIONS
+  // ============================================================
+  {
+    id: 'akatsuki',
+    name: 'Akatsuki (Venus Climate Orbiter)',
+    shortName: 'Akatsuki',
+    agency: 'JAXA',
+    destination: 'venus',
+    missionType: 'orbiter',
+    status: 'completed',
+    launchDate: '2010-05-21',
+    endDate: '2025-09-01',
+    description:
+      'Akatsuki (あかつき, "Dawn") was JAXA\'s Venus Climate Orbiter — Japan\'s first planetary orbiter to study another planet. After a failed Venus orbit insertion in 2010, mission controllers improvised a rescue trajectory using the spacecraft\'s attitude-control thrusters, successfully entering Venus orbit in December 2015. Akatsuki studied Venusian cloud dynamics, lightning, and atmospheric circulation until JAXA officially ended operations in September 2025.',
+    objectives: [
+      'Observe Venus\'s cloud structure and atmospheric dynamics in multiple wavelengths',
+      'Investigate the super-rotation of Venus\'s atmosphere',
+      'Search for active volcanism and lightning on Venus',
+      'Study Venus\'s heat balance and atmospheric chemistry',
+    ],
+    heroImageUrl: 'https://images-assets.nasa.gov/image/PIA23791/PIA23791~orig.jpg',
+    thumbnailUrl: 'https://images-assets.nasa.gov/image/PIA23791/PIA23791~thumb.jpg',
+    currentLocation: {
+      description: 'Heliocentric orbit — operations ended September 2025 after loss of attitude control',
+      label: 'OBSERVED',
+      source: 'JAXA',
+    },
+    phases: [
+      { id: 'launch', name: 'Launch', description: 'Launched 21 May 2010 on H-IIA from Tanegashima', isCompleted: true },
+      { id: 'failed-voi', name: 'Failed Venus Orbit Insertion', description: 'Main engine failure on 7 December 2010; spacecraft placed in heliocentric orbit', isCompleted: true },
+      { id: 'rescue', name: 'Rescue Trajectory', description: 'Five-year heliocentric orbit; attitude thrusters used for second VOI attempt', isCompleted: true },
+      { id: 'venus-orbit', name: 'Venus Orbit', description: 'Successfully entered Venus orbit 7 December 2015; science operations conducted', isCompleted: true },
+      { id: 'eom', name: 'End of Mission', description: 'JAXA officially ended Akatsuki operations September 2025 following loss of attitude control', isCompleted: true },
+    ],
+    currentPhase: {
+      id: 'eom',
+      name: 'Mission Concluded',
+      description: 'JAXA officially ended Akatsuki operations in September 2025 following progressive loss of attitude control capability',
+      isCompleted: true,
+    },
+    spacecraft: [
+      {
+        id: 'akatsuki-sc',
+        missionId: 'akatsuki',
+        name: 'Akatsuki',
+        type: 'orbiter',
+        description: 'Spin-stabilised Venus orbiter carrying five cameras observing Venus at ultraviolet, visible, and infrared wavelengths to study clouds, lightning, and atmospheric dynamics.',
+        massKg: { value: 517, label: 'OBSERVED', source: 'JAXA' },
+        powerSource: 'Solar arrays',
+        manufacturer: 'NEC Toshiba Space Systems / JAXA',
+      },
+    ],
+    events: [
+      { id: 'aka-e1', missionId: 'akatsuki', eventType: 'launch', timestamp: '2010-05-21', title: 'Launch', description: 'Launched aboard H-IIA rocket from Tanegashima Space Center', source: 'JAXA' },
+      { id: 'aka-e2', missionId: 'akatsuki', eventType: 'milestone', timestamp: '2010-12-07', title: 'Failed Venus Orbit Insertion', description: 'Main engine fails during Venus orbit insertion burn; spacecraft escapes into heliocentric orbit', source: 'JAXA' },
+      { id: 'aka-e3', missionId: 'akatsuki', eventType: 'milestone', timestamp: '2015-12-07', title: 'Successful Venus Orbit Insertion', description: 'Using attitude control thrusters, Akatsuki enters Venus orbit exactly 5 years after the failed attempt', source: 'JAXA' },
+      { id: 'aka-e4', missionId: 'akatsuki', eventType: 'science', timestamp: '2017-01-16', title: 'Bow Shock Wave Discovered', description: 'Akatsuki images a massive stationary gravity wave spanning Venus\'s entire southern hemisphere', source: 'JAXA' },
+      { id: 'aka-e5', missionId: 'akatsuki', eventType: 'milestone', timestamp: '2025-09-01', title: 'End of Mission', description: 'JAXA officially ends Akatsuki operations following progressive loss of attitude control capability', source: 'JAXA' },
+    ],
+    images: [
+      { id: 'aka-img-1', missionId: 'akatsuki', url: 'https://images-assets.nasa.gov/image/PIA23791/PIA23791~orig.jpg', title: 'Venus Ultraviolet View — Akatsuki', date: '2018-01-01', source: 'JAXA', sourceUrl: 'https://images.nasa.gov/details/PIA23791' },
+    ],
+    sourceUrl: 'https://global.jaxa.jp/projects/sas/planet_c/',
+    tags: ['orbiter', 'Venus', 'JAXA', 'atmosphere', 'completed'],
+    aiInsights: [
+      {
+        id: 'aka-ai-1',
+        missionId: 'akatsuki',
+        type: 'summary',
+        content: 'Akatsuki\'s story is one of the most remarkable rescues in planetary science history. A stuck thruster valve that ended its first orbit insertion attempt should have been mission-ending — but JAXA engineers devised a 5-year rescue plan using only attitude-control thrusters, successfully inserting the spacecraft into a very different Venus orbit in 2015. From this orbit, Akatsuki observed Venus\'s super-rotating atmosphere and discovered an enormous stationary gravity wave in its cloud tops. Operations concluded in September 2025.',
+        confidence: 'high',
+        createdAt: '2024-01-01',
+        basedOn: ['JAXA'],
+      },
+    ],
+  },
+
+  {
+    id: 'magellan',
+    name: 'Magellan',
+    shortName: 'Magellan',
+    agency: 'NASA',
+    destination: 'venus',
+    missionType: 'orbiter',
+    status: 'completed',
+    launchDate: '1989-05-04',
+    endDate: '1994-10-12',
+    description:
+      'Magellan was a NASA Venus radar-mapping orbiter that produced the first near-global map of Venus\'s surface using synthetic aperture radar (SAR). Launched from Space Shuttle Atlantis in May 1989, it reached Venus in August 1990 and mapped approximately 98% of the surface at resolutions as fine as 100 metres — revealing a geologically young, volcanically resurfaced world. Magellan was intentionally deorbited into Venus\'s atmosphere on 12 October 1994.',
+    objectives: [
+      'Map the surface of Venus at high resolution using synthetic aperture radar',
+      'Characterize Venus\'s geological and tectonic features',
+      'Measure the global topography of Venus',
+      'Study Venus\'s gravity field',
+      'Investigate atmospheric entry dynamics during final aerobraking',
+    ],
+    heroImageUrl: 'https://images-assets.nasa.gov/image/PIA00271/PIA00271~orig.jpg',
+    thumbnailUrl: 'https://images-assets.nasa.gov/image/PIA00271/PIA00271~thumb.jpg',
+    currentLocation: {
+      description: 'Destroyed in Venus\'s atmosphere — intentional deorbit 12 October 1994',
+      label: 'OBSERVED',
+      source: 'NASA',
+    },
+    phases: [
+      { id: 'launch', name: 'Launch', description: 'Launched from Space Shuttle Atlantis (STS-30)', isCompleted: true },
+      { id: 'cruise', name: 'Cruise', description: '15-month cruise to Venus', isCompleted: true },
+      { id: 'mapping', name: 'Radar Mapping', description: 'Three primary mapping cycles covering ~98% of Venus', isCompleted: true },
+      { id: 'gravity', name: 'Gravity Mapping', description: 'Aerobraking and gravitational science', isCompleted: true },
+      { id: 'eom', name: 'End of Mission', description: 'Intentional deorbit for atmospheric entry experiment', isCompleted: true },
+    ],
+    currentPhase: {
+      id: 'eom',
+      name: 'Mission Concluded',
+      description: 'Magellan was intentionally deorbited into Venus\'s atmosphere on 12 October 1994',
+      isCompleted: true,
+    },
+    spacecraft: [
+      {
+        id: 'magellan-sc',
+        missionId: 'magellan',
+        name: 'Magellan',
+        type: 'orbiter',
+        description: 'Venus radar mapper carrying a synthetic aperture radar (SAR) with 12.6 cm wavelength, altimeter, and radiometer. Used Magellan\'s antenna to map Venus through its perpetual cloud cover.',
+        massKg: { value: 3445, label: 'OBSERVED', source: 'NASA' },
+        powerSource: 'Solar arrays',
+        manufacturer: 'Martin Marietta',
+      },
+    ],
+    events: [
+      { id: 'mag-e1', missionId: 'magellan', eventType: 'launch', timestamp: '1989-05-04', title: 'Launch', description: 'Deployed from Space Shuttle Atlantis during STS-30 mission', source: 'NASA' },
+      { id: 'mag-e2', missionId: 'magellan', eventType: 'milestone', timestamp: '1990-08-10', title: 'Venus Orbit Insertion', description: 'Magellan enters Venus orbit and begins radar mapping', source: 'NASA' },
+      { id: 'mag-e3', missionId: 'magellan', eventType: 'science', timestamp: '1991-01-29', title: 'First Radar Map Released', description: 'NASA releases first high-resolution radar maps of Venus — revealing volcanoes, lava plains, and impact craters', source: 'NASA' },
+      { id: 'mag-e4', missionId: 'magellan', eventType: 'milestone', timestamp: '1994-10-12', title: 'End of Mission', description: 'Magellan intentionally deorbited; last signal received before atmospheric entry', source: 'NASA' },
+    ],
+    images: [
+      { id: 'mag-img-1', missionId: 'magellan', url: 'https://images-assets.nasa.gov/image/PIA00271/PIA00271~orig.jpg', title: 'Venus Radar Map — Magellan Global View', date: '1996-01-01', source: 'NASA', sourceUrl: 'https://images.nasa.gov/details/PIA00271' },
+    ],
+    sourceUrl: 'https://science.nasa.gov/mission/magellan/',
+    tags: ['orbiter', 'Venus', 'radar', 'surface mapping', 'completed', 'NASA'],
+    aiInsights: [
+      {
+        id: 'mag-ai-1',
+        missionId: 'magellan',
+        type: 'summary',
+        content: 'Before Magellan, Venus\'s surface was almost entirely unknown — hidden beneath permanent cloud cover impenetrable to visible light. Magellan\'s synthetic aperture radar pierced those clouds and revealed a world reshaped by volcanism: lava plains covering 80% of the surface, thousands of volcanoes, and a surprising near-total absence of impact craters — evidence that Venus was geologically resurfaced relatively recently. Magellan\'s global topographic dataset remains the primary reference for Venus surface science.',
+        confidence: 'high',
+        createdAt: '2024-01-01',
+        basedOn: ['NASA'],
+      },
+    ],
+  },
+
+  {
+    id: 'venus-express',
+    name: 'Venus Express',
+    shortName: 'Venus Express',
+    agency: 'ESA',
+    destination: 'venus',
+    missionType: 'orbiter',
+    status: 'completed',
+    launchDate: '2005-11-09',
+    endDate: '2015-01-18',
+    description:
+      'Venus Express was ESA\'s first mission to Venus, orbiting the planet from April 2006 to January 2015. Reusing the Mars Express platform, it studied Venus\'s atmosphere, plasma environment, and surface temperatures in unprecedented detail. Key findings included the first direct evidence of recent volcanic activity on Venus and detailed characterisation of the global SO₂ emissions that shape Venus\'s clouds.',
+    objectives: [
+      'Study the structure, chemistry, and dynamics of Venus\'s atmosphere',
+      'Characterize Venus\'s plasma environment and its interaction with the solar wind',
+      'Map surface temperatures to search for volcanic hot spots',
+      'Investigate Venus\'s southern polar vortex',
+      'Search for lightning and active volcanism',
+    ],
+    heroImageUrl: 'https://images-assets.nasa.gov/image/PIA23791/PIA23791~orig.jpg',
+    thumbnailUrl: 'https://images-assets.nasa.gov/image/PIA23791/PIA23791~thumb.jpg',
+    currentLocation: {
+      description: 'Destroyed in Venus\'s atmosphere — last contact 18 January 2015 after fuel exhaustion',
+      label: 'OBSERVED',
+      source: 'ESA',
+    },
+    phases: [
+      { id: 'launch', name: 'Launch', description: 'Launched 9 Nov 2005 on Soyuz-FG/Fregat from Baikonur', isCompleted: true },
+      { id: 'venus-orbit', name: 'Venus Orbit', description: 'Entered Venus orbit 11 April 2006; primary and extended missions', isCompleted: true },
+      { id: 'aerobraking', name: 'Aerobraking', description: 'Periapsis-lowering aerobraking campaign 2014', isCompleted: true },
+      { id: 'eom', name: 'End of Mission', description: 'Final contact 18 January 2015 after propellant exhaustion', isCompleted: true },
+    ],
+    currentPhase: {
+      id: 'eom',
+      name: 'Mission Concluded',
+      description: 'Venus Express lost contact on 18 January 2015 after the spacecraft exhausted its propellant during an extended aerobraking campaign',
+      isCompleted: true,
+    },
+    spacecraft: [
+      {
+        id: 'venus-express-sc',
+        missionId: 'venus-express',
+        name: 'Venus Express',
+        type: 'orbiter',
+        description: 'Three-axis stabilized orbiter based on Mars Express bus, carrying 7 instruments including VIRTIS imaging spectrometer, VMC camera, SOIR occultation spectrometer, and MAG magnetometer.',
+        massKg: { value: 1270, label: 'OBSERVED', source: 'ESA' },
+        powerSource: 'Solar arrays',
+        manufacturer: 'EADS Astrium (now Airbus)',
+      },
+    ],
+    events: [
+      { id: 've-e1', missionId: 'venus-express', eventType: 'launch', timestamp: '2005-11-09', title: 'Launch', description: 'Launched on Soyuz-FG/Fregat from Baikonur Cosmodrome', source: 'ESA' },
+      { id: 've-e2', missionId: 'venus-express', eventType: 'milestone', timestamp: '2006-04-11', title: 'Venus Orbit Insertion', description: 'Venus Express enters Venus orbit; begins studying atmosphere and plasma environment', source: 'ESA' },
+      { id: 've-e3', missionId: 'venus-express', eventType: 'science', timestamp: '2010-04-01', title: 'Recent Volcanic Activity Evidence', description: 'VIRTIS data reveals hot spots consistent with recent or active lava flows on Venus — first direct evidence of active volcanism', source: 'ESA' },
+      { id: 've-e4', missionId: 'venus-express', eventType: 'milestone', timestamp: '2015-01-18', title: 'End of Mission', description: 'Last contact with Venus Express; spacecraft lost after propellant exhaustion following aerobraking', source: 'ESA' },
+    ],
+    images: [
+      { id: 've-img-1', missionId: 'venus-express', url: 'https://images-assets.nasa.gov/image/PIA23791/PIA23791~orig.jpg', title: 'Venus Ultraviolet Cloud View', date: '2010-01-01', source: 'ESA', sourceUrl: 'https://images.nasa.gov/details/PIA23791' },
+    ],
+    sourceUrl: 'https://www.esa.int/Science_Exploration/Space_Science/Venus_Express',
+    tags: ['orbiter', 'Venus', 'ESA', 'atmosphere', 'volcanism', 'completed'],
+    aiInsights: [
+      {
+        id: 've-ai-1',
+        missionId: 'venus-express',
+        type: 'summary',
+        content: 'Venus Express achieved something remarkable: operating at Venus for nearly 9 years using a spacecraft bus designed for Mars. Its VIRTIS spectrometer revealed thermal hot spots on the surface consistent with recent or active volcanism — a key open question for understanding Venus today. The mission also mapped Venus\'s southern polar vortex in detail and discovered a permanent cold collar at 60°S, reshaping our understanding of Venusian atmospheric circulation.',
+        confidence: 'high',
+        createdAt: '2024-01-01',
+        basedOn: ['ESA'],
+      },
+    ],
+  },
+
+  {
+    id: 'davinci',
+    name: 'DAVINCI',
+    shortName: 'DAVINCI',
+    agency: 'NASA',
+    destination: 'venus',
+    missionType: 'lander',
+    status: 'planned',
+    launchDate: '2030-01-01',
+    description:
+      'DAVINCI (Deep Atmosphere Venus Investigation of Noble gases, Chemistry, and Imaging) is a planned NASA Discovery mission to Venus. It will drop a spherical descent probe through Venus\'s atmosphere, making in situ measurements of noble gases, atmospheric chemistry, and surface conditions across the descent. A carrier/flyby spacecraft will capture ultraviolet images of Venus\'s clouds. DAVINCI targets Venus\'s tessera terrain — ancient, highly deformed highlands that may preserve the record of a once-habitable Venus.',
+    objectives: [
+      'Measure the noble gas abundances and chemical composition of Venus\'s atmosphere during descent',
+      'Determine the origin of Venus\'s water and how Venus lost a potential early ocean',
+      'Characterize Venus\'s deep atmosphere and clouds',
+      'Image the tessera highlands of Alpha Regio at fine scale',
+      'Measure surface conditions at the landing site',
+    ],
+    heroImageUrl: 'https://images-assets.nasa.gov/image/PIA24818/PIA24818~orig.jpg',
+    thumbnailUrl: 'https://images-assets.nasa.gov/image/PIA24818/PIA24818~thumb.jpg',
+    currentLocation: {
+      description: 'Under development at NASA Goddard Space Flight Center; launch target ~2030',
+      label: 'OBSERVED',
+      source: 'NASA',
+    },
+    phases: [
+      { id: 'development', name: 'Development', description: 'Phase B/C development at NASA Goddard; launch targeting ~2030', isCurrent: true },
+      { id: 'launch', name: 'Launch', description: 'Planned ~2030 launch', isFuture: true },
+      { id: 'cruise', name: 'Cruise', description: '~6-month cruise to Venus', isFuture: true },
+      { id: 'probe-entry', name: 'Atmospheric Probe Descent', description: '~63-minute probe descent through Venus atmosphere', isFuture: true },
+    ],
+    currentPhase: {
+      id: 'development',
+      name: 'Development',
+      description: 'In development at NASA GSFC; selected as NASA Discovery mission in June 2021. Launch targeting approximately 2030.',
+      isCurrent: true,
+    },
+    spacecraft: [
+      {
+        id: 'davinci-carrier',
+        missionId: 'davinci',
+        name: 'DAVINCI Carrier/Relay/Flyby Spacecraft',
+        type: 'probe',
+        description: 'Flyby spacecraft that releases the descent sphere and relays its data to Earth. Carries UV cameras to image Venus\'s clouds and the Alpha Regio tessera highlands.',
+        powerSource: 'Solar arrays',
+        manufacturer: 'NASA Goddard Space Flight Center',
+      },
+      {
+        id: 'davinci-probe',
+        missionId: 'davinci',
+        name: 'DAVINCI Descent Sphere',
+        type: 'lander',
+        description: 'Titanium pressure vessel descending for ~63 minutes through Venus\'s atmosphere, measuring noble gases, sulfur chemistry, and D/H ratio. Designed to survive to the surface.',
+        powerSource: 'Lithium-ion batteries',
+        manufacturer: 'NASA Goddard Space Flight Center',
+      },
+    ],
+    events: [
+      { id: 'dav-e1', missionId: 'davinci', eventType: 'milestone', timestamp: '2021-06-02', title: 'Mission Selected', description: 'NASA selects DAVINCI and VERITAS as two new Discovery missions to Venus — the first dedicated US Venus missions in decades', source: 'NASA', sourceUrl: 'https://www.nasa.gov/solar-system/nasa-selects-2-missions-to-study-lost-habitable-world-of-venus/' },
+    ],
+    images: [
+      { id: 'dav-img-1', missionId: 'davinci', url: 'https://images-assets.nasa.gov/image/PIA24818/PIA24818~orig.jpg', title: 'DAVINCI Descent Sphere Artist Concept', date: '2021-06-02', source: 'NASA', sourceUrl: 'https://images.nasa.gov/details/PIA24818' },
+    ],
+    sourceUrl: 'https://davincimission.gsfc.nasa.gov/',
+    tags: ['lander', 'Venus', 'atmosphere', 'noble gases', 'tessera', 'planned', 'NASA'],
+    aiInsights: [
+      {
+        id: 'dav-ai-1',
+        missionId: 'davinci',
+        type: 'summary',
+        content: 'DAVINCI is targeting one of Venus\'s most profound mysteries: was Venus ever habitable? By measuring noble gas isotope ratios in Venus\'s deep atmosphere — gases that haven\'t been measured since the Soviet Venera probes in the 1970s–80s — DAVINCI can determine whether Venus once had an ocean and lost it, or was never habitable at all. The tessera imaging adds a geological dimension: these ancient highlands may be Venus\'s only surviving record of a potentially watery past.',
+        confidence: 'high',
+        createdAt: '2024-01-01',
+        basedOn: ['NASA'],
+      },
+    ],
+  },
+
+  {
+    id: 'veritas',
+    name: 'VERITAS',
+    shortName: 'VERITAS',
+    agency: 'NASA',
+    destination: 'venus',
+    missionType: 'orbiter',
+    status: 'planned',
+    launchDate: '2031-01-01',
+    description:
+      'VERITAS (Venus Emissivity, Radio Science, InSAR, Topography, and Spectroscopy) is a planned NASA Discovery mission to Venus that will produce the first high-resolution global topographic and geologic map of Venus since Magellan. Using a synthetic aperture radar capable of 30-metre resolution — three times better than Magellan — VERITAS will determine whether Venus is geologically active today and characterize its tectonic history. Currently under development; launch targeted for the early 2030s.',
+    objectives: [
+      'Produce a global high-resolution topographic and geologic map of Venus at 30-metre resolution',
+      'Determine whether Venus is geologically active by detecting surface changes',
+      'Characterize Venus\'s tectonic and volcanic history',
+      'Measure surface emissivity to constrain crustal composition',
+      'Investigate why Venus and Earth evolved so differently',
+    ],
+    heroImageUrl: 'https://images-assets.nasa.gov/image/PIA24813/PIA24813~orig.jpg',
+    thumbnailUrl: 'https://images-assets.nasa.gov/image/PIA24813/PIA24813~thumb.jpg',
+    currentLocation: {
+      description: 'Under development at NASA JPL; launch target early 2030s',
+      label: 'OBSERVED',
+      source: 'NASA',
+    },
+    phases: [
+      { id: 'development', name: 'Development', description: 'Phase development at NASA JPL; launch targeting early 2030s', isCurrent: true },
+      { id: 'launch', name: 'Launch', description: 'Planned early 2030s launch', isFuture: true },
+      { id: 'venus-orbit', name: 'Venus Orbit Operations', description: 'Radar mapping and emissivity measurements from Venus orbit', isFuture: true },
+    ],
+    currentPhase: {
+      id: 'development',
+      name: 'Development',
+      description: 'Selected as NASA Discovery mission June 2021. Launch targeting early 2030s pending final mission confirmation.',
+      isCurrent: true,
+    },
+    spacecraft: [
+      {
+        id: 'veritas-sc',
+        missionId: 'veritas',
+        name: 'VERITAS',
+        type: 'orbiter',
+        description: 'Venus orbiter carrying X-band and S-band synthetic aperture radar (VISAR) for 30-metre resolution surface mapping, and VEMS infrared emissivity mapper for surface composition.',
+        powerSource: 'Solar arrays',
+        manufacturer: 'NASA Jet Propulsion Laboratory',
+      },
+    ],
+    events: [
+      { id: 'ver-e1', missionId: 'veritas', eventType: 'milestone', timestamp: '2021-06-02', title: 'Mission Selected', description: 'NASA selects VERITAS and DAVINCI as two new Discovery missions to Venus', source: 'NASA', sourceUrl: 'https://www.nasa.gov/solar-system/nasa-selects-2-missions-to-study-lost-habitable-world-of-venus/' },
+    ],
+    images: [
+      { id: 'ver-img-1', missionId: 'veritas', url: 'https://images-assets.nasa.gov/image/PIA24813/PIA24813~orig.jpg', title: 'VERITAS Artist Concept at Venus', date: '2021-06-02', source: 'NASA', sourceUrl: 'https://images.nasa.gov/details/PIA24813' },
+    ],
+    sourceUrl: 'https://www.jpl.nasa.gov/missions/veritas',
+    tags: ['orbiter', 'Venus', 'radar', 'surface mapping', 'geology', 'planned', 'NASA'],
+    aiInsights: [
+      {
+        id: 'ver-ai-1',
+        missionId: 'veritas',
+        type: 'summary',
+        content: 'VERITAS will do for Venus what was done for Mars over the past 25 years: replace a coarse, decades-old global map with a modern, high-resolution dataset. Its 30-metre radar will detect surface changes over time — the first definitive way to determine whether Venus is geologically active today. Combined with DAVINCI\'s atmospheric measurements, these two missions will answer the central question about Venus: why did Earth\'s twin become so radically different?',
+        confidence: 'high',
+        createdAt: '2024-01-01',
+        basedOn: ['NASA'],
+      },
+    ],
+  },
+
+  {
+    id: 'envision',
+    name: 'EnVision',
+    shortName: 'EnVision',
+    agency: 'ESA',
+    destination: 'venus',
+    missionType: 'orbiter',
+    status: 'planned',
+    launchDate: '2031-01-01',
+    description:
+      'EnVision is ESA\'s Medium-class mission to Venus, planned for launch in the early 2030s. It will conduct a holistic investigation of Venus from its deep interior to the top of its atmosphere, studying the planet\'s geological activity, volcanism, surface composition, and atmospheric chemistry. EnVision is designed to work synergistically with NASA\'s DAVINCI and VERITAS missions to deliver the most comprehensive Venus exploration since the Magellan era.',
+    objectives: [
+      'Determine the history and current state of geological activity on Venus',
+      'Characterize the surface composition and identify volcanic and tectonic features',
+      'Investigate the exchange between Venus\'s surface and atmosphere',
+      'Study the structure and dynamics of Venus\'s atmosphere',
+      'Establish the geological context for potential future Venus surface missions',
+    ],
+    heroImageUrl: 'https://images-assets.nasa.gov/image/PIA24817/PIA24817~orig.jpg',
+    thumbnailUrl: 'https://images-assets.nasa.gov/image/PIA24817/PIA24817~thumb.jpg',
+    currentLocation: {
+      description: 'Under development at ESA; launch targeted for early 2030s',
+      label: 'OBSERVED',
+      source: 'ESA',
+    },
+    phases: [
+      { id: 'development', name: 'Development', description: 'ESA M5 mission in development; launch targeting early 2030s', isCurrent: true },
+      { id: 'launch', name: 'Launch', description: 'Planned early 2030s launch on Ariane 6 or equivalent', isFuture: true },
+      { id: 'venus-orbit', name: 'Venus Orbit Operations', description: 'Multi-instrument orbital science at Venus', isFuture: true },
+    ],
+    currentPhase: {
+      id: 'development',
+      name: 'Development',
+      description: 'Selected as ESA M5 mission in 2021. Detailed design phase underway; launch targeting early 2030s.',
+      isCurrent: true,
+    },
+    spacecraft: [
+      {
+        id: 'envision-sc',
+        missionId: 'envision',
+        name: 'EnVision',
+        type: 'orbiter',
+        description: 'Venus orbiter carrying VenSAR synthetic aperture radar (S-band), SRS subsurface radar sounder, VenSpec spectrometer suite (UV + IR), and radio science experiment.',
+        powerSource: 'Solar arrays',
+        manufacturer: 'TBD (ESA industrial prime contractor)',
+      },
+    ],
+    events: [
+      { id: 'env-e1', missionId: 'envision', eventType: 'milestone', timestamp: '2021-06-10', title: 'Mission Selected', description: 'ESA selects EnVision as its M5 medium-class science mission to Venus', source: 'ESA', sourceUrl: 'https://www.esa.int/Science_Exploration/Space_Science/EnVision' },
+    ],
+    images: [
+      { id: 'env-img-1', missionId: 'envision', url: 'https://images-assets.nasa.gov/image/PIA24817/PIA24817~orig.jpg', title: 'EnVision Artist Concept at Venus', date: '2021-06-10', source: 'ESA', sourceUrl: 'https://images.nasa.gov/details/PIA24817' },
+    ],
+    sourceUrl: 'https://www.esa.int/Science_Exploration/Space_Science/EnVision',
+    tags: ['orbiter', 'Venus', 'ESA', 'radar', 'geology', 'atmosphere', 'planned'],
+    aiInsights: [
+      {
+        id: 'env-ai-1',
+        missionId: 'envision',
+        type: 'summary',
+        content: 'EnVision is designed to answer the most fundamental question about Venus: is it geologically alive today? By combining a synthetic aperture radar, a subsurface sounding radar, and spectrometers into a single mission, EnVision can detect active volcanism, characterize surface composition, and map subsurface structure — the full toolkit for planetary geology. Working alongside NASA\'s DAVINCI and VERITAS, the three missions together represent the most ambitious Venus exploration program since Magellan.',
+        confidence: 'high',
+        createdAt: '2024-01-01',
+        basedOn: ['ESA'],
+      },
+    ],
+  },
+
+  // ============================================================
   // NEPTUNE MISSIONS
   // ============================================================
   {
@@ -1774,8 +2401,8 @@ export const MISSIONS: Mission[] = [
       { id: 'v2n-e4', missionId: 'voyager-2-neptune', eventType: 'milestone', timestamp: '1989-08-26', title: '6 New Moons Discovered', description: 'Voyager 2\'s flyby reveals six previously unknown Neptunian moons', source: 'NASA' },
     ],
     images: [
-      { id: 'v2n-img-1', missionId: 'voyager-2-neptune', url: 'https://images-assets.nasa.gov/image/PIA00046/PIA00046~orig.jpg', title: 'Neptune by Voyager 2', date: '1989-08-20', source: 'NASA', sourceUrl: 'https://images.nasa.gov/' },
-      { id: 'v2n-img-2', missionId: 'voyager-2-neptune', url: 'https://images-assets.nasa.gov/image/PIA02210/PIA02210~orig.jpg', title: 'Triton — Voyager 2', date: '1989-08-25', source: 'NASA', sourceUrl: 'https://images.nasa.gov/' },
+      { id: 'v2n-img-1', missionId: 'voyager-2-neptune', url: 'https://images-assets.nasa.gov/image/PIA00046/PIA00046~orig.jpg', title: 'Neptune by Voyager 2', date: '1989-08-20', source: 'NASA', sourceUrl: 'https://images.nasa.gov/details/PIA00046' },
+      { id: 'v2n-img-2', missionId: 'voyager-2-neptune', url: 'https://images-assets.nasa.gov/image/PIA02210/PIA02210~orig.jpg', title: 'Triton — Voyager 2', date: '1989-08-25', source: 'NASA', sourceUrl: 'https://images.nasa.gov/details/PIA02210' },
     ],
     sourceUrl: 'https://voyager.jpl.nasa.gov/',
     tags: ['flyby', 'Neptune', 'Triton', 'Grand Tour', 'Voyager', 'completed'],

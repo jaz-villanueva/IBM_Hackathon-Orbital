@@ -6,6 +6,8 @@ import { Sparkles, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 
 interface MissionPulseProps {
+  mercuryMissions: Mission[];
+  venusMissions: Mission[];
   earthMissions: Mission[];
   moonMissions: Mission[];
   marsMissions: Mission[];
@@ -16,6 +18,30 @@ interface MissionPulseProps {
 }
 
 const DEST_CONFIG = {
+  mercury: {
+    label: 'MERCURY',
+    emoji: '☿',
+    color: 'text-stone-400',
+    bg: 'bg-stone-400/10',
+    border: 'border-stone-400/20',
+    dotColor: 'bg-stone-400',
+    highlights: [
+      'BepiColombo (ESA/JAXA) en route — Mercury orbit insertion targeted November 2026.',
+      'MESSENGER confirmed water ice in permanently shadowed polar craters (2012).',
+    ],
+  },
+  venus: {
+    label: 'VENUS',
+    emoji: '♀',
+    color: 'text-yellow-600',
+    bg: 'bg-yellow-600/10',
+    border: 'border-yellow-600/20',
+    dotColor: 'bg-yellow-600',
+    highlights: [
+      'Three future missions selected: DAVINCI & VERITAS (NASA) and EnVision (ESA).',
+      'Akatsuki (JAXA) concluded Venus cloud observations in September 2025.',
+    ],
+  },
   earth: {
     label: 'EARTH',
     emoji: '🌎',
@@ -108,8 +134,10 @@ function countActive(missions: Mission[]) {
   ).length;
 }
 
-export function MissionPulse({ earthMissions, moonMissions, marsMissions, jupiterMissions, saturnMissions, uranusMissions, neptuneMissions }: MissionPulseProps) {
+export function MissionPulse({ mercuryMissions, venusMissions, earthMissions, moonMissions, marsMissions, jupiterMissions, saturnMissions, uranusMissions, neptuneMissions }: MissionPulseProps) {
   const destData = [
+    { key: 'mercury' as const, missions: mercuryMissions, cfg: DEST_CONFIG.mercury },
+    { key: 'venus' as const, missions: venusMissions, cfg: DEST_CONFIG.venus },
     { key: 'earth' as const, missions: earthMissions, cfg: DEST_CONFIG.earth },
     { key: 'moon' as const, missions: moonMissions, cfg: DEST_CONFIG.moon },
     { key: 'mars' as const, missions: marsMissions, cfg: DEST_CONFIG.mars },

@@ -177,9 +177,9 @@ export const ORBITAL_PARAMS: Record<string, OrbitalParams> = {
 
 // ─── Simulation clock ────────────────────────────────────────────────────────
 
-export type SimSpeed = 1 | 10 | 100 | 1000 | 10000;
+export type SimSpeed = 1 | 100 | 1000 | 10000 | 1000000;
 
-export const SIM_SPEEDS: SimSpeed[] = [1, 10, 100, 1000, 10000];
+export const SIM_SPEEDS: SimSpeed[] = [1, 100, 1000, 10000, 1000000];
 
 export interface SimClock {
   /** Wall time when sim was last reset/started (ms) */
