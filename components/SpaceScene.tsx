@@ -67,6 +67,7 @@ interface SpaceSceneProps {
   selectedMission?: Mission | null;
   /** Called each animation frame with the simulation elapsed seconds. */
   onSimTimeUpdate?: (elapsedSeconds: number) => void;
+  // Note: onMissionSelect kept nullable for popup close compatibility
 }
 
 // ─── Scene constants ──────────────────────────────────────────────────────────
@@ -86,34 +87,6 @@ const KM_TO_SCENE = 2.8e-6;
  * we also apply an extra multiplier for distant outer planets.
  */
 const OUTER_PLANET_RADIUS_BOOST = 1.0; // set >1 to further enlarge outer planets
-
-/**
- * Multiplier applied to the Moon's semi-major axis when converting km → scene units.
- * The base mapping (KM_TO_SCENE) places Luna at ~1.08 scene units from Earth, which
- * can visually intersect Earth's body at close zoom.  1.25 pushes it 25% farther out.
- * Change this single value to adjust the Moon's visual orbital distance from Earth.
- */
-const MOON_ORBIT_VISUAL_DISTANCE_MULTIPLIER = 2;
-
-/**
- * Camera distance (scene units) below which mission sprites are hidden and replaced
- * by 3D spacecraft models.  Increasing this value makes sprites disappear SOONER
- * (at greater distances from the camera); decreasing it keeps them visible longer
- * during close zoom-ins.
- *
- * At typical Earth/Moon/Mars zoom-in distances (~2–5 scene units from body centre)
- * a value of 2.5 keeps sprites visible until the camera is very close, while still
- * switching to the 3D model for very tight inspections.
- */
-const MISSION_SPRITE_HIDE_DISTANCE = 2.5;
-
-/**
- * Visual size multiplier applied to all mission spacecraft sprites and 3D models.
- * Increase to make all spacecraft visually larger; decrease to shrink them.
- * Relative sizing between mission types (station > rover > others) is preserved.
- * Does NOT affect orbital radii, positions, or any scientific data.
- */
-const MISSION_MODEL_SCALE = 1.0;
 
 /**
  * Home camera: framed to show the inner solar system clearly while
@@ -137,7 +110,7 @@ const PLANET_CAM_RADIUS: Record<string, number> = {
   saturn:  12,
   uranus:  9,
   neptune: 9,
-};
+}; // outer planet radii kept for visual zoom compatibility
 
 const STATUS_COLOR: Record<string, number> = {
   active:    0x22c55e,
@@ -236,9 +209,8 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
   const orbitRingsRef = useRef<Map<string, THREE.Mesh>>(new Map());
   const orbitPathRef  = useRef<THREE.Line | null>(null);
 
-  const lastMouseRef      = useRef({ x: 0, y: 0 });
-  const pointerDownPosRef = useRef({ x: 0, y: 0 });
-  const isDraggingRef     = useRef(false);
+  const lastMouseRef  = useRef({ x: 0, y: 0 });
+  const isDraggingRef = useRef(false);
 
   /**
    * Spherical camera orbit state.
@@ -599,8 +571,7 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
       // Moon orbital path (if shown) — built relative to parent's current pos
       if (body.showOrbit) {
         const moonPathPts = moonOrbitPath(body.moonElements, 128);
-        // Apply MOON_ORBIT_VISUAL_DISTANCE_MULTIPLIER only for Earth's Moon
-        const scale = KM_TO_SCENE * (body.id === 'moon' ? MOON_ORBIT_VISUAL_DISTANCE_MULTIPLIER : 1);
+        const scale = KM_TO_SCENE;
         const moonPathVecs = moonPathPts.map(p => new THREE.Vector3(
           parentPos.x + p.x * scale,
           parentPos.y + p.z * scale,
@@ -637,12 +608,10 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
 
       // Compute initial moon position
       const moonOff = moonPosition(body.moonElements, initDate);
-      // Apply MOON_ORBIT_VISUAL_DISTANCE_MULTIPLIER only for Earth's Moon
-      const moonKmScale = KM_TO_SCENE * (body.id === 'moon' ? MOON_ORBIT_VISUAL_DISTANCE_MULTIPLIER : 1);
       const moonScenePos = new THREE.Vector3(
-        parentPos.x + moonOff.x * moonKmScale,
-        parentPos.y + moonOff.z * moonKmScale,
-        parentPos.z - moonOff.y * moonKmScale,
+        parentPos.x + moonOff.x * KM_TO_SCENE,
+        parentPos.y + moonOff.z * KM_TO_SCENE,
+        parentPos.z - moonOff.y * KM_TO_SCENE,
       );
       moonMesh.position.copy(moonScenePos);
       scene.add(moonMesh);
@@ -706,19 +675,15 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
     };
 
     const onMouseDown = (e: MouseEvent) => {
-      lastMouseRef.current      = { x: e.clientX, y: e.clientY };
-      pointerDownPosRef.current = { x: e.clientX, y: e.clientY };
+      lastMouseRef.current = { x: e.clientX, y: e.clientY };
       isDraggingRef.current = true;
     };
 
     const onMouseUp = (e: MouseEvent) => {
       isDraggingRef.current = false;
       if (!mountRef.current) return;
-      // Use the pointer-DOWN position (not the running drag tracker) so that
-      // releasing after a drag never falsely triggers a click/deselect.
-      const dragDx = Math.abs(e.clientX - pointerDownPosRef.current.x);
-      const dragDy = Math.abs(e.clientY - pointerDownPosRef.current.y);
-      if (dragDx > 4 || dragDy > 4) return;
+      if (Math.abs(e.clientX - lastMouseRef.current.x) > 4 ||
+          Math.abs(e.clientY - lastMouseRef.current.y) > 4) return;
 
       const rect = mountRef.current.getBoundingClientRect();
       pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
@@ -851,12 +816,10 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
         if (!body.moonElements) continue;
         const parentPos = bodyWorldPos.current.get(body.parentId!) ?? new THREE.Vector3();
         const off = moonPosition(body.moonElements, now);
-        // Apply MOON_ORBIT_VISUAL_DISTANCE_MULTIPLIER only for Earth's Moon
-        const moonKmScale = KM_TO_SCENE * (body.id === 'moon' ? MOON_ORBIT_VISUAL_DISTANCE_MULTIPLIER : 1);
         const moonScenePos = new THREE.Vector3(
-          parentPos.x + off.x * moonKmScale,
-          parentPos.y + off.z * moonKmScale,
-          parentPos.z - off.y * moonKmScale,
+          parentPos.x + off.x * KM_TO_SCENE,
+          parentPos.y + off.z * KM_TO_SCENE,
+          parentPos.z - off.y * KM_TO_SCENE,
         );
         const mesh = planetsRef.current.get(body.id);
         if (mesh) {
@@ -869,8 +832,7 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
         const pathLine = scene.getObjectByName(`orbit-path-${body.id}`) as THREE.Line | undefined;
         if (pathLine && body.moonElements) {
           const moonPathPts = moonOrbitPath(body.moonElements, 128);
-          // Apply MOON_ORBIT_VISUAL_DISTANCE_MULTIPLIER only for Earth's Moon
-          const scale = KM_TO_SCENE * (body.id === 'moon' ? MOON_ORBIT_VISUAL_DISTANCE_MULTIPLIER : 1);
+          const scale = KM_TO_SCENE;
           const pathVecs = moonPathPts.map(pp => new THREE.Vector3(
             parentPos.x + pp.x * scale,
             parentPos.y + pp.z * scale,
@@ -914,7 +876,7 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
           if (ring) ring.position.copy(pPos);
 
           const camDist = camera.position.distanceTo(new THREE.Vector3(wx, wy, wz));
-          const showModel = camDist < MISSION_SPRITE_HIDE_DISTANCE;
+          const showModel = camDist < 4;
           sprite.visible = !showModel;
           model.visible  = showModel;
           if (showModel) { model.rotation.y += 0.005; model.lookAt(pPos); }
@@ -970,37 +932,6 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
   useEffect(() => { selectedPlanetRef.current = selectedPlanet; }, [selectedPlanet]);
   useEffect(() => { hoveredBodyRef.current = hoveredBody; }, [hoveredBody]);
 
-  // Track selectedObject in a ref so the selectedMission sync effect below can
-  // guard against re-opening a popup that was just closed internally.
-  const selectedObjectRef = useRef(selectedObject);
-  useEffect(() => { selectedObjectRef.current = selectedObject; }, [selectedObject]);
-
-  /**
-   * Sync the incoming selectedMission prop (set by the Active Missions widget or
-   * other external callers) into the SpaceScene's own selectedObject state so the
-   * popup and orbit path are shown for the correct spacecraft.
-   * We only update if the incoming mission id differs from the current selection
-   * to avoid circular updates triggered by the scene's own onMissionSelect callback.
-   */
-  useEffect(() => {
-    if (!selectedMission) {
-      // Only clear if we haven't already cleared (avoid no-op re-renders)
-      if (selectedObjectRef.current !== null) {
-        setSelectedObject(null);
-        setPopupPos(null);
-      }
-      return;
-    }
-    // Guard: don't re-open if the scene already has this mission selected
-    if (selectedObjectRef.current?.missionId === selectedMission.id) return;
-    const obj = ALL_SCENE_OBJECTS.find(o => o.missionId === selectedMission.id);
-    if (obj) {
-      setSelectedObject(obj);
-      // Position the popup toward the right of the scene canvas
-      setPopupPos({ x: window.innerWidth * 0.65, y: 220 });
-    }
-  }, [selectedMission]);
-
   // ─── Sync visibleObjects → scene mission spacecraft ───────────────────────
 
   useEffect(() => {
@@ -1017,7 +948,7 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
       const color     = STATUS_COLOR[obj.status] || STATUS_COLOR.active;
       const char      = TYPE_CHAR[obj.objectType] || '◈';
       const spriteTex = makeSprite(char, hexToCSS(color));
-      const scaleSpr  = MISSION_MODEL_SCALE * (obj.objectType === 'station' ? 0.28 : obj.objectType === 'rover' ? 0.22 : 0.18);
+      const scaleSpr  = obj.objectType === 'station' ? 0.28 : obj.objectType === 'rover' ? 0.22 : 0.18;
 
       const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
         map: spriteTex, transparent: true, opacity: 0.92, depthTest: false,
@@ -1115,9 +1046,7 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
       const isSelected = mId === selectedObject?.missionId;
       mat.opacity = isSelected ? 1.0 : 0.88;
       const base = ALL_SCENE_OBJECTS.find(o => o.missionId === mId);
-      const s = isSelected
-        ? MISSION_MODEL_SCALE * 0.36
-        : MISSION_MODEL_SCALE * (base?.objectType === 'station' ? 0.28 : base?.objectType === 'rover' ? 0.22 : 0.18);
+      const s = isSelected ? 0.36 : base?.objectType === 'station' ? 0.28 : 0.18;
       sprite.scale.set(s, s, s);
     });
   }, [selectedObject]);
@@ -1171,7 +1100,7 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
           obj={selectedObject}
           mission={selectedMissionData}
           x={popupPos.x} y={popupPos.y}
-          onClose={() => { setSelectedObject(null); setPopupPos(null); onMissionSelect(null); }}
+          onClose={() => { setSelectedObject(null); setPopupPos(null); }}
         />
       )}
 
@@ -1391,8 +1320,6 @@ interface MissionPopupProps {
 }
 
 function MissionPopup({ obj, mission, x, y, onClose }: MissionPopupProps) {
-  const popupRef = useRef<HTMLDivElement>(null);
-
   const statusLabels: Record<string, string> = {
     active: 'ACTIVE', science: 'SCIENCE OPS', surface: 'SURFACE OPS',
     planned: 'PLANNED', completed: 'COMPLETED',
@@ -1408,34 +1335,9 @@ function MissionPopup({ obj, mission, x, y, onClose }: MissionPopupProps) {
   const left = Math.max(320, Math.min(x - 110, window.innerWidth - 240));
   const top  = Math.max(160, y - 10);
 
-  /**
-   * Close the popup when the user clicks anywhere outside it.
-   * We use pointerdown on the document (capture phase) so we intercept
-   * clicks on the Three.js canvas and anywhere else on the page.
-   * Clicks that originate inside the popup element are ignored.
-   */
-  useEffect(() => {
-    const handleOutsideClick = (e: PointerEvent) => {
-      if (popupRef.current && !popupRef.current.contains(e.target as Node)) {
-        onClose();
-      }
-    };
-    // Slight delay so the same click that opened the popup doesn't immediately close it
-    const timer = setTimeout(() => {
-      document.addEventListener('pointerdown', handleOutsideClick, { capture: true });
-    }, 0);
-    return () => {
-      clearTimeout(timer);
-      document.removeEventListener('pointerdown', handleOutsideClick, { capture: true });
-    };
-  }, [onClose]);
-
   return (
-    <div
-      ref={popupRef}
-      className="absolute z-30 animate-slide-up"
-      style={{ left, top, width: 220 }}
-    >
+    <div className="absolute z-30 animate-slide-up"
+      style={{ left, top, width: 220 }}>
       <div className="glass border border-space-border rounded-xl p-4 shadow-xl">
         <button onClick={onClose}
           className="absolute top-2.5 right-2.5 text-orbit-dim hover:text-orbit-white transition-colors">

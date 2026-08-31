@@ -28,7 +28,6 @@ const TYPE_OPTIONS: { value: MissionType | ''; label: string }[] = [
   { value: 'rover', label: 'Rover' },
   { value: 'orbiter', label: 'Orbiter' },
   { value: 'lander', label: 'Lander' },
-  { value: 'flyby', label: 'Flyby' },
   { value: 'crewed', label: 'Crewed' },
   { value: 'earth-observation', label: 'Earth Observation' },
   { value: 'science', label: 'Science' },

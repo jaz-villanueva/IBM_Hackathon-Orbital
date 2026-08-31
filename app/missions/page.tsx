@@ -27,10 +27,6 @@ function MissionsContent() {
     earth: getMissionsByDestination('earth').length,
     moon: getMissionsByDestination('moon').length,
     mars: getMissionsByDestination('mars').length,
-    jupiter: getMissionsByDestination('jupiter').length,
-    saturn: getMissionsByDestination('saturn').length,
-    uranus: getMissionsByDestination('uranus').length,
-    neptune: getMissionsByDestination('neptune').length,
   }), []);
 
   return (
@@ -44,7 +40,7 @@ function MissionsContent() {
             <div className="text-[10px] text-orbit-dim tracking-widest mb-1">ORBITAL</div>
             <h1 className="text-3xl font-light text-orbit-white tracking-wide mb-2">MISSION CATALOG</h1>
             <p className="text-orbit-dim text-sm">
-              Active and recent space missions across Earth, Moon, Mars, and beyond.
+              Active and recent space missions across Earth, Moon, and Mars.
             </p>
 
             {/* Stats row */}
@@ -55,10 +51,6 @@ function MissionsContent() {
                 { label: '🌎 EARTH', value: stats.earth },
                 { label: '🌙 MOON', value: stats.moon },
                 { label: '🔴 MARS', value: stats.mars },
-                { label: '🟠 JUPITER', value: stats.jupiter },
-                { label: '🪐 SATURN', value: stats.saturn },
-                { label: '🔵 URANUS', value: stats.uranus },
-                { label: '💙 NEPTUNE', value: stats.neptune },
               ].map((s) => (
                 <div key={s.label} className="flex items-center gap-2">
                   {s.dot && <div className={`w-1.5 h-1.5 rounded-full ${s.dot} animate-pulse`} />}
