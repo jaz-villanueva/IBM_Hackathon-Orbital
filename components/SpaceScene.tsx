@@ -209,8 +209,9 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
   const orbitRingsRef = useRef<Map<string, THREE.Mesh>>(new Map());
   const orbitPathRef  = useRef<THREE.Line | null>(null);
 
-  const lastMouseRef  = useRef({ x: 0, y: 0 });
-  const isDraggingRef = useRef(false);
+  const lastMouseRef    = useRef({ x: 0, y: 0 });
+  const isDraggingRef   = useRef(false);
+  const pointerDownPos  = useRef({ x: 0, y: 0 });
 
   /**
    * Spherical camera orbit state.
@@ -675,19 +676,23 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
     };
 
     const onMouseDown = (e: MouseEvent) => {
-      lastMouseRef.current = { x: e.clientX, y: e.clientY };
-      isDraggingRef.current = true;
+      lastMouseRef.current   = { x: e.clientX, y: e.clientY };
+      pointerDownPos.current = { x: e.clientX, y: e.clientY };
+      isDraggingRef.current  = true;
     };
 
     const onMouseUp = (e: MouseEvent) => {
       isDraggingRef.current = false;
       if (!mountRef.current) return;
-      if (Math.abs(e.clientX - lastMouseRef.current.x) > 4 ||
-          Math.abs(e.clientY - lastMouseRef.current.y) > 4) return;
+      // Compare against the original mousedown position (not the last mousemove
+      // position) so that a pan/drag never accidentally triggers selection.
+      if (Math.abs(e.clientX - pointerDownPos.current.x) > 4 ||
+          Math.abs(e.clientY - pointerDownPos.current.y) > 4) return;
 
+      // Raycast at the original click-down position, not the release position.
       const rect = mountRef.current.getBoundingClientRect();
-      pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-      pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+      pointer.x = ((pointerDownPos.current.x - rect.left) / rect.width) * 2 - 1;
+      pointer.y = -((pointerDownPos.current.y - rect.top) / rect.height) * 2 + 1;
       raycaster.setFromCamera(pointer, camera);
 
       const sprites = Array.from(objectsRef.current.values()).map(v => v.sprite);
