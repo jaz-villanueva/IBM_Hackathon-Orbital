@@ -686,6 +686,9 @@ video {
 .left-0 {
   left: 0px;
 }
+.left-10 {
+  left: 2.5rem;
+}
 .left-2 {
   left: 0.5rem;
 }
@@ -740,17 +743,11 @@ video {
 .top-\[110px\] {
   top: 110px;
 }
-.top-\[420px\] {
-  top: 420px;
+.top-\[375px\] {
+  top: 375px;
 }
 .top-full {
   top: 100%;
-}
-.left-10 {
-  left: 2.5rem;
-}
-.top-\[375px\] {
-  top: 375px;
 }
 .z-10 {
   z-index: 10;
@@ -951,9 +948,6 @@ video {
 }
 .max-h-72 {
   max-height: 18rem;
-}
-.max-h-\[calc\(100vh-120px\)\] {
-  max-height: calc(100vh - 120px);
 }
 .max-h-\[calc\(100vh-190px\)\] {
   max-height: calc(100vh - 190px);

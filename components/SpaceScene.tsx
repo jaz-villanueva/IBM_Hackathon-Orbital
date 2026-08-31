@@ -102,6 +102,13 @@ interface SpaceSceneProps {
    * focus back to the current planet view.
    */
   focusedOrbiterId?: string | null;
+  /**
+   * When set to a mission id, selects that mission's SceneObject on the 3D map
+   * (highlights its orbit ring, fires onMissionSelect) without requiring a
+   * canvas click. Used by the Planet Widget to focus a mission from the sidebar.
+   * Pass null to clear the selection.
+   */
+  focusedMissionId?: string | null;
   // Note: onMissionSelect kept nullable for popup close compatibility
 }
 
@@ -315,7 +322,7 @@ function getBodyPos(id: string, bodyWorldPos: Map<string, THREE.Vector3>): THREE
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, selectedMission, onSimTimeUpdate, extraOrbiters, onObjectSelect, focusedOrbiterId }: SpaceSceneProps) {
+export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, selectedMission, onSimTimeUpdate, extraOrbiters, onObjectSelect, focusedOrbiterId, focusedMissionId }: SpaceSceneProps) {
   const mountRef      = useRef<HTMLDivElement>(null);
   const rendererRef   = useRef<THREE.WebGLRenderer | null>(null);
   const sceneRef      = useRef<THREE.Scene | null>(null);
@@ -494,6 +501,47 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
     if (obj) setSelectedObject(obj);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focusedOrbiterId, sceneObjectFor, goToDestination]);
+
+  // ─── Parent-controlled mission focus (focusedMissionId prop) ─────────────
+  // Selects a mission on the 3D map from outside the canvas — e.g. from the
+  // Planet Widget sidebar — without requiring a canvas click.
+  useEffect(() => {
+    if (focusedMissionId === undefined) return;
+    if (focusedMissionId === null) {
+      setSelectedObject(null);
+      setPopupPos(null);
+      return;
+    }
+    const obj = ALL_SCENE_OBJECTS.find((o) => o.missionId === focusedMissionId);
+    if (!obj) return;
+    setSelectedObject(obj);
+    const mission = MISSIONS.find((m) => m.id === focusedMissionId);
+    if (mission) onMissionSelect(mission);
+
+    // Compute popup screen position by projecting the destination planet's
+    // world position through the camera. We defer one rAF so the animate loop
+    // has had a chance to update bodyWorldPos for the current frame.
+    const computePos = () => {
+      const camera = cameraRef.current;
+      const mount  = mountRef.current;
+      if (!camera || !mount) {
+        // Fallback: place popup at a sensible fixed position (clamped by MissionPopup)
+        setPopupPos({ x: 0, y: 0 });
+        return;
+      }
+      const dest    = obj.destination;
+      const worldPos = bodyWorldPos.current.get(dest) ?? new THREE.Vector3();
+      const sp      = worldPos.clone().project(camera);
+      const rect    = mount.getBoundingClientRect();
+      setPopupPos({
+        x: (sp.x + 1) / 2 * rect.width,
+        y: (-sp.y + 1) / 2 * rect.height,
+      });
+    };
+    const rafId = requestAnimationFrame(computePos);
+    return () => cancelAnimationFrame(rafId);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusedMissionId]);
 
   // ─── Sim speed changes ─────────────────────────────────────────────────────
 
