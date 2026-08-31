@@ -205,8 +205,8 @@ export function MissionPulse({ earthMissions, moonMissions, marsMissions, jupite
           <p className="text-[12px] text-orbit-dim leading-relaxed">
             Current Mars operations center on two active rovers exploring different ancient lake environments —
             Perseverance in Jezero Crater hunting for biosignatures, Curiosity reading climate history from Mt. Sharp stratigraphy.
-            At the outer solar system, humanity&apos;s only direct observations of Uranus and Neptune remain the brief Voyager 2 flybys of 1986 and 1989.
-            Saturn&apos;s system saw transformative science from Cassini–Huygens (1997–2017), with Dragonfly en route to Titan in 2028.
+            Six active Mars orbiters provide global atmospheric monitoring and surface communications relay.
+            At the Moon, Artemis II preparation continues as humanity prepares its first crewed deep-space journey since 1972.
           </p>
         </div>
       </div>
