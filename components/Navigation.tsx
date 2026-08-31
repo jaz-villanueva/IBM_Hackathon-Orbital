@@ -78,6 +78,8 @@ export function Navigation({ selectedPlanet, onPlanetSelect, onScrollToMap }: Na
   }, [searchQuery, handleSearch]);
 
   const planets = [
+    { id: 'mercury', label: 'MERCURY', color: 'text-stone-400' },
+    { id: 'venus',   label: 'VENUS',   color: 'text-yellow-600' },
     { id: 'earth',   label: 'EARTH',   color: 'text-blue-400' },
     { id: 'moon',    label: 'MOON',    color: 'text-slate-300' },
     { id: 'mars',    label: 'MARS',    color: 'text-orange-400' },

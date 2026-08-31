@@ -231,7 +231,7 @@ export interface ConjunctionRisk {
   pairId: string;
 
   /** Central body both spacecraft orbit */
-  destination: 'earth' | 'moon' | 'mars';
+  destination: string;
 
   /** Spacecraft A (lower missionId alphabetically) */
   objectA: OrbiterState;

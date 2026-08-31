@@ -40,7 +40,7 @@ export interface SceneObject {
   agency: string;
   objectType: ObjectType;
   status: SceneStatus;
-  destination: 'earth' | 'moon' | 'mars' | 'jupiter' | 'saturn' | 'uranus' | 'neptune';
+  destination: 'mercury' | 'venus' | 'earth' | 'moon' | 'mars' | 'jupiter' | 'saturn' | 'uranus' | 'neptune';
   /** If true the object orbits its planet */
   isOrbiter: boolean;
   /** Orbit ring radius in scene units (planet-relative) */
@@ -59,6 +59,32 @@ export interface SceneObject {
   /** Color accent for orbit ring */
   orbitColor?: number;
 }
+
+// ─── MERCURY ─────────────────────────────────────────────────────────────────
+
+export const MERCURY_OBJECTS: SceneObject[] = [
+  {
+    missionId: 'bepicolombo',
+    name: 'BepiColombo',
+    shortName: 'BepiColombo',
+    agency: 'ESA / JAXA',
+    objectType: 'orbiter',
+    status: 'active',
+    destination: 'mercury',
+    isOrbiter: true,
+    orbitRadius: 0.45,
+    orbitInclination: Math.PI * 0.35,
+    orbitPhase: Math.PI * 0.5,
+    orbitSpeed: 1.2,
+    orbitColor: 0x8c7a6b,
+    statusNote: 'En route to Mercury · Orbit insertion Nov 2026',
+  },
+];
+
+// ─── VENUS ───────────────────────────────────────────────────────────────────
+// Note: no active Venus spacecraft currently in operation. Planned missions shown.
+
+export const VENUS_OBJECTS: SceneObject[] = [];
 
 // ─── EARTH ───────────────────────────────────────────────────────────────────
 
@@ -425,6 +451,8 @@ export const NEPTUNE_OBJECTS: SceneObject[] = [
 ];
 
 export const ALL_SCENE_OBJECTS: SceneObject[] = [
+  ...MERCURY_OBJECTS,
+  ...VENUS_OBJECTS,
   ...EARTH_OBJECTS,
   ...MOON_OBJECTS,
   ...MARS_OBJECTS,
