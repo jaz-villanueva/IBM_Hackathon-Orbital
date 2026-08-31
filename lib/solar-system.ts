@@ -101,7 +101,7 @@ export interface CelestialBody {
   /** Whether the user can click to select missions */
   interactive: boolean;
   /** Maps to mission destination key, if this body is a mission destination */
-  missionDestination?: 'earth' | 'moon' | 'mars' | 'jupiter' | 'saturn' | 'uranus' | 'neptune';
+  missionDestination?: 'mercury' | 'venus' | 'earth' | 'moon' | 'mars' | 'jupiter' | 'saturn' | 'uranus' | 'neptune';
   /** JPL elements for heliocentric planets (undefined for Sun and moons) */
   planetaryElements?: PlanetaryElements;
   /** Local moon elements relative to parent (undefined for heliocentric bodies) */
@@ -302,7 +302,8 @@ export const SOLAR_SYSTEM: CelestialBody[] = [
     type: 'planet',
     radiusKm: 2440,
     visualRadius: 0.22,
-    interactive: false,
+    interactive: true,
+    missionDestination: 'mercury',
     showOrbit: true,
     color: 0x8c7a6b,
     emissive: 0x1a1008,
@@ -314,7 +315,8 @@ export const SOLAR_SYSTEM: CelestialBody[] = [
     type: 'planet',
     radiusKm: 6052,
     visualRadius: 0.40,
-    interactive: false,
+    interactive: true,
+    missionDestination: 'venus',
     showOrbit: true,
     color: 0xddb870,
     emissive: 0x2a1a04,
