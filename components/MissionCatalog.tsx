@@ -43,7 +43,7 @@ const DEST_OPTIONS: { value: Destination | ''; label: string; emoji: string }[] 
   { value: 'jupiter', label: 'Jupiter', emoji: '🟠' },
   { value: 'saturn', label: 'Saturn', emoji: '🪐' },
   { value: 'uranus', label: 'Uranus', emoji: '🔵' },
-  { value: 'neptune', label: 'Neptune', emoji: '🔷' },
+  { value: 'neptune', label: 'Neptune', emoji: '💙' },
 ];
 
 export function MissionCatalog({ missions, onMissionSelect, initialDestination }: MissionCatalogProps) {

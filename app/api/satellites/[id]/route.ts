@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSatelliteCatalogEntry } from '@/lib/satellites/catalog';
 import { fetchGpData, cacheAgeSeconds, CelestrakFetchError } from '@/lib/satellites/celestrak';
 import { deriveOrbitalState } from '@/lib/satellites/orbital-state';
-import { fetchSatNOGSData } from '@/lib/satellites/satnogs';
 import type { SatelliteCatalogEntry } from '@/lib/types';
 
 /** Cache is considered "fresh enough to call OBSERVED" up to this age. Mirrors celestrak.ts's TTL. */
@@ -12,10 +11,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const { id } = await params;
   const catalogEntry = getSatelliteCatalogEntry(id);
 
-  // Earth Mode's satellite population includes many real satellites with no hand-authored
-  // catalog entry (e.g. a GPS satellite pulled from CelesTrak's gps-ops group).
-  // Their id IS their NORAD id — fall back to treating the route param as a NORAD id
-  // directly, with an honest generic description, rather than 404ing.
+  // Earth Mode's fleet includes many real satellites with no hand-authored
+  // catalog entry (e.g. a GPS satellite pulled from CelesTrak's gps-ops
+  // group). Their fleet id IS their NORAD id — fall back to treating the
+  // route param as a NORAD id directly, with a generic honest description,
+  // rather than 404ing on every non-curated satellite.
   const noradId = catalogEntry?.noradId ?? id;
   const isNumericId = /^\d+$/.test(id);
 
@@ -24,13 +24,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   }
 
   try {
-    // Fetch CelesTrak orbital data and SatNOGS data in parallel.
-    // SatNOGS failure does not fail the whole request — it just means no observation data.
-    const [gp, satnogsData] = await Promise.all([
-      fetchGpData(noradId),
-      fetchSatNOGSData(noradId).catch(() => ({ transmitters: [], observations: [], available: false })),
-    ]);
-
+    const gp = await fetchGpData(noradId);
     const ageSec = cacheAgeSeconds(noradId);
     const isStale = ageSec !== null && ageSec > FRESH_THRESHOLD_SEC;
 
@@ -53,9 +47,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       catalog: entry,
       orbitalState,
       // OrbitalParams for the embedded 3D scene (see lib/orbital-mechanics.ts).
+      // Not domain data — purely a rendering input, computed once here so the
+      // client never has to re-derive it from raw GP elements.
       orbitalParams,
-      // SatNOGS observation/transmitter data (OBSERVED from SatNOGS DB).
-      satnogs: satnogsData,
     });
   } catch (err) {
     if (err instanceof CelestrakFetchError) {
@@ -63,7 +57,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         {
           catalog: catalogEntry ?? null,
           orbitalState: null,
-          satnogs: { transmitters: [], observations: [], available: false },
           error: 'Live orbital data is currently unavailable for this satellite. No cached data exists yet.',
         },
         { status: 503 }

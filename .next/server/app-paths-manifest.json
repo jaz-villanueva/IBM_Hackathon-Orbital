@@ -1,5 +1,4 @@
 {
-  "/api/ai/route": "app/api/ai/route.js",
   "/api/risk/route": "app/api/risk/route.js",
   "/api/satellites/fleet/route": "app/api/satellites/fleet/route.js",
   "/api/satellites/[id]/route": "app/api/satellites/[id]/route.js",

@@ -34,14 +34,6 @@ const SUGGESTED_QUESTIONS: Record<string, string[]> = {
     "Why does Mars have so many orbiters?",
     "Explain the Mars methane mystery",
   ],
-  satellite: [
-    "Why is this satellite so high above Earth?",
-    "What does its inclination mean?",
-    "How fast is it moving?",
-    "Why does it stay in orbit and not fall?",
-    "What is this satellite used for?",
-    "How often does it orbit Earth?",
-  ],
 };
 
 function renderMarkdown(text: string) {
@@ -71,9 +63,7 @@ export function AIAnalyst({ context, isOpen, onClose }: AIAnalystProps) {
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const planet = context.selectedPlanet || '';
-  // When a satellite is selected, use satellite-specific questions
-  const suggestionKey = context.selectedSatellite ? 'satellite' : (planet || 'default');
-  const suggestions = SUGGESTED_QUESTIONS[suggestionKey] || SUGGESTED_QUESTIONS.default;
+  const suggestions = SUGGESTED_QUESTIONS[planet] || SUGGESTED_QUESTIONS.default;
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });

@@ -9,90 +9,13 @@ import { MissionPulse } from '@/components/MissionPulse';
 import { MissionCard } from '@/components/MissionCard';
 import { AIAnalyst } from '@/components/AIAnalyst';
 import { RiskHUD, RiskEntry } from '@/components/RiskHUD';
-import { EarthSatellitePanel } from '@/components/satellites/EarthSatellitePanel';
-import { SatelliteDetailPanel } from '@/components/satellites/SatelliteDetailPanel';
+import { EarthTelemetryHUD } from '@/components/satellites/EarthTelemetryHUD';
+import { SatelliteHUDPanel } from '@/components/satellites/SatelliteHUDPanel';
 import { buildSceneObject } from '@/lib/satellites/scene';
 import { MISSIONS, getMissionsByDestination } from '@/lib/missions';
 import { Mission, AIContext, OrbitalRiskContext, FleetSatelliteEntry, SatelliteAIContext } from '@/lib/types';
 import { Sparkles, ChevronRight, ArrowRight, Database, ChevronDown } from 'lucide-react';
 import type { ExtraOrbiter } from '@/components/SpaceScene';
-
-// ─── Planet icon SVG components ───────────────────────────────────────────────
-// These replace emoji with actual planet-representative SVG icons.
-// Neptune and Uranus are visually distinct (different colors, banding, rings).
-
-function PlanetIcon({ id }: { id: string }) {
-  switch (id) {
-    case 'earth':
-      return (
-        <svg width="18" height="18" viewBox="0 0 18 18" aria-label="Earth">
-          <circle cx="9" cy="9" r="8" fill="#1a4a8a"/>
-          <ellipse cx="6" cy="7" rx="3" ry="4" fill="#2a7a3a"/>
-          <ellipse cx="11" cy="11" rx="4" ry="3" fill="#2a7a3a"/>
-          <circle cx="9" cy="9" r="8" fill="none" stroke="#4db8ff" strokeWidth="0.5" strokeOpacity="0.5"/>
-        </svg>
-      );
-    case 'moon':
-      return (
-        <svg width="18" height="18" viewBox="0 0 18 18" aria-label="Moon">
-          <circle cx="9" cy="9" r="8" fill="#8a8a9a"/>
-          <circle cx="5" cy="6" r="1.5" fill="#6a6a7a"/>
-          <circle cx="11" cy="4" r="1" fill="#6a6a7a"/>
-          <circle cx="13" cy="11" r="1.8" fill="#6a6a7a"/>
-          <circle cx="7" cy="13" r="1" fill="#6a6a7a"/>
-        </svg>
-      );
-    case 'mars':
-      return (
-        <svg width="18" height="18" viewBox="0 0 18 18" aria-label="Mars">
-          <circle cx="9" cy="9" r="8" fill="#c2410c"/>
-          <ellipse cx="9" cy="3" rx="4" ry="1.5" fill="#ddeeff" fillOpacity="0.8"/>
-          <ellipse cx="9" cy="15" rx="3" ry="1" fill="#ddeeff" fillOpacity="0.6"/>
-        </svg>
-      );
-    case 'jupiter':
-      return (
-        <svg width="18" height="18" viewBox="0 0 18 18" aria-label="Jupiter">
-          <circle cx="9" cy="9" r="8" fill="#c87941"/>
-          <ellipse cx="9" cy="7" rx="8" ry="1.2" fill="#d4956a" fillOpacity="0.7"/>
-          <ellipse cx="9" cy="11" rx="8" ry="1" fill="#b8643a" fillOpacity="0.7"/>
-          <ellipse cx="9" cy="13.5" rx="8" ry="0.8" fill="#d4956a" fillOpacity="0.6"/>
-          <ellipse cx="4" cy="10" rx="2.5" ry="1.8" fill="#d4956a" fillOpacity="0.5"/>
-        </svg>
-      );
-    case 'saturn':
-      return (
-        <svg width="18" height="18" viewBox="0 0 18 18" aria-label="Saturn">
-          <ellipse cx="9" cy="9" rx="16" ry="2.5" fill="#c8a84a" fillOpacity="0.35" transform="rotate(-20 9 9)"/>
-          <circle cx="9" cy="9" r="6" fill="#d4b060"/>
-          <ellipse cx="9" cy="9" rx="9" ry="1.8" fill="#c8a84a" fillOpacity="0.5" transform="rotate(-20 9 9)"/>
-        </svg>
-      );
-    case 'uranus':
-      // Pale cyan/ice giant — lighter, faint ring
-      return (
-        <svg width="18" height="18" viewBox="0 0 18 18" aria-label="Uranus">
-          <circle cx="9" cy="9" r="8" fill="#7de8e8"/>
-          <ellipse cx="9" cy="9" rx="11" ry="2" fill="#a0f0f0" fillOpacity="0.35" transform="rotate(-90 9 9)"/>
-          <ellipse cx="9" cy="7" rx="8" ry="1" fill="#a0e8e8" fillOpacity="0.4"/>
-          <circle cx="9" cy="9" r="8" fill="none" stroke="#a0f0f0" strokeWidth="0.4" strokeOpacity="0.6"/>
-        </svg>
-      );
-    case 'neptune':
-      // Deeper blue, atmospheric banding — visually distinct from cyan Uranus
-      return (
-        <svg width="18" height="18" viewBox="0 0 18 18" aria-label="Neptune">
-          <circle cx="9" cy="9" r="8" fill="#1e3f9e"/>
-          <ellipse cx="9" cy="7" rx="7" ry="1.2" fill="#3a6fd8" fillOpacity="0.6"/>
-          <ellipse cx="9" cy="10" rx="6" ry="0.8" fill="#2a50b8" fillOpacity="0.5"/>
-          <ellipse cx="9" cy="12.5" rx="5" ry="0.6" fill="#3a6fd8" fillOpacity="0.4"/>
-          <circle cx="9" cy="9" r="8" fill="none" stroke="#5588ff" strokeWidth="0.5" strokeOpacity="0.4"/>
-        </svg>
-      );
-    default:
-      return <span>●</span>;
-  }
-}
 
 // Dynamically import ThreeJS scene to avoid SSR issues
 const SpaceScene = dynamic(() => import('@/components/SpaceScene').then((m) => ({ default: m.SpaceScene })), {
@@ -406,12 +329,12 @@ function HomePageInner() {
           </p>
         </div>
 
-        {/* Earth Mode: telemetry-styled satellite explorer */}
+        {/* Earth Mode: telemetry-styled HUD replaces the standard planet info panel */}
         {selectedPlanet === 'earth' && (
           selectedSatelliteId ? (
-            <SatelliteDetailPanel id={selectedSatelliteId} onBack={handleBackToFleet} onAskAI={handleAskAISatellite} />
+            <SatelliteHUDPanel id={selectedSatelliteId} onBack={handleBackToFleet} onAskAI={handleAskAISatellite} />
           ) : (
-            <EarthSatellitePanel
+            <EarthTelemetryHUD
               satellites={fleet}
               totals={fleetTotals}
               loading={fleetLoading}
@@ -495,13 +418,13 @@ function HomePageInner() {
         {/* Bottom orbit controls */}
         <div className="absolute bottom-[64px] left-0 right-0 flex justify-center gap-1.5 flex-wrap px-4 pointer-events-auto">
           {[
-            { id: 'earth',   icon: <PlanetIcon id="earth" />,   label: 'EARTH',   color: 'text-blue-400' },
-            { id: 'moon',    icon: <PlanetIcon id="moon" />,    label: 'MOON',    color: 'text-slate-300' },
-            { id: 'mars',    icon: <PlanetIcon id="mars" />,    label: 'MARS',    color: 'text-orange-400' },
-            { id: 'jupiter', icon: <PlanetIcon id="jupiter" />, label: 'JUPITER', color: 'text-orange-300' },
-            { id: 'saturn',  icon: <PlanetIcon id="saturn" />,  label: 'SATURN',  color: 'text-yellow-300' },
-            { id: 'uranus',  icon: <PlanetIcon id="uranus" />,  label: 'URANUS',  color: 'text-cyan-300' },
-            { id: 'neptune', icon: <PlanetIcon id="neptune" />, label: 'NEPTUNE', color: 'text-blue-300' },
+            { id: 'earth',   emoji: '🌎', label: 'EARTH',   color: 'text-blue-400' },
+            { id: 'moon',    emoji: '🌙', label: 'MOON',    color: 'text-slate-300' },
+            { id: 'mars',    emoji: '🔴', label: 'MARS',    color: 'text-orange-400' },
+            { id: 'jupiter', emoji: '🟠', label: 'JUPITER', color: 'text-orange-300' },
+            { id: 'saturn',  emoji: '🪐', label: 'SATURN',  color: 'text-yellow-300' },
+            { id: 'uranus',  emoji: '🔵', label: 'URANUS',  color: 'text-cyan-300' },
+            { id: 'neptune', emoji: '💙', label: 'NEPTUNE', color: 'text-blue-300' },
           ].map((cfg) => (
             <button
               key={cfg.id}
@@ -513,7 +436,7 @@ function HomePageInner() {
                   : 'border-space-border text-orbit-dim hover:text-orbit-white hover:border-space-muted'
               }`}
             >
-              <span className="text-base leading-none">{cfg.icon}</span>
+              <span>{cfg.emoji}</span>
               <span>{cfg.label}</span>
             </button>
           ))}
