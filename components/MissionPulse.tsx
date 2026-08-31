@@ -101,7 +101,7 @@ const DEST_CONFIG = {
   },
 };
 
-function countActive(missions: Mission[]) {
+function countActive(missions: Mission[] = []) {
   return missions.filter((m) =>
     ['active', 'science-operations', 'surface-operations', 'extended', 'cruise'].includes(m.status)
   ).length;
@@ -109,13 +109,13 @@ function countActive(missions: Mission[]) {
 
 export function MissionPulse({ earthMissions, moonMissions, marsMissions, jupiterMissions, saturnMissions, uranusMissions, neptuneMissions }: MissionPulseProps) {
   const destData = [
-    { key: 'earth' as const, missions: earthMissions, cfg: DEST_CONFIG.earth },
-    { key: 'moon' as const, missions: moonMissions, cfg: DEST_CONFIG.moon },
-    { key: 'mars' as const, missions: marsMissions, cfg: DEST_CONFIG.mars },
-    { key: 'jupiter' as const, missions: jupiterMissions, cfg: DEST_CONFIG.jupiter },
-    { key: 'saturn' as const, missions: saturnMissions, cfg: DEST_CONFIG.saturn },
-    { key: 'uranus' as const, missions: uranusMissions, cfg: DEST_CONFIG.uranus },
-    { key: 'neptune' as const, missions: neptuneMissions, cfg: DEST_CONFIG.neptune },
+    { key: 'earth' as const, missions: earthMissions ?? [], cfg: DEST_CONFIG.earth },
+    { key: 'moon' as const, missions: moonMissions ?? [], cfg: DEST_CONFIG.moon },
+    { key: 'mars' as const, missions: marsMissions ?? [], cfg: DEST_CONFIG.mars },
+    { key: 'jupiter' as const, missions: jupiterMissions ?? [], cfg: DEST_CONFIG.jupiter },
+    { key: 'saturn' as const, missions: saturnMissions ?? [], cfg: DEST_CONFIG.saturn },
+    { key: 'uranus' as const, missions: uranusMissions ?? [], cfg: DEST_CONFIG.uranus },
+    { key: 'neptune' as const, missions: neptuneMissions ?? [], cfg: DEST_CONFIG.neptune },
   ];
 
   const totalActive = destData.reduce((acc, d) => acc + countActive(d.missions), 0);

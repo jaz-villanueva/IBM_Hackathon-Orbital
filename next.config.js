@@ -10,9 +10,7 @@ const nextConfig = {
       { protocol: 'https', hostname: 'science.nasa.gov' },
     ],
   },
-  experimental: {
-    serverComponentsExternalPackages: [],
-  },
+  serverExternalPackages: [],
 };
 
 module.exports = nextConfig;
