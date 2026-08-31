@@ -285,6 +285,60 @@ export function orbitPath(params: OrbitalParams, steps = 128): Array<{ x: number
   return pts;
 }
 
+// ─── Ground track (Earth-fixed sub-satellite point) ───────────────────────────
+// keplerPosition() returns a direction in the ECI (inertial) frame — fixed
+// relative to the stars, not the rotating Earth. A ground track needs the
+// ECEF (Earth-fixed) frame, which requires subtracting Earth's rotation
+// (Greenwich Mean Sidereal Time) at the moment of interest.
+
+/**
+ * Greenwich Mean Sidereal Time, in degrees, for a given UTC date.
+ * Standard low-precision formula (IAU 1982), accurate to within a few
+ * seconds of arc — sufficient for ground-track visualisation.
+ */
+export function gmstDegrees(date: Date): number {
+  const jd = dateToJD(date);
+  const T = (jd - 2451545.0) / 36525;
+  let gmst =
+    280.46061837 +
+    360.98564736629 * (jd - 2451545.0) +
+    0.000387933 * T * T -
+    (T * T * T) / 38710000;
+  gmst = gmst % 360;
+  if (gmst < 0) gmst += 360;
+  return gmst;
+}
+
+/**
+ * Compute the sub-satellite point (geodetic latitude/longitude, degrees) for
+ * a spacecraft at simulation time `elapsedSeconds` after `referenceDate`.
+ *
+ * `referenceDate` is the real UTC instant that elapsedSeconds=0 corresponds
+ * to (e.g. the moment the orbital elements were propagated to m0Deg). This
+ * anchors the Earth-rotation correction to real time, so live satellites
+ * produce a ground track in the correct real-world longitude band.
+ *
+ * DERIVED from simplified two-body Keplerian propagation — see module
+ * doc-comment. Not a substitute for SGP4.
+ */
+export function subSatellitePoint(
+  params: OrbitalParams,
+  elapsedSeconds: number,
+  referenceDate: Date
+): { lat: number; lon: number } {
+  const unit = keplerPosition(params, elapsedSeconds);
+  const lat = Math.asin(Math.max(-1, Math.min(1, unit.z))) * (180 / Math.PI);
+
+  const lonEci = Math.atan2(unit.y, unit.x) * (180 / Math.PI);
+  const atTime = new Date(referenceDate.getTime() + elapsedSeconds * 1000);
+  const gmst = gmstDegrees(atTime);
+
+  let lon = lonEci - gmst;
+  lon = ((lon + 180) % 360 + 360) % 360 - 180; // normalise to [-180, 180)
+
+  return { lat, lon };
+}
+
 /** Format a Date as "DD MMM YYYY HH:MM:SS UTC" */
 export function formatSimTime(d: Date): string {
   const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN',

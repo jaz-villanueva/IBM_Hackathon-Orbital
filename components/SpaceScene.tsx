@@ -32,6 +32,7 @@ import { MISSIONS, searchMissions } from '@/lib/missions';
 import { ALL_SCENE_OBJECTS, SceneObject, ObjectType } from '@/lib/spacecraft-positions';
 import {
   ORBITAL_PARAMS,
+  OrbitalParams,
   keplerPosition,
   orbitPath,
   makeSimClock,
@@ -53,10 +54,25 @@ import {
   AU_TO_SCENE,
 } from '@/lib/solar-system';
 import { buildSpacecraftModel } from '@/lib/spacecraft-geometry';
+import { classifySatelliteMarkerType, buildSatelliteMarker, markerTypeLabel } from '@/lib/satellites/marker-geometry';
+import { PlanetIcon } from './PlanetIcon';
 import { makeEarthDayTexture, makeEarthNightTexture, makeCloudTexture } from '@/lib/earth-texture';
 import type { Mission } from '@/lib/types';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
+
+/**
+ * A dynamically-supplied orbiter (e.g. from a live CelesTrak fetch) to render
+ * alongside the static ALL_SCENE_OBJECTS/ORBITAL_PARAMS catalog. Used by the
+ * Satellite Explorer to show a live satellite's marker + orbit ring reusing
+ * this scene's existing rendering pipeline, without mutating the shared
+ * ORBITAL_PARAMS/ALL_SCENE_OBJECTS module state.
+ */
+export interface ExtraOrbiter {
+  id: string;
+  params: OrbitalParams;
+  sceneObject: SceneObject;
+}
 
 interface SpaceSceneProps {
   selectedPlanet: string | null;
@@ -67,6 +83,25 @@ interface SpaceSceneProps {
   selectedMission?: Mission | null;
   /** Called each animation frame with the simulation elapsed seconds. */
   onSimTimeUpdate?: (elapsedSeconds: number) => void;
+  /** Live-fetched satellites to render in addition to the static catalog (see ExtraOrbiter). */
+  extraOrbiters?: ExtraOrbiter[];
+  /**
+   * Called whenever a scene object is selected/deselected by click, regardless
+   * of whether it resolves to an Orbital Mission (unlike onMissionSelect, which
+   * only fires for objects with a matching Mission record). Used by Earth Mode
+   * to know which satellite was clicked even for live satellites that
+   * aren't Orbital missions.
+   */
+  onObjectSelect?: (obj: SceneObject | null) => void;
+  /**
+   * Controlled focus target: when set to a missionId, the camera continuously
+   * tracks that orbiter's live position (close-up), and the internal selection
+   * state is synced to match — this lets a parent-owned HUD (e.g. clicking a
+   * satellite in a list, or a "back to satellites" control) drive camera focus
+   * without reaching into the scene's internal state. Pass null to release
+   * focus back to the current planet view.
+   */
+  focusedOrbiterId?: string | null;
   // Note: onMissionSelect kept nullable for popup close compatibility
 }
 
@@ -161,6 +196,29 @@ const PLANET_CAM_RADIUS: Record<string, number> = {
   uranus:  9,
   neptune: 9,
 }; // outer planet radii kept for visual zoom compatibility
+
+/**
+ * Live satellites (Earth Mode) are rendered as a single fixed-scale 3D model
+ * regardless of orbit regime — nothing in this scene is to physical scale
+ * (see the module doc comment), so there is no "real size" to vary by regime.
+ * A deliberately exaggerated fixed scale keeps every satellite recognisable
+ * and clickable rather than shrinking into an unreadable point.
+ */
+const SATELLITE_MARKER_SCALE = 0.55;
+/** Invisible click-target sphere radius — larger than the visible model for reliable selection. */
+const SATELLITE_HIT_RADIUS = 0.12;
+/** Base (non-selected) orbit ring opacity for live satellites — orbit paths are secondary context, not the primary visual. */
+const SATELLITE_RING_OPACITY = 0.04;
+/** Ring opacity for the currently focused/selected satellite. */
+const SATELLITE_RING_OPACITY_SELECTED = 0.70;
+/**
+ * Close-up camera radius (scene units) when a satellite is focused via
+ * focusedOrbiterId. Tuned to SATELLITE_MARKER_SCALE — since every satellite
+ * marker is the same fixed visual size (see above), one focus distance is
+ * appropriate for all orbit regimes; there's no varying physical size to
+ * adapt to.
+ */
+const SATELLITE_FOCUS_RADIUS = 0.65;
 
 const STATUS_COLOR: Record<string, number> = {
   active:    0x22c55e,
@@ -257,7 +315,7 @@ function getBodyPos(id: string, bodyWorldPos: Map<string, THREE.Vector3>): THREE
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, selectedMission, onSimTimeUpdate }: SpaceSceneProps) {
+export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, selectedMission, onSimTimeUpdate, extraOrbiters, onObjectSelect, focusedOrbiterId }: SpaceSceneProps) {
   const mountRef      = useRef<HTMLDivElement>(null);
   const rendererRef   = useRef<THREE.WebGLRenderer | null>(null);
   const sceneRef      = useRef<THREE.Scene | null>(null);
@@ -273,8 +331,8 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
   // Live world-space positions (centre of each body), updated every frame
   const bodyWorldPos  = useRef<Map<string, THREE.Vector3>>(new Map());
 
-  // Mission spacecraft
-  const objectsRef    = useRef<Map<string, { sprite: THREE.Sprite; model: THREE.Group }>>(new Map());
+  // Mission spacecraft (+ an invisible larger click-target sphere for live satellites)
+  const objectsRef    = useRef<Map<string, { sprite: THREE.Sprite; model: THREE.Group; hitSphere?: THREE.Mesh }>>(new Map());
   const orbitRingsRef = useRef<Map<string, THREE.Mesh>>(new Map());
   const orbitPathRef  = useRef<THREE.Line | null>(null);
 
@@ -306,9 +364,32 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
   // Simulation clock stored in ref (mutated without re-render)
   const clockRef = useRef<SimClock>(makeSimClock());
 
+  // Live-fetched extra orbiters, kept in a ref so the once-only animate loop
+  // (empty-dep effect) always reads the latest value without re-subscribing.
+  const extraOrbitersRef = useRef<ExtraOrbiter[]>(extraOrbiters ?? []);
+  useEffect(() => { extraOrbitersRef.current = extraOrbiters ?? []; }, [extraOrbiters]);
+
+  // Parent-controlled camera focus target (see SpaceSceneProps.focusedOrbiterId).
+  const focusedOrbiterIdRef = useRef<string | null>(focusedOrbiterId ?? null);
+  useEffect(() => { focusedOrbiterIdRef.current = focusedOrbiterId ?? null; }, [focusedOrbiterId]);
+
+  /** Live satellite currently under the pointer — drives the per-frame hover glow/scale in the animate loop. */
+  const hoveredSatelliteIdRef = useRef<string | null>(null);
+
+  /** OrbitalParams for a mission id, preferring a live extraOrbiter over the static catalog. */
+  const paramsFor = useCallback((missionId: string): OrbitalParams | undefined => {
+    return extraOrbitersRef.current.find((e) => e.id === missionId)?.params ?? ORBITAL_PARAMS[missionId];
+  }, []);
+
+  /** SceneObject for a mission id, preferring a live extraOrbiter over the static catalog. */
+  const sceneObjectFor = useCallback((missionId: string): SceneObject | undefined => {
+    return extraOrbitersRef.current.find((e) => e.id === missionId)?.sceneObject
+      ?? ALL_SCENE_OBJECTS.find((o) => o.missionId === missionId);
+  }, []);
+
   // UI state
   const [hoveredBody,    setHoveredBody]    = useState<string | null>(null);
-  const [tooltip,        setTooltip]        = useState<{ x: number; y: number; label: string } | null>(null);
+  const [tooltip,        setTooltip]        = useState<{ x: number; y: number; label: string; sublabel?: string } | null>(null);
   const [selectedObject, setSelectedObject] = useState<SceneObject | null>(null);
   const [popupPos,       setPopupPos]       = useState<{ x: number; y: number } | null>(null);
   const [simSpeed,       setSimSpeed]       = useState<SimSpeed>(1);
@@ -336,15 +417,20 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
   // Completed missions are never shown as 3D sprites — they only appear in the
   // mission catalog (/missions).  All other status-based filters still apply.
   // When a planet/moon is selected, only show missions belonging to that destination.
-  const visibleObjects = useMemo(() => ALL_SCENE_OBJECTS.filter(obj => {
-    if (obj.status === 'completed') return false;
-    if (!typeFilters[obj.objectType]) return false;
-    if (!statusFilters[obj.status as keyof typeof statusFilters]) return false;
-    if (!destFilters[obj.destination]) return false;
-    // When a destination is selected, hide missions for other destinations.
-    if (selectedPlanet && obj.destination !== selectedPlanet) return false;
-    return true;
-  }), [typeFilters, statusFilters, destFilters, selectedPlanet]);
+  const visibleObjects = useMemo(() => {
+    const extraIds = new Set((extraOrbiters ?? []).map((e) => e.id));
+    const base = ALL_SCENE_OBJECTS.filter(obj => {
+      if (extraIds.has(obj.missionId)) return false; // extraOrbiters take precedence — avoid duplicate markers/rings
+      if (obj.status === 'completed') return false;
+      if (!typeFilters[obj.objectType]) return false;
+      if (!statusFilters[obj.status as keyof typeof statusFilters]) return false;
+      if (!destFilters[obj.destination]) return false;
+      // When a destination is selected, hide missions for other destinations.
+      if (selectedPlanet && obj.destination !== selectedPlanet) return false;
+      return true;
+    });
+    return [...base, ...(extraOrbiters ?? []).map((e) => e.sceneObject)];
+  }, [typeFilters, statusFilters, destFilters, selectedPlanet, extraOrbiters]);
 
   const counts = useMemo(() => {
     const c = { mercury: 0, venus: 0, earth: 0, moon: 0, mars: 0, jupiter: 0, saturn: 0, uranus: 0, neptune: 0 };
@@ -390,6 +476,24 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
   useEffect(() => {
     goToDestination(selectedPlanet);
   }, [selectedPlanet, goToDestination]);
+
+  // ─── Parent-controlled satellite focus (focusedOrbiterId prop) ────────────
+  // Keeps the internal selectedObject in sync when selection originates
+  // outside the 3D canvas (e.g. a HUD list click, or a "back to fleet"
+  // control) rather than a direct click on a marker. Camera tracking itself
+  // happens per-frame in the animate loop via focusedOrbiterIdRef.
+  useEffect(() => {
+    if (focusedOrbiterId === undefined) return; // prop unused by this consumer
+    if (focusedOrbiterId === null) {
+      setSelectedObject(null);
+      setPopupPos(null);
+      goToDestination(selectedPlanet); // restore the normal planet-view camera radius/target
+      return;
+    }
+    const obj = sceneObjectFor(focusedOrbiterId);
+    if (obj) setSelectedObject(obj);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusedOrbiterId, sceneObjectFor, goToDestination]);
 
   // ─── Sim speed changes ─────────────────────────────────────────────────────
 
@@ -729,17 +833,27 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
       pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
       raycaster.setFromCamera(pointer, camera);
 
-      const sprites = Array.from(objectsRef.current.values()).map(v => v.sprite);
-      const sHits = raycaster.intersectObjects(sprites);
+      // Live satellites raycast against an invisible, larger hit-sphere (see
+      // SATELLITE_HIT_RADIUS) rather than their small visible model, so
+      // clicking/hovering stays reliable even though the model itself is
+      // deliberately compact. Regular mission markers keep using their sprite.
+      const pickTargets: THREE.Object3D[] = [];
+      objectsRef.current.forEach(({ sprite, hitSphere }) => pickTargets.push(hitSphere ?? sprite));
+      const sHits = raycaster.intersectObjects(pickTargets);
       if (sHits.length) {
         const mId = sHits[0].object.name;
-        const obj = ALL_SCENE_OBJECTS.find(o => o.missionId === mId);
-        setTooltip({ x: e.clientX - rect.left, y: e.clientY - rect.top - 14, label: obj?.shortName || mId });
+        const obj = sceneObjectFor(mId);
+        const sublabel = obj?.isLiveSatellite
+          ? markerTypeLabel(classifySatelliteMarkerType(obj.name, obj.objectType === 'station'))
+          : undefined;
+        setTooltip({ x: e.clientX - rect.left, y: e.clientY - rect.top - 14, label: obj?.shortName || mId, sublabel });
         document.body.style.cursor = 'pointer';
         setHoveredBody(null);
+        hoveredSatelliteIdRef.current = obj?.isLiveSatellite ? mId : null;
         if (isDraggingRef.current) { lastMouseRef.current = { x: e.clientX, y: e.clientY }; }
         return;
       }
+      hoveredSatelliteIdRef.current = null;
 
       // Hover: test planets (interactive) first, then all moons (name display only)
       const hoverMeshes = Array.from(planetsRef.current.values());
@@ -798,13 +912,15 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
       pointer.y = -((pointerDownPos.current.y - rect.top) / rect.height) * 2 + 1;
       raycaster.setFromCamera(pointer, camera);
 
-      const sprites = Array.from(objectsRef.current.values()).map(v => v.sprite);
-      const sHits = raycaster.intersectObjects(sprites);
+      const pickTargets: THREE.Object3D[] = [];
+      objectsRef.current.forEach(({ sprite, hitSphere }) => pickTargets.push(hitSphere ?? sprite));
+      const sHits = raycaster.intersectObjects(pickTargets);
       if (sHits.length) {
         const mId = sHits[0].object.name;
-        const obj = ALL_SCENE_OBJECTS.find(o => o.missionId === mId);
+        const obj = sceneObjectFor(mId);
         if (obj) {
           setSelectedObject(obj);
+          onObjectSelect?.(obj);
           const mission = MISSIONS.find(m => m.id === obj.missionId);
           if (mission) onMissionSelect(mission);
           const sp = sHits[0].object.position.clone().project(camera);
@@ -833,6 +949,7 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
         if (bodyId) {
           onPlanetSelect(bodyId);
           setSelectedObject(null); setPopupPos(null);
+          onObjectSelect?.(null);
         }
       }
     };
@@ -871,6 +988,27 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
       if (sel && sel !== '' && sel !== 'home') {
         const livePos = bodyWorldPos.current.get(sel);
         if (livePos) o.tTarget.copy(livePos);
+      }
+
+      // When a satellite is focused (Earth Mode HUD selection), override the
+      // planet-level target with the satellite's live WORLD-SPACE position —
+      // same "continuously re-lock to a moving target" technique as the
+      // planet tracking above, just targeting a tracked orbiter instead.
+      // We use getWorldPosition() so that any parent-group transforms are
+      // correctly resolved — this is the fix for the "camera zooms to empty
+      // space" bug where model.position was read as local coords.
+      const focusedId = focusedOrbiterIdRef.current;
+      if (focusedId) {
+        const tracked = objectsRef.current.get(focusedId);
+        if (tracked) {
+          const _wp = new THREE.Vector3();
+          // Prefer the hit-sphere world position (always in sync with the model
+          // and most reliably kept in scene coords), fall back to model.
+          const source = tracked.hitSphere ?? tracked.model;
+          source.getWorldPosition(_wp);
+          o.tTarget.copy(_wp);
+          o.tRadius = SATELLITE_FOCUS_RADIUS;
+        }
       }
 
       o.azimuth   += (o.tAzimuth   - o.azimuth)   * lerpK;
@@ -961,15 +1099,15 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
       // ── Update mission spacecraft positions ──
       const elapsed = simElapsedSeconds(clockRef.current);
       onSimTimeUpdate?.(elapsed);
-      objectsRef.current.forEach(({ sprite, model }, missionId) => {
-        const scObj = ALL_SCENE_OBJECTS.find(o => o.missionId === missionId);
+      objectsRef.current.forEach(({ sprite, model, hitSphere }, missionId) => {
+        const scObj = sceneObjectFor(missionId);
         if (!scObj) return;
 
         // Parent body world position (now dynamic)
         const pPos = bodyWorldPos.current.get(scObj.destination) ?? new THREE.Vector3();
 
         if (scObj.isOrbiter) {
-          const params = ORBITAL_PARAMS[missionId];
+          const params = paramsFor(missionId);
           const vr     = VISUAL_ORBIT_RADIUS[missionId] || scObj.orbitRadius || 1.5;
           let dx: number, dy: number, dz: number;
           if (params) {
@@ -985,6 +1123,7 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
           const wx = pPos.x + dx, wy = pPos.y + dy, wz = pPos.z + dz;
           sprite.position.set(wx, wy, wz);
           model.position.set(wx, wy, wz);
+          if (hitSphere) hitSphere.position.set(wx, wy, wz);
 
           // Move orbit ring with parent
           const ring = orbitRingsRef.current.get(missionId);
@@ -995,6 +1134,30 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
           sprite.visible = !showModel;
           model.visible  = showModel;
           if (showModel) { model.rotation.y += 0.005; model.lookAt(pPos); }
+          if (scObj.isLiveSatellite) {
+            // Live satellites always show their 3D marker — no sprite/model
+            // distance swap. They're deliberately scaled (SATELLITE_MARKER_SCALE)
+            // to stay recognisable at both overview and focused distances.
+            model.rotation.y += 0.004;
+
+            // Smoothly ease the model's scale toward a target based on
+            // focus/hover state — a gentle, continuous alternative to an
+            // instant jump, giving satellites a "discoverable" feel on hover
+            // (subtle grow) and a stronger emphasis once selected.
+            const isFocused = focusedOrbiterIdRef.current === missionId;
+            const isHovered = hoveredSatelliteIdRef.current === missionId;
+            const targetFactor = isFocused ? 1.35 : isHovered ? 1.2 : 1;
+            const prevFactor = (model.userData.scaleFactor as number | undefined) ?? 1;
+            const nextFactor = prevFactor + (targetFactor - prevFactor) * 0.15;
+            model.userData.scaleFactor = nextFactor;
+            model.scale.setScalar(SATELLITE_MARKER_SCALE * nextFactor);
+          } else {
+            const camDist = camera.position.distanceTo(new THREE.Vector3(wx, wy, wz));
+            const showModel = camDist < 4;
+            sprite.visible = !showModel;
+            model.visible  = showModel;
+            if (showModel) { model.rotation.y += 0.005; model.lookAt(pPos); }
+          }
         } else {
           // Surface mission: position relative to parent body
           const bodyDef  = SOLAR_SYSTEM.find(b => b.missionDestination === scObj.destination);
@@ -1064,7 +1227,10 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
     if (!scene) return;
 
     // Remove old spacecraft
-    objectsRef.current.forEach(({ sprite, model }) => { scene.remove(sprite); scene.remove(model); });
+    objectsRef.current.forEach(({ sprite, model, hitSphere }) => {
+      scene.remove(sprite); scene.remove(model);
+      if (hitSphere) scene.remove(hitSphere);
+    });
     objectsRef.current.clear();
     orbitRingsRef.current.forEach(r => scene.remove(r));
     orbitRingsRef.current.clear();
@@ -1080,17 +1246,34 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
       }));
       sprite.scale.set(scaleSpr, scaleSpr, scaleSpr);
       sprite.name = obj.missionId;
+      sprite.visible = !obj.isLiveSatellite;
 
-      // 3D model
-      const model = buildSpacecraftModel(obj.missionId, 0.12);
+      // 3D model — live satellites (Earth Mode) get the dedicated marker
+      // system (bigger, always visible, recognisable shape); everything
+      // else keeps the existing mission-catalog model.
+      const model = obj.isLiveSatellite
+        ? buildSatelliteMarker(classifySatelliteMarkerType(obj.name, obj.objectType === 'station'), obj.orbitColor ?? color, SATELLITE_MARKER_SCALE)
+        : buildSpacecraftModel(obj.missionId, 0.12);
       model.name  = obj.missionId + '-model';
-      model.visible = false;
+      model.visible = !!obj.isLiveSatellite; // live satellites: always on; others: distance-toggled per-frame
+
+      // Invisible larger click-target for live satellites — the visible
+      // model stays compact/recognisable, but the hit area is bigger for
+      // reliable selection (opacity:0 + visible:true so it still raycasts).
+      let hitSphere: THREE.Mesh | undefined;
+      if (obj.isLiveSatellite) {
+        hitSphere = new THREE.Mesh(
+          new THREE.SphereGeometry(SATELLITE_HIT_RADIUS, 8, 8),
+          new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false }),
+        );
+        hitSphere.name = obj.missionId;
+      }
 
       // Get current parent position
       const pPos = bodyWorldPos.current.get(obj.destination) ?? new THREE.Vector3();
 
       if (obj.isOrbiter) {
-        const params = ORBITAL_PARAMS[obj.missionId];
+        const params = extraOrbiters?.find((e) => e.id === obj.missionId)?.params ?? ORBITAL_PARAMS[obj.missionId];
         const vr     = VISUAL_ORBIT_RADIUS[obj.missionId] || obj.orbitRadius || 1.5;
         let dx = vr, dy = 0, dz = 0;
         if (params) {
@@ -1099,13 +1282,19 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
         }
         sprite.position.set(pPos.x + dx, pPos.y + dy, pPos.z + dz);
         model.position.set(pPos.x + dx, pPos.y + dy, pPos.z + dz);
+        if (hitSphere) hitSphere.position.set(pPos.x + dx, pPos.y + dy, pPos.z + dz);
 
-        // Orbit ring (positioned at parent body)
+        // Orbit ring (positioned at parent body). Live satellite rings start
+        // dim — orbital paths are secondary context, not the primary visual —
+        // and get boosted only for the focused/selected satellite (see the
+        // selection-highlight effect below).
         const ringR   = vr;
         const ringGeo = new THREE.RingGeometry(ringR - 0.005, ringR + 0.005, 96);
         const ringMat = new THREE.MeshBasicMaterial({
           color: obj.orbitColor || color,
-          transparent: true, opacity: 0.2, side: THREE.DoubleSide,
+          transparent: true,
+          opacity: obj.isLiveSatellite ? SATELLITE_RING_OPACITY : 0.2,
+          side: THREE.DoubleSide,
         });
         const ring = new THREE.Mesh(ringGeo, ringMat);
         ring.position.copy(pPos);
@@ -1126,10 +1315,11 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
 
       scene.add(sprite);
       scene.add(model);
-      objectsRef.current.set(obj.missionId, { sprite, model });
+      if (hitSphere) scene.add(hitSphere);
+      objectsRef.current.set(obj.missionId, { sprite, model, hitSphere });
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visibleObjects]);
+  }, [visibleObjects, extraOrbiters]);
 
   // ─── Orbit path when mission object selected ──────────────────────────────
 
@@ -1138,7 +1328,7 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
     if (!scene) return;
     if (orbitPathRef.current) { scene.remove(orbitPathRef.current); orbitPathRef.current = null; }
     if (!selectedObject?.isOrbiter) return;
-    const params = ORBITAL_PARAMS[selectedObject.missionId];
+    const params = extraOrbiters?.find((e) => e.id === selectedObject.missionId)?.params ?? ORBITAL_PARAMS[selectedObject.missionId];
     if (!params) return;
 
     const vr   = VISUAL_ORBIT_RADIUS[selectedObject.missionId] || selectedObject.orbitRadius || 1.5;
@@ -1154,27 +1344,48 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
     const pathLine = new THREE.Line(
       new THREE.BufferGeometry().setFromPoints(pts3d),
       new THREE.LineBasicMaterial({
-        color: STATUS_COLOR[selectedObject.status] || 0x3b82f6,
-        transparent: true, opacity: 0.55,
+        color: selectedObject.orbitColor ?? STATUS_COLOR[selectedObject.status] ?? 0x3b82f6,
+        transparent: true, opacity: selectedObject.isLiveSatellite ? 0.75 : 0.55,
       }),
     );
     scene.add(pathLine);
     orbitPathRef.current = pathLine;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedObject]);
+  }, [selectedObject, extraOrbiters]);
 
-  // ─── Highlight selected spacecraft sprite ─────────────────────────────────
+  // ─── Highlight selected spacecraft sprite + satellite model/ring ──────────
 
   useEffect(() => {
-    objectsRef.current.forEach(({ sprite }, mId) => {
+    objectsRef.current.forEach(({ sprite, model }, mId) => {
       const mat = sprite.material as THREE.SpriteMaterial;
       const isSelected = mId === selectedObject?.missionId;
       mat.opacity = isSelected ? 1.0 : 0.88;
-      const base = ALL_SCENE_OBJECTS.find(o => o.missionId === mId);
+      const base = extraOrbiters?.find((e) => e.id === mId)?.sceneObject ?? ALL_SCENE_OBJECTS.find(o => o.missionId === mId);
       const s = isSelected ? 0.36 : base?.objectType === 'station' ? 0.28 : 0.18;
       sprite.scale.set(s, s, s);
+
+      if (base?.isLiveSatellite) {
+        // Selected satellite: brighter model, others dim slightly so the
+        // selection reads clearly. Scale itself is handled per-frame in the
+        // animate loop (smooth ease toward a focus/hover target) rather than
+        // set instantly here.
+        model.traverse((child) => {
+          if (child instanceof THREE.Mesh && 'opacity' in child.material) {
+            const mm = child.material as THREE.MeshStandardMaterial;
+            mm.transparent = true;
+            mm.opacity = isSelected ? 1 : 0.8;
+          }
+        });
+
+        const ring = orbitRingsRef.current.get(mId);
+        if (ring) {
+          const ringMat = ring.material as THREE.MeshBasicMaterial;
+          ringMat.opacity = isSelected ? SATELLITE_RING_OPACITY_SELECTED : SATELLITE_RING_OPACITY;
+        }
+      }
     });
-  }, [selectedObject]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedObject, extraOrbiters]);
 
   // ─── AI Pulse ─────────────────────────────────────────────────────────────
 
@@ -1213,19 +1424,26 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
       {tooltip && (
         <div className="absolute pointer-events-none z-20"
           style={{ left: tooltip.x, top: tooltip.y, transform: 'translateX(-50%)' }}>
-          <div className="glass px-2 py-1 rounded text-xs text-orbit-white tracking-widest whitespace-nowrap border border-space-border/60">
-            {tooltip.label}
+          <div className="glass px-2 py-1.5 rounded text-xs text-orbit-white tracking-widest whitespace-nowrap border border-space-border/60">
+            <div>{tooltip.label}</div>
+            {tooltip.sublabel && (
+              <div className="text-[9px] text-orbit-dim tracking-wider normal-case mt-0.5">{tooltip.sublabel}</div>
+            )}
           </div>
         </div>
       )}
 
       {/* Mission Popup */}
-      {selectedObject && selectedMissionData && popupPos && (
+      {/* Earth Mode uses the parent-owned SatelliteHUDPanel instead of this floating
+          popup — a live satellite (e.g. a GPS satellite) has no Mission record
+          and can't resolve selectedMissionData anyway, but even for Orbital missions
+          like ISS, Earth's selection surface is the HUD, not this card. */}
+      {selectedObject && selectedMissionData && popupPos && selectedPlanet !== 'earth' && (
         <MissionPopup
           obj={selectedObject}
           mission={selectedMissionData}
           x={popupPos.x} y={popupPos.y}
-          onClose={() => { setSelectedObject(null); setPopupPos(null); }}
+          onClose={() => { setSelectedObject(null); setPopupPos(null); onObjectSelect?.(null); }}
         />
       )}
 
@@ -1375,7 +1593,10 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
             { key: 'neptune', label: '💙 NEPTUNE', color: 'text-blue-300' },
           ] as const).map(({ key, label, color }) => (
             <div key={key} className="flex items-center justify-between gap-4">
-              <span className={`text-[9px] ${color} tracking-wider`}>{label}</span>
+              <span className={`flex items-center gap-1.5 text-[9px] ${color} tracking-wider`}>
+                <PlanetIcon planet={key} size={9} />
+                {label}
+              </span>
               <span className="text-[11px] font-semibold text-orbit-white tabular-nums">{counts[key]}</span>
             </div>
           ))}

@@ -5,16 +5,19 @@
  * Switch between providers via the AI_PROVIDER environment variable.
  *
  * Environment:
- *   AI_PROVIDER=mock|watsonx          (default: mock)
+ *   AI_PROVIDER=mock|gemini|watsonx   (default: mock)
+ *   GEMINI_API_KEY=<key>              (required for gemini — free tier from https://aistudio.google.com/)
+ *   GEMINI_MODEL=gemini-2.0-flash     (optional; defaults to gemini-2.0-flash)
  *   AI_API_KEY=<IBM Cloud API key>    (required for watsonx)
  *   WATSONX_PROJECT_ID=<project id>   (required for watsonx)
  *   WATSONX_URL=https://...           (required for watsonx, e.g. https://eu-de.ml.cloud.ibm.com)
  *   WATSONX_MODEL_ID=<granite model>  (required for watsonx, e.g. ibm/granite-3-8b-instruct)
  *
- * All credentials remain server-side only. Never expose AI_API_KEY to the client.
+ * All credentials remain server-side only. Never expose any key to the client.
+ * GEMINI_API_KEY must never be used as NEXT_PUBLIC_GEMINI_API_KEY.
  */
 
-import { Mission, AIContext, AIMessage, OrbitalRiskContext } from './types';
+import { Mission, AIContext, AIMessage, OrbitalRiskContext, SatelliteAIContext } from './types';
 
 export interface AIProvider {
   generateResponse(
@@ -151,6 +154,47 @@ function buildRiskContext(risk: OrbitalRiskContext): string {
   return parts.join('\n');
 }
 
+// ─── Satellite context formatter ───────────────────────────────────────────────
+// Converts a SatelliteAIContext into a structured text block. Only values
+// already present in the context are surfaced — the AI must not recompute
+// or invent orbital/signal values.
+
+function buildSatelliteContext(sat: SatelliteAIContext): string {
+  const parts: string[] = [];
+
+  parts.push('── SATELLITE CONTEXT ──');
+  parts.push(`Satellite: ${sat.name} (NORAD ${sat.noradId})`);
+  parts.push(`Data quality: ${sat.dataQuality}`);
+  parts.push('');
+  parts.push(`Altitude (DERIVED): ${sat.altitudeKm} km`);
+  parts.push(`Velocity (DERIVED): ${sat.velocityKmS} km/s`);
+  parts.push(`Orbital period (DERIVED): ${sat.periodMin} min`);
+  parts.push(`Inclination (OBSERVED, from CelesTrak elements): ${sat.inclinationDeg}°`);
+  parts.push(`Eccentricity (OBSERVED, from CelesTrak elements): ${sat.eccentricity}`);
+  parts.push(`Current sub-satellite point (DERIVED): ${sat.lat.toFixed(2)}°, ${sat.lon.toFixed(2)}°`);
+  parts.push(`Element epoch: ${sat.epoch}`);
+  parts.push('');
+
+  if (sat.hasObservations && sat.latestObservation) {
+    const o = sat.latestObservation;
+    parts.push(`Latest SatNOGS observation (OBSERVED): ${o.station}, ${o.time}, ${o.frequencyMHz} MHz, ${o.mode}, ${o.signalDbm ?? 'unknown'} dBm`);
+  } else {
+    parts.push('No public SatNOGS observation data is available for this satellite in this session.');
+  }
+
+  if (sat.anomalyFlags.length > 0) {
+    parts.push('');
+    parts.push('DERIVED anomaly flags (deterministic threshold-based, NOT AI-generated):');
+    sat.anomalyFlags.forEach((f) => parts.push(`- ${f}`));
+  }
+
+  parts.push('');
+  parts.push('No engineering telemetry (battery, temperature, attitude) is available from public sources for this satellite. Do not invent any.');
+  parts.push('── END SATELLITE CONTEXT ──');
+
+  return parts.join('\n');
+}
+
 const MOCK_RESPONSES: Record<string, string> = {
   artemis: `**Artemis II** is NASA's first crewed mission to the vicinity of the Moon since 1972 — a critical test before humans land on the Moon again.
 
@@ -206,6 +250,11 @@ class MockAIProvider implements AIProvider {
     // ── Risk-aware mode: respond grounded on pre-computed risk data only ──────
     if (context.selectedRisk) {
       return this.generateRiskResponse(context.selectedRisk, lastUserMessage);
+    }
+
+    // ── Satellite-aware mode: respond grounded on pre-computed satellite data ─
+    if (context.selectedSatellite) {
+      return this.generateSatelliteResponse(context.selectedSatellite, lastUserMessage);
     }
 
     // Check for mission-specific keywords
@@ -344,6 +393,39 @@ ${qualityCaveat}
 
 *Context data provided by ORBITAL's deterministic risk engine. All values sourced from public orbital element sets.*`;
   }
+
+  // ── Satellite-grounded response generator ───────────────────────────────────
+  // Interprets ONLY the pre-computed values from lib/satellites. Never fabricates
+  // engineering telemetry, signal values, or orbital elements not supplied.
+
+  private generateSatelliteResponse(sat: SatelliteAIContext, userQuestion: string): string {
+    const q = userQuestion.toLowerCase();
+    const qualityNote = sat.dataQuality === 'ESTIMATED'
+      ? `\n\n**Data quality note:** This satellite's data is currently **ESTIMATED** — live CelesTrak data was unavailable, so the last known orbital elements are shown instead.`
+      : `\n\n*Position and derived values are DERIVED from OBSERVED CelesTrak orbital elements (epoch ${sat.epoch}) using simplified two-body propagation — not a full SGP4 solution.*`;
+
+    if (/inclin/.test(q)) {
+      return `**${sat.name}**'s orbital inclination is **${sat.inclinationDeg}°** — the angle between its orbital plane and Earth's equator. This value is OBSERVED, taken directly from CelesTrak's published orbital elements. An inclination near 51.6° (like the ISS) means the satellite's ground track ranges roughly that far north and south of the equator each orbit.${qualityNote}`;
+    }
+
+    if (/fall|why.*(stay|not).*(fall|crash)|orbit.*work/.test(q)) {
+      return `**${sat.name}** doesn't fall into Earth because it's moving forward fast enough (~${sat.velocityKmS} km/s) that the curve of its fall matches the curve of the Earth falling away beneath it — it's continuously "falling around" the planet rather than into it. At its altitude of ~${sat.altitudeKm} km, this balance produces an orbital period of about ${sat.periodMin} minutes.${qualityNote}`;
+    }
+
+    if (/fast|speed|velocity/.test(q)) {
+      return `**${sat.name}** is moving at approximately **${sat.velocityKmS} km/s** (DERIVED from its orbital elements). Satellites in low Earth orbit must travel this fast — several kilometers per second — so that their forward motion continuously "outruns" the pull of Earth's gravity, keeping them in a stable orbit rather than falling back down.${qualityNote}`;
+    }
+
+    if (/where|position|location|right now|currently/.test(q)) {
+      return `As of the last update (epoch ${sat.epoch}), **${sat.name}** is at approximately **${sat.lat.toFixed(1)}°, ${sat.lon.toFixed(1)}°** — DERIVED from its OBSERVED CelesTrak orbital elements via simplified propagation, not a live tracking fix. Altitude: ~${sat.altitudeKm} km.${qualityNote}`;
+    }
+
+    if (sat.anomalyFlags.length > 0 && /unusual|anomaly|normal|flag/.test(q)) {
+      return `AI-interpreted assessment for **${sat.name}**: ${sat.anomalyFlags.length} deterministic flag(s) were raised from orbital-element or signal deviation:\n${sat.anomalyFlags.map((f) => `- ${f}`).join('\n')}\n\nThese are threshold-based DERIVED classifications, not an official operator report or spacecraft health data.${qualityNote}`;
+    }
+
+    return `**${sat.name}** (NORAD ${sat.noradId}):\n\n- Altitude: ~${sat.altitudeKm} km (DERIVED)\n- Velocity: ~${sat.velocityKmS} km/s (DERIVED)\n- Orbital period: ~${sat.periodMin} min (DERIVED)\n- Inclination: ${sat.inclinationDeg}° (OBSERVED)\n\n${sat.hasObservations ? 'Public SatNOGS radio observations are available for this satellite.' : 'No public SatNOGS radio observations are available for this satellite in this session.'} No engineering telemetry (battery, temperature, attitude) is available from public sources.${qualityNote}`;
+  }
 }
 
 // ─── Watsonx Provider ─────────────────────────────────────────────────────────
@@ -450,9 +532,11 @@ class WatsonxProvider implements AIProvider {
     context: AIContext,
     systemPrompt: string
   ): Promise<string> {
-    // Build the effective system prompt — extend with risk grounding when needed.
+    // Build the effective system prompt — extend with risk/satellite grounding when needed.
     const effectiveSystem = context.selectedRisk
       ? `${systemPrompt}\n\n${RISK_GROUNDING_ADDENDUM}\n\n${buildRiskContext(context.selectedRisk)}`
+      : context.selectedSatellite
+      ? `${systemPrompt}\n\n${SATELLITE_GROUNDING_ADDENDUM}\n\n${buildSatelliteContext(context.selectedSatellite)}`
       : context.selectedMission
       ? `${systemPrompt}\n\n${buildMissionContext(context)}`
       : systemPrompt;
@@ -719,11 +803,201 @@ assessment. For authoritative conjunction screening, consult NASA's CARA or
 the 18th Space Control Squadron.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
 
+/**
+ * Grounding instructions injected into the system prompt only when a
+ * satellite context is present. Mirrors the intent of RISK_GROUNDING_ADDENDUM:
+ * never let the model invent orbital, signal, or engineering data.
+ */
+const SATELLITE_GROUNDING_ADDENDUM = `\
+── SATELLITE CONTEXT GROUNDING (STRICT) ──────────────────────────────────────
+1. Use ONLY the values in the supplied satellite context. Never invent altitude,
+   velocity, period, inclination, position, or signal values.
+2. NEVER present engineering telemetry (battery charge, temperature, attitude,
+   fuel, power state) — it is not available from public sources for this
+   satellite. If asked, say so explicitly rather than guessing.
+3. Distinguish clearly: raw orbital elements (inclination, eccentricity, mean
+   motion, RAAN, argument of perigee) are OBSERVED, directly from CelesTrak.
+   Altitude, velocity, period, position, and ground track are DERIVED —
+   computed from those elements via simplified two-body Keplerian propagation
+   (not SGP4, no atmospheric drag or J2 perturbation modeling).
+4. If dataQuality is ESTIMATED, say plainly that live data was unavailable and
+   the last known elements are being shown, with their age if given.
+5. Anomaly flags in the context are DERIVED (deterministic threshold checks),
+   never AI-generated — do not describe them as an AI detection or an official
+   spacecraft health assessment.
+6. If asked something the context does not establish (e.g. a future pass time,
+   crew activity, exact real-time position), say plainly that public data does
+   not establish this rather than estimating a number.
+───────────────────────────────────────────────────────────────────────────────`;
+
+// ─── Gemini Provider (Google AI Studio — FREE tier) ───────────────────────────
+// Server-side only. Calls Google Gemini REST API using an API key from
+// GEMINI_API_KEY env var (never exposed to the browser).
+//
+// Free-tier model: gemini-2.0-flash (confirmed free at https://ai.google.dev/pricing)
+// Override with GEMINI_MODEL env var.
+//
+// On the free tier Google may use conversation content for product improvement.
+// We send only public satellite orbital data and user questions — no private data.
+
+interface GeminiContent {
+  role: 'user' | 'model';
+  parts: { text: string }[];
+}
+
+interface GeminiResponse {
+  candidates?: Array<{
+    content: { parts: Array<{ text: string }> };
+    finishReason?: string;
+  }>;
+  error?: { message: string; code?: number };
+}
+
+class GeminiProvider implements AIProvider {
+  private readonly apiKey: string;
+  private readonly model: string;
+  private readonly baseUrl: string;
+
+  constructor() {
+    const key = process.env.GEMINI_API_KEY;
+    if (!key) throw new Error('GEMINI_API_KEY is not set. Add it to .env.local (server-side only — never NEXT_PUBLIC_).');
+    this.apiKey  = key;
+    this.model   = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
+    this.baseUrl = `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent`;
+  }
+
+  async generateResponse(
+    messages: AIMessage[],
+    context: AIContext,
+    systemPrompt: string
+  ): Promise<string> {
+    // Build the Gemini contents array — Gemini uses 'user'/'model' roles.
+    // Inject the system prompt as the first user turn (Gemini supports a
+    // separate systemInstruction field, but injecting it here works across
+    // all model versions including flash-lite and 2.0).
+    const systemTurn: GeminiContent = {
+      role: 'user',
+      parts: [{ text: systemPrompt }],
+    };
+    const ackTurn: GeminiContent = {
+      role: 'model',
+      parts: [{ text: 'Understood. I am Orbital AI, ready to help visitors explore space.' }],
+    };
+
+    // Build live context block — satellite data the AI MUST use, never guess
+    const contextBlock = buildGeminiContext(context);
+
+    // Convert our message history
+    const historyContents: GeminiContent[] = messages.map((m) => ({
+      role: m.role === 'user' ? 'user' : 'model',
+      parts: [{ text: m.content }],
+    }));
+
+    // Prepend context to the last user message so Gemini always sees it
+    if (historyContents.length > 0) {
+      const last = historyContents[historyContents.length - 1];
+      if (last.role === 'user' && contextBlock) {
+        last.parts = [{ text: `${contextBlock}\n\nUser question: ${last.parts[0].text}` }];
+      }
+    }
+
+    const contents: GeminiContent[] = [systemTurn, ackTurn, ...historyContents];
+
+    const payload = {
+      contents,
+      generationConfig: {
+        maxOutputTokens: 800,
+        temperature: 0.7,
+        topP: 0.9,
+      },
+    };
+
+    let res: Response;
+    try {
+      res = await fetch(`${this.baseUrl}?key=${this.apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(25_000),
+      });
+    } catch (err) {
+      // Network error or timeout — do NOT log the API key
+      console.error('[gemini] Network error:', (err as Error).message);
+      throw new Error('Gemini API request failed — network error or timeout.');
+    }
+
+    const data: GeminiResponse = await res.json();
+
+    if (!res.ok || data.error) {
+      const msg = data.error?.message || `HTTP ${res.status}`;
+      // Rate-limit / quota messages are expected on the free tier
+      if (res.status === 429) {
+        throw new Error('Orbital AI is temporarily unavailable (rate limit). Please try again in a moment.');
+      }
+      console.error('[gemini] API error:', msg);
+      throw new Error(`Gemini API error: ${msg}`);
+    }
+
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+    if (!text) throw new Error('Gemini returned an empty response.');
+    return text;
+  }
+}
+
+/**
+ * Build a compact context block for Gemini — the application-provided live
+ * satellite data the AI is grounded on. Gemini never re-derives these values.
+ */
+function buildGeminiContext(context: AIContext): string {
+  const parts: string[] = [];
+
+  if (context.selectedSatellite) {
+    const s = context.selectedSatellite;
+    parts.push(`[SELECTED SATELLITE — LIVE ORBITAL DATA]
+Satellite: ${s.name}
+NORAD ID: ${s.noradId}
+Altitude: ${s.altitudeKm} km (DERIVED from CelesTrak orbital elements)
+Speed: ${(s.velocityKmS * 3600).toFixed(0)} km/h / ${s.velocityKmS} km/s (DERIVED)
+Orbital period: ${s.periodMin} minutes (DERIVED)
+Inclination: ${s.inclinationDeg}° (OBSERVED)
+Current position: ${s.lat.toFixed(2)}°, ${s.lon.toFixed(2)}° (DERIVED)
+Data epoch: ${s.epoch}
+Data quality: ${s.dataQuality}
+Source: CelesTrak
+
+IMPORTANT: Use the above values when the user asks about altitude, speed, position, or period.
+Never invent different numbers. If data quality is ESTIMATED, say live data was unavailable.`);
+  }
+
+  if (context.selectedMission) {
+    const m = context.selectedMission;
+    parts.push(`[SELECTED MISSION]
+Name: ${m.name}
+Destination: ${m.destination}
+Status: ${m.status}
+Agency: ${m.agency}
+Description: ${m.description}`);
+  }
+
+  if (context.selectedPlanet && !context.selectedSatellite) {
+    parts.push(`[CONTEXT: User is viewing ${context.selectedPlanet.toUpperCase()} in the Orbital atlas.]`);
+  }
+
+  return parts.join('\n\n');
+}
+
 // ─── Provider Factory ─────────────────────────────────────────────────────────
 
 function createProvider(): AIProvider {
   const provider = process.env.AI_PROVIDER || 'mock';
   switch (provider) {
+    case 'gemini':
+      try {
+        return new GeminiProvider();
+      } catch (err) {
+        console.error('[gemini] Provider initialisation failed — falling back to mock:', (err as Error).message);
+        return new MockAIProvider();
+      }
     case 'watsonx':
       try {
         return new WatsonxProvider();
@@ -847,6 +1121,17 @@ SCORE FORMAT (applies to every sentence):
     "These are simplified deterministic indices and not an operational conjunction assessment.
      For authoritative conjunction screening, consult NASA's CARA or the 18th Space Control
      Squadron."
+
+── SATELLITE CONTEXT RULES (when a satellite context is present) ──────────────
+1. Use ONLY supplied altitude/velocity/period/inclination/position/signal values.
+   Never invent them, and never present engineering telemetry (battery, temperature,
+   attitude) — it is not publicly available for these satellites.
+2. Raw orbital elements (inclination, eccentricity, mean motion, RAAN, argument of
+   perigee) are OBSERVED. Altitude, velocity, period, position, and ground track are
+   DERIVED via simplified Keplerian propagation, not SGP4.
+3. If dataQuality is ESTIMATED, say plainly that live data was unavailable.
+4. Anomaly flags are DERIVED threshold checks, never AI-generated — do not call them
+   an "AI detection."
 ───────────────────────────────────────────────────────────────────────────────`;
 
 export async function generateAIResponse(
