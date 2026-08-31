@@ -367,7 +367,7 @@ function HomePageInner() {
                 <span className="text-[11px] text-orbit-dim">Active missions</span>
                 <span className="text-orbit-white font-semibold text-sm">
                   {getMissionsByDestination(selectedPlanet).filter((m) =>
-                    ['active', 'science-operations', 'surface-operations', 'extended', 'cruise'].includes(m.status)
+                    !['completed', 'planned', 'unknown'].includes(m.status)
                   ).length}
                 </span>
               </div>
@@ -391,7 +391,7 @@ function HomePageInner() {
                 }}
               >
                 {getMissionsByDestination(selectedPlanet!)
-                  .filter((m) => ['active', 'science-operations', 'surface-operations'].includes(m.status))
+                  .filter((m) => !['completed', 'planned', 'unknown'].includes(m.status))
                   .map((m) => (
                     <button
                       key={m.id}
