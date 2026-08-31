@@ -1,1 +1,0 @@
-self.__REACT_LOADABLE_MANIFEST="{\"app\\\\page.tsx -> @/components/SpaceScene\":{\"id\":\"app\\\\page.tsx -> @/components/SpaceScene\",\"files\":[\"static/chunks/_app-pages-browser_components_SpaceScene_tsx.js\"]}}"
