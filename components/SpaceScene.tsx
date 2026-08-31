@@ -199,6 +199,8 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
 
   // id → planet/moon mesh (interactive bodies go into planetsRef for raycasting)
   const planetsRef    = useRef<Map<string, THREE.Mesh>>(new Map());
+  // id → all moon meshes (used for hover raycasting of non-interactive moons)
+  const moonMeshesRef = useRef<Map<string, THREE.Mesh>>(new Map());
   // id → parent group that moves with the body (children: mesh + satellites)
   const bodyGroupsRef = useRef<Map<string, THREE.Group>>(new Map());
   // Live world-space positions (centre of each body), updated every frame
@@ -562,7 +564,24 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
       // (handled in the moons loop below)
     }
 
-    // ─── Build moons (Moon, Phobos, Deimos) ────────────────────────────────
+    // ─── Build all moons ────────────────────────────────────────────────────
+    // Reuse geometry instances by radius bucket (rounded to 3 dp) to avoid
+    // creating a new SphereGeometry per moon — important for outer planets
+    // which have many small moons with essentially identical visual sizes.
+    const moonGeoCache = new Map<number, THREE.SphereGeometry>();
+    const getMoonGeo = (r: number): THREE.SphereGeometry => {
+      // bucket radius to 3 decimal places so nearby radii share geometry
+      const key = Math.round(r * 1000) / 1000;
+      let geo = moonGeoCache.get(key);
+      if (!geo) {
+        // Small moons get fewer segments for performance; large ones get more.
+        const segs = r >= 0.10 ? 32 : r >= 0.06 ? 20 : 14;
+        geo = new THREE.SphereGeometry(key, segs, segs);
+        moonGeoCache.set(key, geo);
+      }
+      return geo;
+    };
+
     for (const body of SOLAR_SYSTEM) {
       if (!body.moonElements) continue;
 
@@ -583,26 +602,27 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
           new THREE.BufferGeometry().setFromPoints(moonPathVecs),
           orbitLineMat.clone(),
         );
-        // Tag it so we can update its position when Earth/Mars moves
+        // Tag it so we can update its position when the parent planet moves
         moonPathLine.name = `orbit-path-${body.id}`;
         scene.add(moonPathLine);
       }
 
-      // Moon mesh
+      // Moon mesh — reuse geometry; each moon still gets its own material so
+      // emissive intensity can be animated on hover independently.
       const moonMat = new THREE.MeshStandardMaterial({
         color: body.color ?? 0x888888,
         emissive: new THREE.Color(body.emissive ?? 0x000000),
-        emissiveIntensity: 0.2,
+        emissiveIntensity: 0.15,
         roughness: 0.9,
         metalness: 0.05,
       });
-      const moonMesh = new THREE.Mesh(new THREE.SphereGeometry(r, 48, 48), moonMat);
+      const moonMesh = new THREE.Mesh(getMoonGeo(r), moonMat);
       moonMesh.name = body.id;
 
-      // Atmosphere glow for Moon
+      // Atmosphere glow for Earth's Moon only
       if (body.id === 'moon') {
         moonMesh.add(new THREE.Mesh(
-          new THREE.SphereGeometry(r * 1.06, 24, 24),
+          new THREE.SphereGeometry(r * 1.06, 16, 16),
           new THREE.MeshBasicMaterial({ color: 0x9ca3af, transparent: true, opacity: 0.04, side: THREE.BackSide }),
         ));
       }
@@ -616,6 +636,9 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
       );
       moonMesh.position.copy(moonScenePos);
       scene.add(moonMesh);
+      // All moons go into moonMeshesRef for hover detection
+      moonMeshesRef.current.set(body.id, moonMesh);
+      // Interactive moons (Earth's Moon) also go into planetsRef for click selection
       if (body.interactive) planetsRef.current.set(body.id, moonMesh);
       bodyWorldPos.current.set(body.id, moonScenePos.clone());
     }
@@ -644,15 +667,21 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
         return;
       }
 
+      // Hover: test planets (interactive) first, then all moons (name display only)
       const hoverMeshes = Array.from(planetsRef.current.values());
       const hoverIds = new Set(Array.from(planetsRef.current.keys()));
-      const pHits = raycaster.intersectObjects(hoverMeshes, true);
+      // Also include non-interactive moon meshes so they show tooltips
+      const allMoonMeshes = Array.from(moonMeshesRef.current.values());
+      const allMoonIds = new Set(Array.from(moonMeshesRef.current.keys()));
+      const combinedMeshes = [...hoverMeshes, ...allMoonMeshes.filter(m => !hoverIds.has(m.name))];
+      const combinedIds = new Set([...hoverIds, ...allMoonIds]);
+      const pHits = raycaster.intersectObjects(combinedMeshes, true);
       if (pHits.length) {
-        // Walk up to find the named interactive body
+        // Walk up to find the named body
         let hitObj: THREE.Object3D | null = pHits[0].object;
         let hoverBodyId: string | null = null;
         while (hitObj) {
-          if (hoverIds.has(hitObj.name)) { hoverBodyId = hitObj.name; break; }
+          if (combinedIds.has(hitObj.name)) { hoverBodyId = hitObj.name; break; }
           hitObj = hitObj.parent;
         }
         const displayName = hoverBodyId ?? pHits[0].object.name;
@@ -826,7 +855,8 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
           parentPos.y + off.z * KM_TO_SCENE,
           parentPos.z - off.y * KM_TO_SCENE,
         );
-        const mesh = planetsRef.current.get(body.id);
+        // moonMeshesRef holds all moons; planetsRef only has interactive ones
+        const mesh = moonMeshesRef.current.get(body.id);
         if (mesh) {
           mesh.position.copy(moonScenePos);
           mesh.rotation.y += 0.0004;
@@ -904,6 +934,16 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
         const isSelected = SOLAR_SYSTEM.find(b => b.id === name)?.missionDestination === selectedPlanetRef.current;
         const isHovered  = name === hoveredBodyRef.current;
         const target = (isHovered || isSelected) ? 0.6 : 0.15;
+        mat.emissiveIntensity += (target - mat.emissiveIntensity) * 0.1;
+      });
+
+      // ── Moon emissive glow on hover (non-interactive moons) ──
+      moonMeshesRef.current.forEach((mesh, name) => {
+        if (planetsRef.current.has(name)) return; // already handled above
+        const mat = mesh.material as THREE.MeshStandardMaterial;
+        if (!mat || !('emissiveIntensity' in mat)) return;
+        const isHovered = name === hoveredBodyRef.current;
+        const target = isHovered ? 0.5 : 0.15;
         mat.emissiveIntensity += (target - mat.emissiveIntensity) * 0.1;
       });
 
