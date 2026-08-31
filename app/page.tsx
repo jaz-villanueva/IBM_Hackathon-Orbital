@@ -1,16 +1,16 @@
 'use client';
 
-import { useState, useMemo, useCallback, useEffect, useRef, Suspense } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
 import { Navigation } from '@/components/Navigation';
 import { MissionPulse } from '@/components/MissionPulse';
 import { MissionCard } from '@/components/MissionCard';
 import { AIAnalyst } from '@/components/AIAnalyst';
+import { RiskHUD, RiskEntry } from '@/components/RiskHUD';
 import { MISSIONS, getMissionsByDestination } from '@/lib/missions';
-import { Mission, AIContext } from '@/lib/types';
-import { Sparkles, ChevronRight, ArrowRight, Database, ChevronDown } from 'lucide-react';
+import { Mission, AIContext, OrbitalRiskContext } from '@/lib/types';
+import { Sparkles, ChevronRight, ArrowRight, Database } from 'lucide-react';
 
 // Dynamically import ThreeJS scene to avoid SSR issues
 const SpaceScene = dynamic(() => import('@/components/SpaceScene').then((m) => ({ default: m.SpaceScene })), {
@@ -26,47 +26,24 @@ const SpaceScene = dynamic(() => import('@/components/SpaceScene').then((m) => (
 });
 
 const PLANET_LABELS: Record<string, { title: string; desc: string; color: string; href: string }> = {
-  earth:   { title: 'EARTH',   desc: 'Low Earth Orbit · Observation · Crewed',       color: 'text-blue-400',   href: '/missions?dest=earth' },
-  moon:    { title: 'MOON',    desc: 'Lunar Orbit · Artemis · Surface',               color: 'text-slate-300',  href: '/missions?dest=moon' },
-  mars:    { title: 'MARS',    desc: 'Rovers · Orbiters · Sample Caching',            color: 'text-orange-400', href: '/missions?dest=mars' },
-  jupiter: { title: 'JUPITER', desc: 'Juno · Europa Clipper · JUICE · Galilean Moons', color: 'text-orange-300', href: '/missions?dest=jupiter' },
-  saturn:  { title: 'SATURN',  desc: 'Cassini Legacy · Titan · Ring System',          color: 'text-yellow-300', href: '/missions?dest=saturn' },
-  uranus:  { title: 'URANUS',  desc: 'Ice Giant · Voyager 2 · Future Orbiter',        color: 'text-cyan-300',   href: '/missions?dest=uranus' },
-  neptune: { title: 'NEPTUNE', desc: 'Ice Giant · Voyager 2 · Triton',                color: 'text-blue-300',   href: '/missions?dest=neptune' },
+  earth: { title: 'EARTH', desc: 'Low Earth Orbit · Observation · Crewed', color: 'text-blue-400', href: '/missions?dest=earth' },
+  moon: { title: 'MOON', desc: 'Lunar Orbit · Artemis · Surface', color: 'text-slate-300', href: '/missions?dest=moon' },
+  mars: { title: 'MARS', desc: 'Rovers · Orbiters · Sample Caching', color: 'text-orange-400', href: '/missions?dest=mars' },
 };
 
-function HomePageInner() {
-  const searchParams   = useSearchParams();
-  const planetParam    = searchParams.get('planet');
-
-  const [selectedPlanet, setSelectedPlanet] = useState<string | null>(null);
+export default function HomePage() {
+  const [selectedPlanet, setSelectedPlanet] = useState('');
   const [selectedMission, setSelectedMission] = useState<Mission | null>(null);
   const [aiOpen, setAiOpen] = useState(false);
-  /** Ref to the hero / 3D-map section so we can scroll back to it. */
-  const heroRef = useRef<HTMLElement>(null);
+  // Simulation elapsed seconds — updated by SpaceScene's clock ticker every 250 ms
+  const [simTimeSec, setSimTimeSec] = useState(0);
+  const handleSimTimeUpdate = useCallback((t: number) => setSimTimeSec(t), []);
+  // Risk context — set when user clicks "Analyze with AI" on a RiskHUD card
+  const [activeRisk, setActiveRisk] = useState<OrbitalRiskContext | null>(null);
 
-  /**
-   * When arriving via /?planet=earth (i.e. from the top nav on another route),
-   * auto-select the requested planet so the camera transitions to it immediately.
-   * We only fire this once per navigation — the effect re-runs only when planetParam
-   * changes (i.e. a new navigation to this page).
-   */
-  useEffect(() => {
-    if (planetParam && ['earth', 'moon', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune'].includes(planetParam)) {
-      setSelectedPlanet(planetParam);
-      setSelectedMission(null);
-      // Scroll hero into view so the map is visible
-      heroRef.current?.scrollIntoView({ behavior: 'auto', block: 'start' });
-    }
-  }, [planetParam]);
-
-  const earthMissions   = useMemo(() => getMissionsByDestination('earth'), []);
-  const moonMissions    = useMemo(() => getMissionsByDestination('moon'), []);
-  const marsMissions    = useMemo(() => getMissionsByDestination('mars'), []);
-  const jupiterMissions = useMemo(() => getMissionsByDestination('jupiter'), []);
-  const saturnMissions  = useMemo(() => getMissionsByDestination('saturn'), []);
-  const uranusMissions  = useMemo(() => getMissionsByDestination('uranus'), []);
-  const neptuneMissions = useMemo(() => getMissionsByDestination('neptune'), []);
+  const earthMissions = useMemo(() => getMissionsByDestination('earth'), []);
+  const moonMissions = useMemo(() => getMissionsByDestination('moon'), []);
+  const marsMissions = useMemo(() => getMissionsByDestination('mars'), []);
 
   const featuredMissions = useMemo(
     () =>
@@ -78,90 +55,52 @@ function HomePageInner() {
 
   const aiContext: AIContext = {
     selectedMission: selectedMission || undefined,
-    selectedPlanet: (selectedPlanet ?? '') as AIContext['selectedPlanet'],
+    selectedPlanet: selectedPlanet as AIContext['selectedPlanet'],
     visibleMissions: selectedPlanet
       ? getMissionsByDestination(selectedPlanet)
       : MISSIONS.filter((m) => ['active', 'science-operations', 'surface-operations'].includes(m.status)),
+    selectedRisk: activeRisk ?? undefined,
   };
 
-  /**
-   * Toggle-select a planet. Clicking the already-selected planet deselects it.
-   * Switching to a different planet clears the selected mission.
-   * Passing '' or 'home' deselects (used by deep-space search results).
-   */
-  const handlePlanetSelect = useCallback((planet: string) => {
-    const dest = planet === '' || planet === 'home' ? null : planet;
-    setSelectedPlanet(prev => {
-      if (dest !== null && prev === dest) {
-        setSelectedMission(null);
-        return null;
-      }
-      setSelectedMission(null);
-      return dest;
-    });
-  }, []);
+  const handlePlanetSelect = (planet: string) => {
+    setSelectedPlanet((prev) => (prev === planet ? '' : planet));
+    setSelectedMission(null);
+  };
 
-  /**
-   * Select a mission from the Active Missions widget.
-   * Sets the mission in parent state so SpaceScene can respond via prop.
-   * Does NOT navigate to /missions/[id].
-   */
-  const handleWidgetMissionSelect = useCallback((mission: Mission) => {
-    const dest = mission.destination === 'deep-space' ? null : mission.destination;
-    if (dest) setSelectedPlanet(dest);
-    setSelectedMission(mission);
-  }, []);
-
-  /** Space bar → deselect everything and return to overview */
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.repeat) return;
-      if (e.code !== 'Space') return;
-      const tag = (e.target as HTMLElement)?.tagName ?? '';
-      if (['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON'].includes(tag)) return;
-      e.preventDefault();
-      setSelectedPlanet(null);
-      setSelectedMission(null);
+  // Called by RiskHUD when user clicks "Analyze with AI" on a conjunction card.
+  // Maps the RiskEntry shape into OrbitalRiskContext and opens the AI panel.
+  const handleAnalyzeRisk = useCallback((risk: RiskEntry) => {
+    const ctx: OrbitalRiskContext = {
+      pairId:                    risk.pairId,
+      objectAName:               risk.objectA.name,
+      objectBName:               risk.objectB.name,
+      destination:               risk.objectA.destination,
+      objectAAltitudeKm:         risk.objectA.altitudeKm,
+      objectBAltitudeKm:         risk.objectB.altitudeKm,
+      riskLevel:                 risk.riskLevel,
+      compositeScore:            risk.compositeScore,
+      orbitalCompatibilityScore: risk.orbitalCompatibilityScore,
+      trajectoryRiskScore:       risk.trajectoryRiskScore,
+      currentSeparationKm:       risk.currentSeparationKm,
+      relativeSpeedKmS:          risk.relativeSpeedKmS,
+      closingSpeedKmS:           risk.closingSpeedKmS,
+      isApproaching:             risk.isApproaching,
+      timeToClosestApproachSec:  risk.timeToClosestApproachSec,
+      predictedMissDistanceKm:   risk.predictedMissDistanceKm,
+      tcaInvalidReason:          risk.tcaInvalidReason,
+      dataQuality:               risk.dataQuality,
+      explanation:               risk.explanation,
     };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, []);
-
-  /** Scroll-down floating button handler */
-  const handleScrollDown = useCallback(() => {
-    const hero = heroRef.current;
-    if (!hero) return;
-    const heroBottom = hero.offsetTop + hero.offsetHeight;
-    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    window.scrollTo({
-      top: heroBottom,
-      behavior: prefersReduced ? 'auto' : 'smooth',
-    });
-  }, []);
-
-  /**
-   * Scroll the page back to the 3D map hero section.
-   * Called by the top-nav Earth/Moon/Mars buttons so that clicking them from
-   * anywhere below the map first returns the user to the map, then the camera
-   * transitions to the selected body.
-   */
-  const handleScrollToMap = useCallback(() => {
-    const hero = heroRef.current;
-    if (!hero) return;
-    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    hero.scrollIntoView({ behavior: prefersReduced ? 'auto' : 'smooth', block: 'start' });
+    setActiveRisk(ctx);
+    setAiOpen(true);
   }, []);
 
   return (
     <div className="min-h-screen bg-space-black">
-      <Navigation
-        selectedPlanet={selectedPlanet ?? ''}
-        onPlanetSelect={handlePlanetSelect}
-        onScrollToMap={handleScrollToMap}
-      />
+      <Navigation selectedPlanet={selectedPlanet} onPlanetSelect={handlePlanetSelect} />
 
       {/* Hero Section — 3D Visualization */}
-      <section ref={heroRef} className="relative h-[calc(100vh-3.5rem)] mt-14 overflow-hidden">
+      <section className="relative h-[calc(100vh-3.5rem)] mt-14 overflow-hidden">
         {/* Scene */}
         <div className="absolute inset-0">
           <SpaceScene
@@ -170,6 +109,7 @@ function HomePageInner() {
             onPlanetSelect={handlePlanetSelect}
             onMissionSelect={setSelectedMission}
             selectedMission={selectedMission}
+            onSimTimeUpdate={handleSimTimeUpdate}
           />
         </div>
 
@@ -196,7 +136,7 @@ function HomePageInner() {
 
         {/* Planet info panel (when selected) */}
         {selectedPlanet && PLANET_LABELS[selectedPlanet] && (
-          <div className="absolute top-[110px] right-[15px] animate-slide-up">
+          <div className="absolute top-8 right-6 md:right-10 animate-slide-up">
             <div className="glass rounded-xl p-5 w-64 border border-space-border">
               <div className={`text-[10px] tracking-widest font-semibold mb-1 ${PLANET_LABELS[selectedPlanet].color}`}>
                 {PLANET_LABELS[selectedPlanet].title}
@@ -213,44 +153,16 @@ function HomePageInner() {
                 </span>
               </div>
 
-              {/* Active missions — scrollable, clickable, selects mission on the 3D map.
-                  max-h shows ~3 rows; remaining missions reachable by scrolling.
-                  onWheel/onTouchMove stop propagation so the page doesn't scroll while
-                  the user is scrolling within this list. */}
-              <div
-                className="mb-3 overflow-y-auto pr-1"
-                role="list"
-                aria-label="Active missions"
-                tabIndex={0}
-                style={{
-                  maxHeight: '4.75rem',
-                  scrollbarWidth: 'thin',
-                  scrollbarColor: 'rgba(100,116,139,0.4) transparent',
-                }}
-                onWheel={(e) => {
-                  e.stopPropagation();
-                }}
-              >
-                {getMissionsByDestination(selectedPlanet!)
+              {/* Recent missions */}
+              <div className="space-y-1.5 mb-3">
+                {getMissionsByDestination(selectedPlanet)
                   .filter((m) => ['active', 'science-operations', 'surface-operations'].includes(m.status))
+                  .slice(0, 3)
                   .map((m) => (
-                    <button
-                      key={m.id}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleWidgetMissionSelect(m);
-                      }}
-                      role="listitem"
-                      className={`w-full flex items-center gap-2 text-[11px] text-left rounded px-1 py-1 -mx-1 transition-colors hover:bg-white/5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-orbit-blue/50 ${
-                        selectedMission?.id === m.id ? 'text-orbit-white' : 'text-orbit-dim hover:text-orbit-white'
-                      }`}
-                      aria-label={`Select ${m.shortName || m.name} on the 3D map`}
-                    >
-                      <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                        selectedMission?.id === m.id ? 'bg-orbit-blue animate-pulse' : 'bg-emerald-400 animate-pulse'
-                      }`} />
-                      <span className="truncate">{m.shortName || m.name}</span>
-                    </button>
+                    <div key={m.id} className="flex items-center gap-2 text-[11px]">
+                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      <span className="text-orbit-dim">{m.shortName || m.name}</span>
+                    </div>
                   ))}
               </div>
 
@@ -266,47 +178,30 @@ function HomePageInner() {
         )}
 
         {/* Bottom orbit controls */}
-        <div className="absolute bottom-[64px] left-0 right-0 flex justify-center gap-1.5 flex-wrap px-4 pointer-events-auto">
-          {[
-            { id: 'earth',   emoji: '🌎', label: 'EARTH',   color: 'text-blue-400' },
-            { id: 'moon',    emoji: '🌙', label: 'MOON',    color: 'text-slate-300' },
-            { id: 'mars',    emoji: '🔴', label: 'MARS',    color: 'text-orange-400' },
-            { id: 'jupiter', emoji: '🟠', label: 'JUPITER', color: 'text-orange-300' },
-            { id: 'saturn',  emoji: '🪐', label: 'SATURN',  color: 'text-yellow-300' },
-            { id: 'uranus',  emoji: '🔵', label: 'URANUS',  color: 'text-cyan-300' },
-            { id: 'neptune', emoji: '💙', label: 'NEPTUNE', color: 'text-blue-300' },
-          ].map((cfg) => (
-            <button
-              key={cfg.id}
-              onClick={() => handlePlanetSelect(cfg.id)}
-              aria-pressed={selectedPlanet === cfg.id}
-              className={`flex items-center gap-1.5 px-3 py-2 glass rounded-lg border transition-all text-xs tracking-wider ${
-                selectedPlanet === cfg.id
-                  ? `border-orbit-blue/50 ${cfg.color} bg-white/5`
-                  : 'border-space-border text-orbit-dim hover:text-orbit-white hover:border-space-muted'
-              }`}
-            >
-              <span>{cfg.emoji}</span>
-              <span>{cfg.label}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* Scroll-down floating button — centered via fixed full-width container */}
-        <div className="fixed bottom-6 left-0 right-0 flex justify-center pointer-events-none z-20">
-          <button
-            onClick={handleScrollDown}
-            aria-label="Scroll down to see more content"
-            className="flex items-center justify-center w-8 h-8 glass rounded-full border border-space-border/50 text-orbit-dim hover:text-orbit-white hover:border-space-muted transition-colors pointer-events-auto"
-          >
-            <ChevronDown size={15} />
-          </button>
+        <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-2 pointer-events-auto">
+          {['earth', 'moon', 'mars'].map((p) => {
+            const cfg = { earth: { emoji: '🌎', label: 'EARTH', color: 'text-blue-400' }, moon: { emoji: '🌙', label: 'MOON', color: 'text-slate-300' }, mars: { emoji: '🔴', label: 'MARS', color: 'text-orange-400' } }[p]!;
+            return (
+              <button
+                key={p}
+                onClick={() => handlePlanetSelect(p)}
+                className={`flex items-center gap-2 px-4 py-2.5 glass rounded-lg border transition-all text-xs tracking-wider ${
+                  selectedPlanet === p
+                    ? `border-orbit-blue/50 ${cfg.color} bg-white/5`
+                    : 'border-space-border text-orbit-dim hover:text-orbit-white hover:border-space-muted'
+                }`}
+              >
+                <span>{cfg.emoji}</span>
+                <span>{cfg.label}</span>
+              </button>
+            );
+          })}
         </div>
 
         {/* AI Analyst button — kept for deep conversation mode */}
         <button
           onClick={() => setAiOpen(true)}
-          className="absolute bottom-16 right-4 flex items-center gap-2 px-4 py-2.5 glass rounded-lg border border-purple-400/30 text-purple-400 hover:bg-purple-400/10 transition-colors text-xs tracking-wider"
+          className="absolute bottom-8 left-6 flex items-center gap-2 px-4 py-2.5 glass rounded-lg border border-purple-400/30 text-purple-400 hover:bg-purple-400/10 transition-colors text-xs tracking-wider"
         >
           <Sparkles size={13} />
           <span>AI ANALYST</span>
@@ -321,10 +216,6 @@ function HomePageInner() {
             earthMissions={earthMissions}
             moonMissions={moonMissions}
             marsMissions={marsMissions}
-            jupiterMissions={jupiterMissions}
-            saturnMissions={saturnMissions}
-            uranusMissions={uranusMissions}
-            neptuneMissions={neptuneMissions}
           />
         </section>
 
@@ -423,15 +314,14 @@ function HomePageInner() {
       </div>
 
       {/* AI Analyst Panel */}
-      <AIAnalyst context={aiContext} isOpen={aiOpen} onClose={() => setAiOpen(false)} />
-    </div>
-  );
-}
+      <AIAnalyst
+        context={aiContext}
+        isOpen={aiOpen}
+        onClose={() => { setAiOpen(false); setActiveRisk(null); }}
+      />
 
-export default function HomePage() {
-  return (
-    <Suspense fallback={null}>
-      <HomePageInner />
-    </Suspense>
+      {/* Orbital Safety Monitor HUD */}
+      <RiskHUD simulationTimeSec={simTimeSec} onAnalyzeWithAI={handleAnalyzeRisk} />
+    </div>
   );
 }

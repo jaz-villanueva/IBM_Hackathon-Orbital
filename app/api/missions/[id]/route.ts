@@ -3,11 +3,15 @@ import { getMissionById } from '@/lib/missions';
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const mission = getMissionById(params.id);
+  const { id } = await params;
+
+  const mission = getMissionById(id);
+
   if (!mission) {
     return NextResponse.json({ error: 'Mission not found' }, { status: 404 });
   }
+
   return NextResponse.json(mission);
 }
