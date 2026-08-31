@@ -64,9 +64,14 @@ function HomePageInner() {
   /** One-off ExtraOrbiter for a deep-linked/selected satellite not present in the fetched fleet groups. */
   const [deepLinkOrbiter, setDeepLinkOrbiter] = useState<ExtraOrbiter | null>(null);
 
-  // Fetch the live fleet once, the first time Earth is selected.
+  // Fetch the live fleet once, as soon as the page loads — not gated behind
+  // clicking Earth first. The fleet endpoint alone takes several seconds
+  // (multiple CelesTrak group requests), so starting it eagerly on mount
+  // means it has usually already resolved by the time the user reaches
+  // Earth mode, instead of the satellites appearing only after a visible
+  // delay once they click in.
   useEffect(() => {
-    if (selectedPlanet !== 'earth' || fleet.length > 0 || fleetLoading) return;
+    if (fleet.length > 0 || fleetLoading) return;
     setFleetLoading(true);
     setFleetError(null);
     fetch('/api/satellites/fleet')
@@ -78,7 +83,7 @@ function HomePageInner() {
       })
       .catch(() => setFleetError('Could not reach the Orbital server for live satellite data.'))
       .finally(() => setFleetLoading(false));
-  }, [selectedPlanet, fleet.length, fleetLoading]);
+  }, [fleet.length, fleetLoading]);
 
   // A satellite selected via the HUD/3D click that isn't in the fetched fleet groups
   // (e.g. a deep-linked catalog satellite like Terra) still needs a scene entry for
@@ -337,7 +342,12 @@ function HomePageInner() {
         {/* Earth Mode: telemetry-styled HUD replaces the standard planet info panel */}
         {selectedPlanet === 'earth' && (
           selectedSatelliteId ? (
-            <SatelliteHUDPanel id={selectedSatelliteId} onBack={handleBackToSatellites} onAskAI={handleAskAISatellite} />
+            <SatelliteHUDPanel
+              id={selectedSatelliteId}
+              onBack={handleBackToSatellites}
+              onAskAI={handleAskAISatellite}
+              preloaded={fleet.find((s) => s.id === selectedSatelliteId)}
+            />
           ) : (
             <EarthTelemetryHUD
               satellites={fleet}
@@ -420,8 +430,15 @@ function HomePageInner() {
           </div>
         )}
 
-        {/* Bottom orbit controls */}
-        <div className="absolute bottom-[64px] left-0 right-0 flex justify-center gap-1.5 flex-wrap px-4 pointer-events-auto">
+        {/* Bottom orbit controls — a single horizontally-scrollable row on
+            mobile (a wrapped multi-row layout has unpredictable height,
+            which risks colliding with the satellite HUD panels' bottom-sheet
+            positioning on small screens); the original centered, wrapping
+            row is unchanged at sm+. */}
+        <div
+          className="absolute bottom-[64px] left-0 right-0 flex justify-start sm:justify-center gap-1.5 flex-nowrap sm:flex-wrap overflow-x-auto sm:overflow-visible px-4 pointer-events-auto"
+          style={{ scrollbarWidth: 'none' }}
+        >
           {[
             { id: 'mercury', label: 'MERCURY', color: 'text-stone-400' },
             { id: 'venus',   label: 'VENUS',   color: 'text-yellow-600' },
@@ -437,7 +454,7 @@ function HomePageInner() {
               key={cfg.id}
               onClick={() => handlePlanetSelect(cfg.id)}
               aria-pressed={selectedPlanet === cfg.id}
-              className={`flex items-center gap-1.5 px-3 py-2 glass rounded-lg border transition-all text-xs tracking-wider ${
+              className={`flex items-center gap-1.5 px-3 py-2 glass rounded-lg border transition-all text-xs tracking-wider shrink-0 ${
                 selectedPlanet === cfg.id
                   ? `border-orbit-blue/50 ${cfg.color} bg-white/5`
                   : 'border-space-border text-orbit-dim hover:text-orbit-white hover:border-space-muted'

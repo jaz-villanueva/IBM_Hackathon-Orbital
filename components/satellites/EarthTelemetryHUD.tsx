@@ -30,7 +30,16 @@ export function EarthTelemetryHUD({ satellites, totals, loading, error, onSelect
   );
 
   return (
-    <div className="absolute top-[110px] left-4 z-20 w-72 max-h-[calc(100vh-190px)] animate-slide-up flex flex-col">
+    <div
+      className={clsx(
+        // Mobile: a bottom sheet spanning the viewport width, clear of the
+        // bottom orbit-control row. Desktop (sm+): the original fixed-width
+        // left-side panel, unchanged.
+        'absolute z-20 left-3 right-3 bottom-[124px] top-auto max-h-[42vh]',
+        'sm:left-4 sm:right-auto sm:top-[110px] sm:bottom-auto sm:w-72 sm:max-h-[calc(100vh-190px)]',
+        'animate-slide-up flex flex-col'
+      )}
+    >
       <div className="glass rounded-xl border border-space-border overflow-hidden flex flex-col min-h-0 flex-1">
         {/* Header */}
         <div className="p-4 border-b border-space-border shrink-0">

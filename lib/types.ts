@@ -316,6 +316,8 @@ export type OrbitRegime = 'LEO' | 'MEO' | 'GEO';
 export interface FleetSatelliteEntry {
   id: string;
   name: string;
+  shortName?: string;
+  agency?: string;
   noradId: string;
   orbitRegime: OrbitRegime;
   description: string;
@@ -327,6 +329,15 @@ export interface FleetSatelliteEntry {
   periodMin: number;
   inclinationDeg: number;
   dataQuality: DataLabel;
+  /**
+   * The full orbital state already computed while assembling the fleet —
+   * carried through so the satellite detail panel can render a fleet
+   * satellite immediately from this, instead of firing a second, separate
+   * CelesTrak fetch on click (which in practice runs as an isolated route
+   * with its own cache, so it can fail independently of the fleet fetch
+   * that already succeeded).
+   */
+  orbitalState: SatelliteOrbitalState;
 }
 
 /** Flat, pre-computed satellite context injected into the AI copilot — mirrors OrbitalRiskContext. */

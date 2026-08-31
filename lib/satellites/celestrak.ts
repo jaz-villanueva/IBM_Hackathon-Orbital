@@ -159,6 +159,18 @@ export async function fetchGpGroup(group: string): Promise<CelesTrakGpRecord[]> 
 
   const records = data as CelesTrakGpRecord[];
   groupCache.set(group, { record: records, fetchedAt: Date.now() });
+
+  // A group fetch already carries a fresh GP record for every satellite in
+  // it — warm the single-satellite cache from these too, so clicking a
+  // satellite that's already part of a loaded fleet group reads instantly
+  // from memory instead of firing a second, independently-flaky request at
+  // CelesTrak's single-satellite endpoint (the actual cause of some
+  // satellites showing "unable to connect" despite appearing in the fleet).
+  const fetchedAt = Date.now();
+  for (const record of records) {
+    cache.set(String(record.NORAD_CAT_ID), { record, fetchedAt });
+  }
+
   return records;
 }
 

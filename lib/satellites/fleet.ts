@@ -56,6 +56,8 @@ function toFleetEntry(gp: CelesTrakGpRecord): FleetSatelliteEntry | null {
     return {
       id: catalogEntry?.id ?? noradId,
       name: catalogEntry?.name ?? state.name,
+      shortName: catalogEntry?.shortName,
+      agency: catalogEntry?.agency,
       noradId,
       orbitRegime: classifyOrbitRegime(altitudeKm),
       description: catalogEntry?.description ?? `Tracked via CelesTrak public orbital element data.`,
@@ -67,6 +69,7 @@ function toFleetEntry(gp: CelesTrakGpRecord): FleetSatelliteEntry | null {
       periodMin: state.derived.periodMin.value,
       inclinationDeg: state.elements.inclination.value,
       dataQuality: state.dataQuality,
+      orbitalState: state,
     };
   } catch {
     // A single malformed GP record shouldn't take down the whole fleet.

@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, ExternalLink, AlertTriangle, ChevronDown, Radio, Video, Image as ImageIcon, Sparkles, Lightbulb, Globe, Rocket, Clock, Info, Compass } from 'lucide-react';
+import { ArrowLeft, ExternalLink, AlertTriangle, ChevronDown, Radio, Video, Image as ImageIcon, ImageOff, Sparkles, Lightbulb, Globe, Rocket, Clock, Info, Compass } from 'lucide-react';
 import { GroundTrackMap } from './GroundTrackMap';
-import type { SatelliteCatalogEntry, SatelliteOrbitalState, SatelliteAIContext } from '@/lib/types';
+import type { SatelliteCatalogEntry, SatelliteOrbitalState, SatelliteAIContext, FleetSatelliteEntry } from '@/lib/types';
 import { SATELLITE_EDUCATION, getEducationProfile, type SatelliteEducationProfile } from '@/lib/satellites/education';
+import { getSatelliteImage } from '@/lib/satellites/imagery';
 import clsx from 'clsx';
 
 interface ApiResponse {
@@ -18,6 +19,15 @@ interface SatelliteHUDPanelProps {
   id: string;
   onBack: () => void;
   onAskAI: (satellite: SatelliteAIContext) => void;
+  /**
+   * When the selected satellite is already present in the loaded fleet, its
+   * full orbital state was already computed for that fetch — pass it here to
+   * render immediately instead of firing a second, independent CelesTrak
+   * request on click. That second request runs as its own isolated route
+   * with its own cache, so without this it can fail (or just be slow) even
+   * though the satellite's data is already sitting in memory on the client.
+   */
+  preloaded?: FleetSatelliteEntry;
 }
 
 /** Mean Earth diameter, km (IAU nominal — used only for the "N Earth-diameters" comparison). */
@@ -57,13 +67,34 @@ function periodDescription(min: number): string {
   return `It takes about ${(min / 60).toFixed(1)} hours to complete one full orbit.`;
 }
 
-export function SatelliteHUDPanel({ id, onBack, onAskAI }: SatelliteHUDPanelProps) {
+export function SatelliteHUDPanel({ id, onBack, onAskAI, preloaded }: SatelliteHUDPanelProps) {
   const [data, setData] = useState<ApiResponse | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!preloaded);
   const [error, setError] = useState<string | null>(null);
   const [showTechnical, setShowTechnical] = useState(false);
 
   useEffect(() => {
+    if (preloaded) {
+      // Already have everything from the fleet fetch — render immediately,
+      // no network round-trip.
+      setData({
+        catalog: {
+          id: preloaded.id,
+          name: preloaded.name,
+          shortName: preloaded.shortName,
+          agency: preloaded.agency,
+          noradId: preloaded.noradId,
+          description: preloaded.description,
+          obsCapability: preloaded.obsCapability,
+          missionId: preloaded.missionId,
+        },
+        orbitalState: preloaded.orbitalState,
+      });
+      setError(null);
+      setLoading(false);
+      return;
+    }
+
     let cancelled = false;
     setLoading(true);
     setError(null);
@@ -78,7 +109,7 @@ export function SatelliteHUDPanel({ id, onBack, onAskAI }: SatelliteHUDPanelProp
       .catch(() => { if (!cancelled) setError('Could not reach the Orbital server.'); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [id]);
+  }, [id, preloaded]);
 
   const education: SatelliteEducationProfile | null = data?.catalog?.noradId
     ? (SATELLITE_EDUCATION[data.catalog.noradId] ?? getEducationProfile(data.catalog.noradId, data.catalog.name))
@@ -89,7 +120,16 @@ export function SatelliteHUDPanel({ id, onBack, onAskAI }: SatelliteHUDPanelProp
     // height is always correct regardless of ancestor percentage-height quirks —
     // this is what makes the bottom of the panel (Ask AI, technical details)
     // reliably reachable on short/laptop viewports instead of being clipped.
-    <div className="absolute top-[110px] right-[15px] z-20 w-80 max-h-[calc(100vh-190px)] animate-slide-up flex flex-col">
+    <div
+      className={clsx(
+        // Mobile: a bottom sheet spanning the viewport width, clear of the
+        // bottom orbit-control row. Desktop (sm+): the original fixed-width
+        // right-side panel, unchanged.
+        'absolute z-20 left-3 right-3 bottom-[124px] top-auto max-h-[55vh]',
+        'sm:left-auto sm:right-[15px] sm:top-[110px] sm:bottom-auto sm:w-80 sm:max-h-[calc(100vh-190px)]',
+        'animate-slide-up flex flex-col'
+      )}
+    >
       <div className="glass rounded-xl border border-space-border overflow-hidden flex flex-col min-h-0 flex-1">
 
         {/* Back button */}
@@ -126,6 +166,8 @@ export function SatelliteHUDPanel({ id, onBack, onAskAI }: SatelliteHUDPanelProp
             const periodMin = state.derived.periodMin.value;
             const incDeg = state.elements.inclination.value;
             const edu = education;
+            // EDUCATIONAL DATA — never derived from live orbital state, see lib/satellites/imagery.ts.
+            const image = getSatelliteImage(cat.noradId, cat.name);
 
             return (
               <>
@@ -144,6 +186,9 @@ export function SatelliteHUDPanel({ id, onBack, onAskAI }: SatelliteHUDPanelProp
                     <div className="text-[13px] text-orbit-blue mt-1.5 italic">&ldquo;{edu.tagline}&rdquo;</div>
                   )}
                 </div>
+
+                {/* ── What does it look like? — EDUCATIONAL DATA, not live/derived ── */}
+                <SatelliteImageSection image={image} name={cat.shortName ?? cat.name} />
 
                 {/* ── Stale data warning ── */}
                 {state.dataQuality === 'ESTIMATED' && (
@@ -231,14 +276,14 @@ export function SatelliteHUDPanel({ id, onBack, onAskAI }: SatelliteHUDPanelProp
                   </p>
                 </section>
 
-                {/* ── Ground track ── */}
+                {/* ── Ground track — real Earth map + the satellite's actual computed path ── */}
                 <section>
                   <SectionHeading icon={<Globe size={12} />} label="WHERE DOES IT FLY OVER?" color="text-cyan-400" />
-                  <GroundTrackMap track={state.derived.groundTrack} current={state.derived.position} />
-                  <p className="text-[11px] text-orbit-dim mt-1.5 leading-relaxed">
-                    This line traces the path across Earth&apos;s surface directly beneath the satellite as it orbits.
-                    <span className="ml-1.5 text-[9px] text-orbit-dim/60 tracking-wider">DERIVED</span>
-                  </p>
+                  <GroundTrackMap
+                    track={state.derived.groundTrack}
+                    current={state.derived.position}
+                    inclinationDeg={incDeg}
+                  />
                 </section>
 
                 {/* ── Orbit tilt ── */}
@@ -388,6 +433,56 @@ function TechRow({ label, value, badge }: { label: string; value: string; badge:
         <span className="text-[8px] text-orbit-dim/50 shrink-0">{badge}</span>
       </div>
     </div>
+  );
+}
+
+/**
+ * "What does it look like?" — a real photo/rendering of the satellite
+ * (EDUCATIONAL DATA, see lib/satellites/imagery.ts). Never shows a broken
+ * image or an unrelated stock photo: missing entries fall back to an
+ * honest "image unavailable" state, and representative (not-the-exact-
+ * spacecraft) images are always labeled as such.
+ */
+function SatelliteImageSection({ image, name }: { image: ReturnType<typeof getSatelliteImage>; name: string }) {
+  const [loaded, setLoaded] = useState(false);
+  const [failed, setFailed] = useState(false);
+
+  return (
+    <section>
+      <SectionHeading icon={<ImageIcon size={12} />} label="WHAT DOES IT LOOK LIKE?" color="text-orbit-blue" />
+      <div className="rounded-xl overflow-hidden border border-space-border bg-space-deep relative aspect-[4/3]">
+        {image && !failed ? (
+          <>
+            {!loaded && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-6 h-6 rounded-full border border-orbit-blue/30 border-t-orbit-blue animate-spin" />
+              </div>
+            )}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={image.url}
+              alt={image.alt}
+              className={clsx('w-full h-full object-cover transition-opacity duration-300', loaded ? 'opacity-100' : 'opacity-0')}
+              onLoad={() => setLoaded(true)}
+              onError={() => setFailed(true)}
+            />
+          </>
+        ) : (
+          <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-center px-4">
+            <ImageOff size={22} className="text-space-border" />
+            <span className="text-[11px] text-orbit-dim">An image of this spacecraft isn&apos;t currently available.</span>
+          </div>
+        )}
+      </div>
+      {image && !failed && (
+        <div className="flex items-center justify-between mt-1.5">
+          <span className="text-[10px] text-orbit-dim">
+            {image.isRepresentative ? `Representative image of this satellite class` : name}
+          </span>
+          <span className="text-[9px] text-orbit-dim/60 tracking-wider">IMAGE · {image.source.toUpperCase()}</span>
+        </div>
+      )}
+    </section>
   );
 }
 
