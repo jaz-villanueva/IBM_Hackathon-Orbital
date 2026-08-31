@@ -92,6 +92,7 @@ export function Navigation({ selectedPlanet, onPlanetSelect, onScrollToMap }: Na
   const navLinks = [
     { href: '/', label: 'EXPLORE' },
     { href: '/missions', label: 'MISSIONS' },
+    { href: '/satellites', label: 'SATELLITES' },
     { href: '/timeline', label: 'TIMELINE' },
   ];
 
