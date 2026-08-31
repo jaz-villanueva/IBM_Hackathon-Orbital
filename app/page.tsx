@@ -226,6 +226,7 @@ function HomePageInner() {
     if (dest) setSelectedPlanet(dest);
     setSelectedMission(mission);
     setFocusedMissionId(mission.id);
+    setSelectedSatelliteId(null); // clear satellite HUD so the mission focus takes effect
   }, []);
 
   // Called by RiskHUD when user clicks "Analyze with AI" on a conjunction card.
@@ -318,7 +319,7 @@ function HomePageInner() {
             extraOrbiters={extraOrbiters}
             onObjectSelect={handleObjectSelect}
             focusedOrbiterId={selectedPlanet === 'earth' ? selectedSatelliteId : null}
-            focusedMissionId={selectedPlanet !== 'earth' ? focusedMissionId : null}
+            focusedMissionId={focusedMissionId}
           />
         </div>
 
@@ -363,8 +364,8 @@ function HomePageInner() {
           )
         )}
 
-        {/* Planet info panel (Moon/Mars/outer planets — unchanged) */}
-        {selectedPlanet && selectedPlanet !== 'earth' && PLANET_LABELS[selectedPlanet] && (
+        {/* Planet info panel — shown for all selected planets, including Earth (when no satellite is focused) */}
+        {selectedPlanet && PLANET_LABELS[selectedPlanet] && !(selectedPlanet === 'earth' && selectedSatelliteId) && (
           <div className="absolute top-[110px] right-[15px] animate-slide-up">
             <div className="glass rounded-xl p-5 w-64 border border-space-border">
               <div className={`text-[10px] tracking-widest font-semibold mb-1 ${PLANET_LABELS[selectedPlanet].color}`}>

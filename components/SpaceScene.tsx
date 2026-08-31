@@ -1493,7 +1493,7 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
       )}
 
       {/* ── Simulation Clock ── */}
-      <div className="absolute top-[375px] left-10 z-20">
+      <div className="absolute top-[385px] right-4 z-20">
         <div className="glass border border-space-border/70 rounded-lg px-3 py-2 space-y-1.5">
           <div className="flex items-center gap-2">
             <Clock size={10} className="text-orbit-dim" />
@@ -1528,7 +1528,7 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
       </div>
 
       {/* ── Data provenance ── */}
-      <div className="absolute bottom-[10px] left-4 z-20">
+      <div className="absolute bottom-[65px] left-4 z-20">
         <div className="glass border border-space-border/40 rounded px-2 py-1">
           <div className="text-[8px] text-orbit-dim/60 tracking-widest">
             PLANETS · DERIVED · JPL KEPLERIAN ELEMENTS (1800–2050)
@@ -1671,7 +1671,7 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
       </div>
 
       {/* ── Bottom legend ── */}
-      <div className="absolute bottom-[20px] left-4 space-y-1 pointer-events-none z-10">
+      <div className="absolute bottom-[100px] left-4 space-y-1 pointer-events-none z-10">
         <div className="text-[8px] text-orbit-dim/50 tracking-widest mb-1">LEGEND</div>
         {[
           { color: '#22c55e', label: 'Active' },
@@ -1693,7 +1693,7 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
       </div>
 
       {/* Controls hint */}
-      <div className="absolute bottom-[140px] left-4 text-[10px] text-orbit-dim/40 tracking-wider pointer-events-none z-10">
+      <div className="absolute bottom-[220px] left-4 text-[10px] text-orbit-dim/40 tracking-wider pointer-events-none z-10">
         <div>DRAG to rotate · SCROLL to zoom</div>
         <div>CLICK planet or spacecraft</div>
         {simSpeed > 1 && (
