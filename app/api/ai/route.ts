@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { generateAIResponse } from '@/lib/ai';
+import { generateAIResponse, AIConfigurationError } from '@/lib/ai';
 import { getMissionById } from '@/lib/missions';
 import { getSatelliteCatalogEntryByNoradId } from '@/lib/satellites/catalog';
 import { fetchGpData, CelestrakFetchError } from '@/lib/satellites/celestrak';
@@ -85,10 +85,27 @@ export async function POST(request: NextRequest) {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    console.error('AI API error:', error);
+    if (error instanceof AIConfigurationError) {
+      // Missing or rejected API key — a setup problem, not an outage. Logged
+      // server-side with detail (never the key itself; AIConfigurationError
+      // messages never carry it); the client gets a safe, distinct message so
+      // this is never confused with a transient failure or silently masked
+      // by falling back to a mock answer.
+      console.error('[AI] Configuration error:', error.message);
+      return NextResponse.json(
+        { error: 'Orbital AI is temporarily unavailable. Please check the Gemini API configuration.' },
+        { status: 503 }
+      );
+    }
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.error('[AI] Provider error:', message);
     return NextResponse.json(
-      { error: 'Failed to generate response' },
-      { status: 500 }
+      // The provider's own error messages (rate limit, network timeout, a
+      // Gemini API error) are already written to be safe to show a user —
+      // see GeminiProvider.generateResponse in lib/ai.ts — so they're passed
+      // through directly rather than replaced with a generic string.
+      { error: message || "Orbital AI couldn't connect to Gemini right now. Please try again." },
+      { status: 502 }
     );
   }
 }

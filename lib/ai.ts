@@ -7,7 +7,7 @@
  * Environment:
  *   AI_PROVIDER=mock|gemini|watsonx   (default: mock)
  *   GEMINI_API_KEY=<key>              (required for gemini — free tier from https://aistudio.google.com/)
- *   GEMINI_MODEL=gemini-2.0-flash     (optional; defaults to gemini-2.0-flash)
+ *   GEMINI_MODEL=gemini-3.5-flash     (optional; defaults to gemini-3.5-flash)
  *   AI_API_KEY=<IBM Cloud API key>    (required for watsonx)
  *   WATSONX_PROJECT_ID=<project id>   (required for watsonx)
  *   WATSONX_URL=https://...           (required for watsonx, e.g. https://eu-de.ml.cloud.ibm.com)
@@ -25,6 +25,20 @@ export interface AIProvider {
     context: AIContext,
     systemPrompt: string
   ): Promise<string>;
+}
+
+/**
+ * Thrown when the currently-selected AI provider is misconfigured (missing or
+ * rejected API key, missing required env vars) — as opposed to a transient
+ * failure (network error, rate limit, malformed response). app/api/ai/route.ts
+ * uses this to show a distinct "check your configuration" message. Never
+ * carries the secret itself in its message.
+ */
+export class AIConfigurationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'AIConfigurationError';
+  }
 }
 
 // ─── Mock Provider ────────────────────────────────────────────────────────────
@@ -834,7 +848,10 @@ const SATELLITE_GROUNDING_ADDENDUM = `\
 // Server-side only. Calls Google Gemini REST API using an API key from
 // GEMINI_API_KEY env var (never exposed to the browser).
 //
-// Free-tier model: gemini-2.0-flash (confirmed free at https://ai.google.dev/pricing)
+// Free-tier model: gemini-3.5-flash (confirmed free at https://ai.google.dev/gemini-api/docs/pricing
+// as of 2026-09). gemini-2.0-flash — this provider's previous default — has since
+// been shut down by Google; verify https://ai.google.dev/gemini-api/docs/models
+// before changing this again, models get deprecated on a rolling basis.
 // Override with GEMINI_MODEL env var.
 //
 // On the free tier Google may use conversation content for product improvement.
@@ -850,7 +867,7 @@ interface GeminiResponse {
     content: { parts: Array<{ text: string }> };
     finishReason?: string;
   }>;
-  error?: { message: string; code?: number };
+  error?: { message: string; code?: number; status?: string };
 }
 
 class GeminiProvider implements AIProvider {
@@ -860,9 +877,9 @@ class GeminiProvider implements AIProvider {
 
   constructor() {
     const key = process.env.GEMINI_API_KEY;
-    if (!key) throw new Error('GEMINI_API_KEY is not set. Add it to .env.local (server-side only — never NEXT_PUBLIC_).');
+    if (!key) throw new AIConfigurationError('GEMINI_API_KEY is not set. Add it to .env.local (server-side only — never NEXT_PUBLIC_).');
     this.apiKey  = key;
-    this.model   = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
+    this.model   = process.env.GEMINI_MODEL || 'gemini-3.5-flash';
     this.baseUrl = `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent`;
   }
 
@@ -909,8 +926,17 @@ class GeminiProvider implements AIProvider {
         maxOutputTokens: 800,
         temperature: 0.7,
         topP: 0.9,
+        // gemini-3.5-flash "thinks" by default — verified against the live API
+        // that with this unset, a simple 3-sentence request spent 769 of the
+        // 800-token budget on invisible reasoning and returned a response cut
+        // off mid-sentence (finishReason MAX_TOKENS). This assistant answers
+        // short educational questions, not multi-step problems, so thinking
+        // is disabled to spend the whole budget on the visible answer.
+        thinkingConfig: { thinkingBudget: 0 },
       },
     };
+
+    console.log(`[AI] Gemini request started (model: ${this.model})`);
 
     let res: Response;
     try {
@@ -934,12 +960,25 @@ class GeminiProvider implements AIProvider {
       if (res.status === 429) {
         throw new Error('Orbital AI is temporarily unavailable (rate limit). Please try again in a moment.');
       }
+      // An invalid/revoked key surfaces here as a 400 (API_KEY_INVALID) or 403
+      // (PERMISSION_DENIED) from Google — the key is present (GeminiProvider's
+      // constructor already checked that), but Google rejects it. This is a
+      // configuration problem, not a transient outage, so it gets the same
+      // "check configuration" treatment as a missing key. A plain 400 with an
+      // unrelated message (e.g. a malformed request) is NOT reclassified —
+      // only ones Google itself attributes to the API key.
+      const isKeyProblem = res.status === 403 || (res.status === 400 && /api[\s_-]?key/i.test(msg));
+      if (isKeyProblem) {
+        console.error('[gemini] API key rejected by Google:', msg);
+        throw new AIConfigurationError(`Gemini rejected the configured API key: ${msg}`);
+      }
       console.error('[gemini] API error:', msg);
       throw new Error(`Gemini API error: ${msg}`);
     }
 
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
     if (!text) throw new Error('Gemini returned an empty response.');
+    console.log(`[AI] Gemini response received (${text.length} chars)`);
     return text;
   }
 }
@@ -992,12 +1031,12 @@ function createProvider(): AIProvider {
   const provider = process.env.AI_PROVIDER || 'mock';
   switch (provider) {
     case 'gemini':
-      try {
-        return new GeminiProvider();
-      } catch (err) {
-        console.error('[gemini] Provider initialisation failed — falling back to mock:', (err as Error).message);
-        return new MockAIProvider();
-      }
+      // No catch-and-fall-back-to-mock here, deliberately: when AI_PROVIDER is
+      // explicitly set to gemini, a misconfigured key must surface as a clear
+      // error (caught by generateAIResponse's caller in app/api/ai/route.ts),
+      // never silently answer with the mock provider instead.
+      console.log('[AI] Provider: Gemini');
+      return new GeminiProvider();
     case 'watsonx':
       try {
         return new WatsonxProvider();
@@ -1012,13 +1051,17 @@ function createProvider(): AIProvider {
       if (provider !== 'mock') {
         console.warn(`[ai] Unknown AI_PROVIDER "${provider}" — falling back to mock`);
       }
+      console.log('[AI] Provider: Mock');
       return new MockAIProvider();
   }
 }
 
 // ─── Exported Service ─────────────────────────────────────────────────────────
-
-const aiProvider = createProvider();
+// Provider is constructed fresh per call rather than as a module-level
+// singleton: GeminiProvider's constructor throws when misconfigured, and a
+// throw during module evaluation would take down the whole route with an
+// opaque Next.js 500 instead of the clear, catchable error the API route is
+// meant to surface to the UI.
 
 export const SYSTEM_PROMPT = `You are ORBITAL's AI Space Analyst — an expert in space missions, spacecraft, and planetary science.
 
@@ -1138,7 +1181,8 @@ export async function generateAIResponse(
   messages: AIMessage[],
   context: AIContext
 ): Promise<string> {
-  return aiProvider.generateResponse(messages, context, SYSTEM_PROMPT);
+  const provider = createProvider();
+  return provider.generateResponse(messages, context, SYSTEM_PROMPT);
 }
 
 export function generateMissionPulse(mission: Mission): string {

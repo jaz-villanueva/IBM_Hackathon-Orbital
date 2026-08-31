@@ -109,10 +109,17 @@ export function AIAnalyst({ context, isOpen, onClose }: AIAnalystProps) {
         }),
       });
       const data = await res.json();
+      // On failure the server sends a specific, already-safe-to-display
+      // reason (e.g. a Gemini configuration problem vs. a rate limit) in
+      // data.error — show that rather than a generic string so a
+      // misconfiguration is actually visible instead of looking like a
+      // normal answer or a vague failure.
       const assistantMsg: AIMessage = {
         id: crypto.randomUUID(),
         role: 'assistant',
-        content: data.content || 'Orbital AI is temporarily unavailable. Please try again.',
+        content: res.ok
+          ? (data.content || 'Orbital AI returned an empty response. Please try again.')
+          : (data.error || "Orbital AI couldn't connect to Gemini right now. Please try again."),
         timestamp: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, assistantMsg]);
