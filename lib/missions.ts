@@ -616,8 +616,8 @@ export const MISSIONS: Mission[] = [
       'Characterize Martian weather and dust',
       'Support Ingenuity helicopter flight operations',
     ],
-    heroImageUrl: 'https://mars.nasa.gov/system/news_items/main_images/9098_PIA24401-16.jpg',
-    thumbnailUrl: 'https://mars.nasa.gov/system/news_items/main_images/9098_PIA24401-16.jpg',
+    heroImageUrl: 'https://images-assets.nasa.gov/image/PIA24401/PIA24401~orig.jpg',
+    thumbnailUrl: 'https://images-assets.nasa.gov/image/PIA24401/PIA24401~thumb.jpg',
     currentLocation: {
       description: 'Jezero Crater, Mars — exploring the ancient lake delta margin',
       label: 'OBSERVED',

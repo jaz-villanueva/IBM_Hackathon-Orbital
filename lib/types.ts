@@ -1,5 +1,7 @@
 // Core type definitions for ORBITAL AI Mission Atlas
 
+import type { OrbitalParams } from './orbital-mechanics';
+
 export type Destination = 'earth' | 'moon' | 'mars' | 'jupiter' | 'saturn' | 'uranus' | 'neptune' | 'deep-space';
 
 export type MissionType =
@@ -228,4 +230,124 @@ export interface AIContext {
   visibleMissions?: Mission[];
   /** Set when the user clicks "Analyze with AI" on a RiskHUD card. */
   selectedRisk?: OrbitalRiskContext;
+  /** Set when the user opens the AI Analyst from a satellite detail page. */
+  selectedSatellite?: SatelliteAIContext;
+}
+
+// ─── Satellite Explorer types ──────────────────────────────────────────────
+
+/** Progressive-disclosure capability for what public observation data exists for a satellite. */
+export type ObservationCapabilityType = 'LIVE_VIDEO' | 'NEAR_REAL_TIME' | 'RADIO' | 'NONE';
+
+export interface ObservationCapability {
+  type: ObservationCapabilityType;
+  /** Human-readable source name, e.g. "NASA", "SatNOGS". */
+  source?: string;
+  /** Deep link to the official source (e.g. NASA's live stream page). */
+  url?: string;
+}
+
+/** Static catalog metadata for a trackable satellite — not orbital data itself. */
+export interface SatelliteCatalogEntry {
+  /** Stable slug id, e.g. 'iss'. */
+  id: string;
+  name: string;
+  shortName?: string;
+  noradId: string;
+  agency?: string;
+  description: string;
+  obsCapability: ObservationCapability;
+  /** Set when this satellite corresponds to an existing Orbital Mission (e.g. 'iss'). */
+  missionId?: string;
+}
+
+/** A single SatNOGS-style radio observation of a satellite pass. */
+export interface SatelliteObservation {
+  id: string;
+  station: string;
+  /** ISO-8601 timestamp of the observation. */
+  time: string;
+  frequencyHz: number;
+  mode: string;
+  signalDbm: number | null;
+  status: 'good' | 'bad' | 'failed' | 'unknown';
+  source: DataSource;
+}
+
+/** Full live orbital state for a satellite, assembled server-side from a CelesTrak GP fetch. */
+export interface SatelliteOrbitalState {
+  noradId: string;
+  name: string;
+  epoch: string;
+  elements: {
+    inclination: DataPoint<number>;
+    eccentricity: DataPoint<number>;
+    meanMotion: DataPoint<number>;
+    raan: DataPoint<number>;
+    argPerigee: DataPoint<number>;
+  };
+  derived: {
+    altitudeKm: DataPoint<number>;
+    periodMin: DataPoint<number>;
+    velocityKmS: DataPoint<number>;
+    apogeeKm: DataPoint<number>;
+    perigeeKm: DataPoint<number>;
+    position: { lat: number; lon: number; label: DataLabel; source: DataSource };
+    groundTrack: Array<{ lat: number; lon: number }>;
+  };
+  /** OBSERVED when this came from a fresh live CelesTrak fetch, ESTIMATED when served from a stale cache/fallback. */
+  dataQuality: DataLabel;
+  fetchedAt: string;
+  /** Present when dataQuality is ESTIMATED — explains why live data wasn't available. */
+  fallbackReason?: string;
+}
+
+export type OrbitRegime = 'LEO' | 'MEO' | 'GEO';
+
+/**
+ * A satellite in the live Earth Mode fleet — assembled server-side by
+ * lib/satellites/fleet.ts from a real CelesTrak group fetch. Carries both
+ * catalog-shaped metadata and the derived quantities needed to render it
+ * (orbitalParams for the 3D scene) and describe it (altitude/velocity/etc.
+ * for the HUD), so the client never has to re-derive anything.
+ */
+export interface FleetSatelliteEntry {
+  id: string;
+  name: string;
+  noradId: string;
+  orbitRegime: OrbitRegime;
+  description: string;
+  obsCapability: ObservationCapability;
+  missionId?: string;
+  orbitalParams: OrbitalParams;
+  altitudeKm: number;
+  velocityKmS: number;
+  periodMin: number;
+  inclinationDeg: number;
+  dataQuality: DataLabel;
+}
+
+/** Flat, pre-computed satellite context injected into the AI copilot — mirrors OrbitalRiskContext. */
+export interface SatelliteAIContext {
+  noradId: string;
+  name: string;
+  altitudeKm: number;
+  velocityKmS: number;
+  periodMin: number;
+  inclinationDeg: number;
+  eccentricity: number;
+  lat: number;
+  lon: number;
+  epoch: string;
+  dataQuality: DataLabel;
+  hasObservations: boolean;
+  latestObservation?: {
+    station: string;
+    time: string;
+    signalDbm: number | null;
+    frequencyMHz: number;
+    mode: string;
+  };
+  /** DERIVED heuristic flags (never AI-labeled — see lib/satellites/anomaly.ts). */
+  anomalyFlags: string[];
 }
