@@ -64,7 +64,10 @@ export async function fetchGpData(noradId: string): Promise<CelesTrakGpRecord> {
   try {
     response = await fetch(
       `${CELESTRAK_BASE}?CATNR=${encodeURIComponent(noradId)}&FORMAT=json`,
-      { signal: AbortSignal.timeout(8000) }
+      // CelesTrak has been observed taking up to ~9s even for a single-satellite
+      // lookup under normal (non-degraded) conditions — 8s was tight enough to
+      // cause spurious failures. Matches the group-fetch timeout below.
+      { signal: AbortSignal.timeout(15000) }
     );
   } catch (err) {
     if (cached) return cached.record; // network hiccup — serve stale cache, caller labels it

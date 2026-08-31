@@ -1,6 +1,7 @@
 'use client';
 
 import { Mission } from '@/lib/types';
+import { PlanetIcon } from './PlanetIcon';
 import { Sparkles, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 
@@ -152,7 +153,7 @@ export function MissionPulse({ earthMissions, moonMissions, marsMissions, jupite
             >
               <div className="flex items-start justify-between mb-3">
                 <div>
-                  <div className="text-2xl mb-1">{cfg.emoji}</div>
+                  <PlanetIcon planet={key} size={28} className="block mb-1.5" />
                   <div className={`text-xs tracking-widest font-semibold ${cfg.color}`}>{cfg.label}</div>
                 </div>
                 <div className="text-right">

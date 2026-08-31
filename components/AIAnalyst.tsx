@@ -14,18 +14,19 @@ interface AIAnalystProps {
 const SUGGESTED_QUESTIONS: Record<string, string[]> = {
   default: [
     "What is happening in space right now?",
-    "What data sources does ORBITAL use?",
+    "How many satellites orbit Earth?",
     "Which missions are studying Mars?",
-    "What's the difference between observed and derived data?",
+    "What's the difference between LEO and GEO?",
   ],
   earth: [
-    "What missions are monitoring Earth's climate?",
-    "Tell me about the ISS crew",
-    "How many Earth observation satellites are active?",
+    "What do Earth observation satellites do?",
+    "Tell me about the ISS",
+    "How does GPS work?",
+    "How do weather satellites help us?",
   ],
   moon: [
     "What missions are currently orbiting the Moon?",
-    "What is Artemis II doing and when does it launch?",
+    "What is Artemis II doing?",
     "What did LRO discover about the Moon?",
   ],
   mars: [
@@ -33,6 +34,14 @@ const SUGGESTED_QUESTIONS: Record<string, string[]> = {
     "What has Perseverance discovered?",
     "Why does Mars have so many orbiters?",
     "Explain the Mars methane mystery",
+  ],
+  satellite: [
+    "What is this satellite?",
+    "Why doesn't it fall down?",
+    "How high is it right now?",
+    "Tell me something cool about it",
+    "Who uses this satellite?",
+    "Explain this like I'm 10",
   ],
 };
 
@@ -63,7 +72,10 @@ export function AIAnalyst({ context, isOpen, onClose }: AIAnalystProps) {
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const planet = context.selectedPlanet || '';
-  const suggestions = SUGGESTED_QUESTIONS[planet] || SUGGESTED_QUESTIONS.default;
+  const hasSatellite = !!context.selectedSatellite;
+  const suggestions = hasSatellite
+    ? SUGGESTED_QUESTIONS.satellite
+    : (SUGGESTED_QUESTIONS[planet] || SUGGESTED_QUESTIONS.default);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -92,6 +104,7 @@ export function AIAnalyst({ context, isOpen, onClose }: AIAnalystProps) {
           missionId: context.selectedMission?.id,
           planet: context.selectedPlanet,
           riskContext: context.selectedRisk,
+          // Pass NORAD id for fleet satellites (numeric) or noradId from catalog
           satelliteId: context.selectedSatellite?.noradId,
         }),
       });
@@ -99,7 +112,7 @@ export function AIAnalyst({ context, isOpen, onClose }: AIAnalystProps) {
       const assistantMsg: AIMessage = {
         id: crypto.randomUUID(),
         role: 'assistant',
-        content: data.content || 'Unable to generate response.',
+        content: data.content || 'Orbital AI is temporarily unavailable. Please try again.',
         timestamp: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, assistantMsg]);
@@ -109,7 +122,7 @@ export function AIAnalyst({ context, isOpen, onClose }: AIAnalystProps) {
         {
           id: crypto.randomUUID(),
           role: 'assistant',
-          content: 'Connection error. Please try again.',
+          content: 'Orbital AI is having trouble connecting right now. Please try again.',
           timestamp: new Date().toISOString(),
         },
       ]);
@@ -138,18 +151,18 @@ export function AIAnalyst({ context, isOpen, onClose }: AIAnalystProps) {
         <div className="flex items-center gap-2 flex-1 min-w-0">
           <Sparkles size={13} className="text-purple-400 shrink-0" />
           <div>
-            <div className="text-[11px] font-semibold text-orbit-white tracking-widest">AI SPACE ANALYST</div>
+            <div className="text-[11px] font-semibold text-orbit-white tracking-widest">✦ ORBITAL AI</div>
             {!minimized && (context.selectedRisk
               ? <div className="text-[9px] text-purple-300/70 mt-0.5 truncate">
                   Risk: {context.selectedRisk.objectAName} ↔ {context.selectedRisk.objectBName}
                 </div>
               : context.selectedSatellite
               ? <div className="text-[9px] text-purple-300/70 mt-0.5 truncate">
-                  Satellite: {context.selectedSatellite.name}
+                  {context.selectedSatellite.name}
                 </div>
               : context.selectedMission && (
                 <div className="text-[9px] text-orbit-dim mt-0.5 truncate">
-                  Context: {context.selectedMission.name}
+                  {context.selectedMission.name}
                 </div>
               )
             )}
@@ -174,13 +187,17 @@ export function AIAnalyst({ context, isOpen, onClose }: AIAnalystProps) {
               <div className="space-y-3">
                 {/* Welcome */}
                 <div className="text-[11px] text-orbit-dim/70 text-center py-2 leading-relaxed">
-                  Ask me about any mission in the atlas. I answer using publicly available data only.
+                  {context.selectedSatellite
+                    ? `Ask me anything about ${context.selectedSatellite.name}.`
+                    : 'Ask about satellites, missions, or space exploration.'}
                 </div>
-                {/* AI label warning */}
+                {/* AI label */}
                 <div className="flex items-start gap-2 p-2.5 rounded-lg bg-purple-400/5 border border-purple-400/20">
                   <Sparkles size={11} className="text-purple-400 mt-0.5 shrink-0" />
                   <div className="text-[10px] text-purple-300/80">
-                    All responses are AI-generated based on curated public mission data. I do not fabricate telemetry.
+                    {context.selectedSatellite
+                      ? 'I can see this satellite\'s live orbital data. I use public CelesTrak data — I never invent numbers.'
+                      : 'Powered by AI · answers based on public space data · I do not fabricate telemetry.'}
                   </div>
                 </div>
 

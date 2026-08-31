@@ -9,6 +9,7 @@ import { MissionPulse } from '@/components/MissionPulse';
 import { MissionCard } from '@/components/MissionCard';
 import { AIAnalyst } from '@/components/AIAnalyst';
 import { RiskHUD, RiskEntry } from '@/components/RiskHUD';
+import { PlanetIcon } from '@/components/PlanetIcon';
 import { EarthTelemetryHUD } from '@/components/satellites/EarthTelemetryHUD';
 import { SatelliteHUDPanel } from '@/components/satellites/SatelliteHUDPanel';
 import { buildSceneObject } from '@/lib/satellites/scene';
@@ -51,7 +52,7 @@ function HomePageInner() {
   /** Ref to the hero / 3D-map section so we can scroll back to it. */
   const heroRef = useRef<HTMLElement>(null);
 
-  // ── Earth Mode: live satellite fleet ────────────────────────────────────
+  // ── Earth Mode: live satellite data ─────────────────────────────────────
   const [fleet, setFleet] = useState<FleetSatelliteEntry[]>([]);
   const [fleetTotals, setFleetTotals] = useState({ total: 0, leo: 0, meo: 0, geo: 0 });
   const [fleetLoading, setFleetLoading] = useState(false);
@@ -115,7 +116,7 @@ function HomePageInner() {
     setAiSatellite(null);
   }, []);
 
-  const handleBackToFleet = useCallback(() => {
+  const handleBackToSatellites = useCallback(() => {
     setSelectedSatelliteId(null);
   }, []);
 
@@ -332,7 +333,7 @@ function HomePageInner() {
         {/* Earth Mode: telemetry-styled HUD replaces the standard planet info panel */}
         {selectedPlanet === 'earth' && (
           selectedSatelliteId ? (
-            <SatelliteHUDPanel id={selectedSatelliteId} onBack={handleBackToFleet} onAskAI={handleAskAISatellite} />
+            <SatelliteHUDPanel id={selectedSatelliteId} onBack={handleBackToSatellites} onAskAI={handleAskAISatellite} />
           ) : (
             <EarthTelemetryHUD
               satellites={fleet}
@@ -418,13 +419,13 @@ function HomePageInner() {
         {/* Bottom orbit controls */}
         <div className="absolute bottom-[64px] left-0 right-0 flex justify-center gap-1.5 flex-wrap px-4 pointer-events-auto">
           {[
-            { id: 'earth',   emoji: '🌎', label: 'EARTH',   color: 'text-blue-400' },
-            { id: 'moon',    emoji: '🌙', label: 'MOON',    color: 'text-slate-300' },
-            { id: 'mars',    emoji: '🔴', label: 'MARS',    color: 'text-orange-400' },
-            { id: 'jupiter', emoji: '🟠', label: 'JUPITER', color: 'text-orange-300' },
-            { id: 'saturn',  emoji: '🪐', label: 'SATURN',  color: 'text-yellow-300' },
-            { id: 'uranus',  emoji: '🔵', label: 'URANUS',  color: 'text-cyan-300' },
-            { id: 'neptune', emoji: '💙', label: 'NEPTUNE', color: 'text-blue-300' },
+            { id: 'earth',   label: 'EARTH',   color: 'text-blue-400' },
+            { id: 'moon',    label: 'MOON',    color: 'text-slate-300' },
+            { id: 'mars',    label: 'MARS',    color: 'text-orange-400' },
+            { id: 'jupiter', label: 'JUPITER', color: 'text-orange-300' },
+            { id: 'saturn',  label: 'SATURN',  color: 'text-yellow-300' },
+            { id: 'uranus',  label: 'URANUS',  color: 'text-cyan-300' },
+            { id: 'neptune', label: 'NEPTUNE', color: 'text-blue-300' },
           ].map((cfg) => (
             <button
               key={cfg.id}
@@ -436,7 +437,7 @@ function HomePageInner() {
                   : 'border-space-border text-orbit-dim hover:text-orbit-white hover:border-space-muted'
               }`}
             >
-              <span>{cfg.emoji}</span>
+              <PlanetIcon planet={cfg.id} size={14} />
               <span>{cfg.label}</span>
             </button>
           ))}
