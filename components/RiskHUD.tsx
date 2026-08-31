@@ -459,7 +459,7 @@ export function RiskHUD({ simulationTimeSec, onAnalyzeWithAI }: RiskHUDProps) {
   // ── Closed: a small persistent pill, never blocks the scene ──────────────
   if (!open) {
     return (
-      <div className="fixed bottom-4 left-4 z-40">
+      <div className="fixed bottom-4 left-4 z-50">
         <button
           onClick={() => setOpen(true)}
           className={clsx(
@@ -484,7 +484,7 @@ export function RiskHUD({ simulationTimeSec, onAnalyzeWithAI }: RiskHUDProps) {
   // ── Open: full floating panel, overlays the scene without restructuring it ──
   return (
     <div className={clsx(
-      'fixed bottom-4 left-4 z-40 animate-slide-up',
+      'fixed bottom-4 left-4 z-50 animate-slide-up',
       'glass rounded-xl border border-space-border shadow-2xl',
       'w-[calc(100vw-2rem)] sm:w-80 flex flex-col max-h-[calc(100vh-6rem)] overflow-hidden',
     )}>

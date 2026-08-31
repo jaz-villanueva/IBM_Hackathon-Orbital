@@ -36,7 +36,12 @@ export function EarthTelemetryHUD({ satellites, totals, loading, error, onSelect
         // bottom orbit-control row. Desktop (sm+): the original fixed-width
         // left-side panel, unchanged.
         'absolute z-20 left-3 right-3 bottom-[124px] top-auto max-h-[42vh]',
-        'sm:left-4 sm:right-auto sm:top-8 sm:bottom-auto sm:w-72 sm:max-h-[calc(100vh-60px)]',
+        // Leave ≥ 72px at the bottom so the Safety Monitor pill (fixed bottom-4,
+        // ~40 px tall) is never hidden behind this panel.
+        // The section top is mt-14 (56 px), top-8 adds 32 px = 88 px from viewport top.
+        // Subtracting 88 px eaten from the top + 72 px reserved at the bottom gives
+        // the usable height for the panel.
+        'sm:left-4 sm:right-auto sm:top-8 sm:bottom-auto sm:w-72 sm:max-h-[calc(100vh-160px)]',
         'animate-slide-up flex flex-col'
       )}
     >

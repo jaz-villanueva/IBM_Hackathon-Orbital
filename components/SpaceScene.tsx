@@ -1022,6 +1022,20 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
     el.addEventListener('wheel', onWheel, { passive: false });
     window.addEventListener('resize', onResize);
 
+    // Reset drag state if the mouse is released anywhere outside the canvas
+    // (e.g. on a UI element above the scene or outside the browser window).
+    // Without this, isDraggingRef can get stuck at `true`, causing the orbit
+    // to continue rotating on every mousemove — and on some Chromium/Windows
+    // builds with hardware-accelerated compositing this stale drag state
+    // prevents fixed-position nav elements (Missions, Timeline) from
+    // receiving pointer events correctly.  Alt+Tab normally flushes the
+    // compositor and happens to clear the symptom, but the right fix is to
+    // keep drag state consistent at the source.
+    const onWindowMouseUp = () => {
+      isDraggingRef.current = false;
+    };
+    window.addEventListener('mouseup', onWindowMouseUp);
+
     // ─── Animation loop ─────────────────────────────────────────────────────
     const animate = () => {
       frameRef.current = requestAnimationFrame(animate);
@@ -1252,6 +1266,7 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
       el.removeEventListener('mouseup', onMouseUp);
       el.removeEventListener('wheel', onWheel);
       window.removeEventListener('resize', onResize);
+      window.removeEventListener('mouseup', onWindowMouseUp);
       renderer.dispose();
       if (el.contains(renderer.domElement)) el.removeChild(renderer.domElement);
       document.body.style.cursor = '';
@@ -1463,7 +1478,7 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
   // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
-    <div className="relative w-full h-full select-none" ref={mountRef}>
+    <div className="relative w-full h-full select-none pointer-events-auto" ref={mountRef}>
 
       {/* Tooltip */}
       {tooltip && (

@@ -308,7 +308,7 @@ function HomePageInner() {
       {/* Hero Section — 3D Visualization */}
       <section ref={heroRef} className="relative h-[calc(100vh-3.5rem)] mt-14 overflow-hidden">
         {/* Scene */}
-        <div className="absolute inset-0">
+        <div className="absolute inset-0 pointer-events-none">
           <SpaceScene
             selectedPlanet={selectedPlanet}
             missions={MISSIONS}
