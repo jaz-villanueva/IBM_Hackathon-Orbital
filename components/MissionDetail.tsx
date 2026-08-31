@@ -3,6 +3,7 @@
 import { Mission, Spacecraft, DataSource } from '@/lib/types';
 import { MissionTimeline } from './MissionTimeline';
 import { DataProvenance, DataSourcePanel, DataLegend } from './DataProvenance';
+import { getSatelliteCatalogEntryByNoradId } from '@/lib/satellites/catalog';
 import Link from 'next/link';
 import { ArrowLeft, ExternalLink, Globe, Sparkles, ImageOff } from 'lucide-react';
 import { useState } from 'react';
@@ -206,6 +207,15 @@ function SpacecraftCard({ sc }: { sc: Spacecraft }) {
             </div>
           )}
         </div>
+      )}
+      {sc.noradId && getSatelliteCatalogEntryByNoradId(sc.noradId) && (
+        <Link
+          href={`/satellites/${getSatelliteCatalogEntryByNoradId(sc.noradId)!.id}`}
+          className="flex items-center justify-center gap-2 mt-1 py-2 rounded-lg bg-orbit-blue/10 border border-orbit-blue/20 text-orbit-blue hover:bg-orbit-blue/15 transition-colors text-[11px] font-medium tracking-wider"
+        >
+          <Radar size={12} />
+          TRACK {sc.name.toUpperCase()} LIVE
+        </Link>
       )}
     </div>
   );

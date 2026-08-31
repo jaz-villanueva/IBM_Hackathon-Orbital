@@ -9,9 +9,14 @@ import { MissionPulse } from '@/components/MissionPulse';
 import { MissionCard } from '@/components/MissionCard';
 import { AIAnalyst } from '@/components/AIAnalyst';
 import { RiskHUD, RiskEntry } from '@/components/RiskHUD';
+import { PlanetIcon } from '@/components/PlanetIcon';
+import { EarthTelemetryHUD } from '@/components/satellites/EarthTelemetryHUD';
+import { SatelliteHUDPanel } from '@/components/satellites/SatelliteHUDPanel';
+import { buildSceneObject } from '@/lib/satellites/scene';
 import { MISSIONS, getMissionsByDestination } from '@/lib/missions';
-import { Mission, AIContext, OrbitalRiskContext } from '@/lib/types';
+import { Mission, AIContext, OrbitalRiskContext, FleetSatelliteEntry, SatelliteAIContext } from '@/lib/types';
 import { Sparkles, ChevronRight, ArrowRight, Database, ChevronDown } from 'lucide-react';
+import type { ExtraOrbiter } from '@/components/SpaceScene';
 
 // Dynamically import ThreeJS scene to avoid SSR issues
 const SpaceScene = dynamic(() => import('@/components/SpaceScene').then((m) => ({ default: m.SpaceScene })), {
@@ -41,12 +46,101 @@ const PLANET_LABELS: Record<string, { title: string; desc: string; color: string
 function HomePageInner() {
   const searchParams   = useSearchParams();
   const planetParam    = searchParams.get('planet');
+  const satelliteParam = searchParams.get('satellite');
 
   const [selectedPlanet, setSelectedPlanet] = useState<string | null>(null);
   const [selectedMission, setSelectedMission] = useState<Mission | null>(null);
   const [aiOpen, setAiOpen] = useState(false);
   /** Ref to the hero / 3D-map section so we can scroll back to it. */
   const heroRef = useRef<HTMLElement>(null);
+
+  // ── Earth Mode: live satellite data ─────────────────────────────────────
+  const [fleet, setFleet] = useState<FleetSatelliteEntry[]>([]);
+  const [fleetTotals, setFleetTotals] = useState({ total: 0, leo: 0, meo: 0, geo: 0 });
+  const [fleetLoading, setFleetLoading] = useState(false);
+  const [fleetError, setFleetError] = useState<string | null>(null);
+  const [selectedSatelliteId, setSelectedSatelliteId] = useState<string | null>(null);
+  const [aiSatellite, setAiSatellite] = useState<SatelliteAIContext | null>(null);
+  /** One-off ExtraOrbiter for a deep-linked/selected satellite not present in the fetched fleet groups. */
+  const [deepLinkOrbiter, setDeepLinkOrbiter] = useState<ExtraOrbiter | null>(null);
+
+  // Fetch the live fleet once, the first time Earth is selected.
+  useEffect(() => {
+    if (selectedPlanet !== 'earth' || fleet.length > 0 || fleetLoading) return;
+    setFleetLoading(true);
+    setFleetError(null);
+    fetch('/api/satellites/fleet')
+      .then(async (res) => {
+        const json = await res.json();
+        if (json.error) setFleetError(json.error);
+        setFleet(json.satellites || []);
+        setFleetTotals(json.totals || { total: 0, leo: 0, meo: 0, geo: 0 });
+      })
+      .catch(() => setFleetError('Could not reach the Orbital server for live satellite data.'))
+      .finally(() => setFleetLoading(false));
+  }, [selectedPlanet, fleet.length, fleetLoading]);
+
+  // A satellite selected via the HUD/3D click that isn't in the fetched fleet groups
+  // (e.g. a deep-linked catalog satellite like Terra) still needs a scene entry for
+  // the 3D marker/camera focus — fetch its params once and merge them in.
+  useEffect(() => {
+    if (!selectedSatelliteId) { setDeepLinkOrbiter(null); return; }
+    if (fleet.some((s) => s.id === selectedSatelliteId)) { setDeepLinkOrbiter(null); return; }
+    let cancelled = false;
+    fetch(`/api/satellites/${selectedSatelliteId}`)
+      .then(async (res) => {
+        const json = await res.json();
+        if (cancelled || !json.orbitalParams || !json.catalog) return;
+        setDeepLinkOrbiter({
+          id: selectedSatelliteId,
+          params: json.orbitalParams,
+          sceneObject: buildSceneObject({ id: selectedSatelliteId, name: json.catalog.name, shortName: json.catalog.shortName, agency: json.catalog.agency, missionId: json.catalog.missionId }),
+        });
+      })
+      .catch(() => { /* HUD panel already surfaces its own error; camera focus just degrades gracefully */ });
+    return () => { cancelled = true; };
+  }, [selectedSatelliteId, fleet]);
+
+  const extraOrbiters = useMemo<ExtraOrbiter[]>(() => {
+    const fromFleet = fleet.map((s) => ({
+      id: s.id,
+      params: s.orbitalParams,
+      sceneObject: buildSceneObject({ id: s.id, name: s.name, missionId: s.missionId, orbitRegime: s.orbitRegime }),
+    }));
+    if (deepLinkOrbiter && !fromFleet.some((o) => o.id === deepLinkOrbiter.id)) {
+      return [...fromFleet, deepLinkOrbiter];
+    }
+    return fromFleet;
+  }, [fleet, deepLinkOrbiter]);
+
+  const handleSelectSatellite = useCallback((id: string) => {
+    setSelectedSatelliteId(id);
+    setAiSatellite(null);
+  }, []);
+
+  const handleBackToSatellites = useCallback(() => {
+    setSelectedSatelliteId(null);
+  }, []);
+
+  const handleAskAISatellite = useCallback((sat: SatelliteAIContext) => {
+    setAiSatellite(sat);
+    setAiOpen(true);
+  }, []);
+
+  /** SpaceScene's onObjectSelect — fires for ANY clicked object, mission or not. */
+  const handleObjectSelect = useCallback((obj: { missionId: string } | null) => {
+    if (!obj) { setSelectedSatelliteId(null); return; }
+    setSelectedSatelliteId(obj.missionId);
+    setAiSatellite(null);
+  }, []);
+
+  // Deep link: /?satellite=<id> selects Earth Mode with that satellite focused.
+  useEffect(() => {
+    if (satelliteParam) {
+      setSelectedPlanet('earth');
+      setSelectedSatelliteId(satelliteParam);
+    }
+  }, [satelliteParam]);
 
   /**
    * When arriving via /?planet=earth (i.e. from the top nav on another route),
@@ -94,6 +188,7 @@ function HomePageInner() {
       ? getMissionsByDestination(selectedPlanet)
       : MISSIONS.filter((m) => ['active', 'science-operations', 'surface-operations'].includes(m.status)),
     selectedRisk: activeRisk ?? undefined,
+    selectedSatellite: aiSatellite ?? undefined,
   };
 
   /**
@@ -103,6 +198,7 @@ function HomePageInner() {
    */
   const handlePlanetSelect = useCallback((planet: string) => {
     const dest = planet === '' || planet === 'home' ? null : planet;
+    setSelectedSatelliteId(null);
     setSelectedPlanet(prev => {
       if (dest !== null && prev === dest) {
         setSelectedMission(null);
@@ -161,6 +257,7 @@ function HomePageInner() {
       e.preventDefault();
       setSelectedPlanet(null);
       setSelectedMission(null);
+      setSelectedSatelliteId(null);
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
@@ -210,6 +307,9 @@ function HomePageInner() {
             onMissionSelect={setSelectedMission}
             selectedMission={selectedMission}
             onSimTimeUpdate={handleSimTimeUpdate}
+            extraOrbiters={extraOrbiters}
+            onObjectSelect={handleObjectSelect}
+            focusedOrbiterId={selectedPlanet === 'earth' ? selectedSatelliteId : null}
           />
         </div>
 
@@ -234,8 +334,23 @@ function HomePageInner() {
           </p>
         </div>
 
-        {/* Planet info panel (when selected) */}
-        {selectedPlanet && PLANET_LABELS[selectedPlanet] && (
+        {/* Earth Mode: telemetry-styled HUD replaces the standard planet info panel */}
+        {selectedPlanet === 'earth' && (
+          selectedSatelliteId ? (
+            <SatelliteHUDPanel id={selectedSatelliteId} onBack={handleBackToSatellites} onAskAI={handleAskAISatellite} />
+          ) : (
+            <EarthTelemetryHUD
+              satellites={fleet}
+              totals={fleetTotals}
+              loading={fleetLoading}
+              error={fleetError}
+              onSelect={handleSelectSatellite}
+            />
+          )
+        )}
+
+        {/* Planet info panel (Moon/Mars/outer planets — unchanged) */}
+        {selectedPlanet && selectedPlanet !== 'earth' && PLANET_LABELS[selectedPlanet] && (
           <div className="absolute top-[110px] right-[15px] animate-slide-up">
             <div className="glass rounded-xl p-5 w-64 border border-space-border">
               <div className={`text-[10px] tracking-widest font-semibold mb-1 ${PLANET_LABELS[selectedPlanet].color}`}>
@@ -328,7 +443,7 @@ function HomePageInner() {
                   : 'border-space-border text-orbit-dim hover:text-orbit-white hover:border-space-muted'
               }`}
             >
-              <span>{cfg.emoji}</span>
+              <PlanetIcon planet={cfg.id} size={14} />
               <span>{cfg.label}</span>
             </button>
           ))}
@@ -470,7 +585,7 @@ function HomePageInner() {
       <AIAnalyst
         context={aiContext}
         isOpen={aiOpen}
-        onClose={() => { setAiOpen(false); setActiveRisk(null); }}
+        onClose={() => { setAiOpen(false); setActiveRisk(null); setAiSatellite(null); }}
       />
 
       {/* Orbital Safety Monitor HUD */}
