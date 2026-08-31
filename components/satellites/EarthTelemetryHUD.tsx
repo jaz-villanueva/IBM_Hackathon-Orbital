@@ -30,19 +30,19 @@ export function EarthTelemetryHUD({ satellites, totals, loading, error, onSelect
   );
 
   return (
-    <div className="absolute top-[110px] left-4 z-20 w-72 animate-slide-up">
-      <div className="glass rounded-xl border border-space-border overflow-hidden flex flex-col max-h-[min(560px,calc(100%-160px))]">
+    <div className="absolute top-[110px] left-4 z-20 w-72 max-h-[calc(100vh-190px)] animate-slide-up flex flex-col">
+      <div className="glass rounded-xl border border-space-border overflow-hidden flex flex-col min-h-0 flex-1">
         {/* Header */}
         <div className="p-4 border-b border-space-border shrink-0">
-          <div className="text-[10px] text-orbit-dim tracking-widest mb-1">EARTH · ORBITAL ENVIRONMENT</div>
+          <div className="text-[10px] text-orbit-cyan tracking-widest mb-1 font-medium">EARTH · ORBITAL ENVIRONMENT</div>
           <div className="flex items-end gap-2">
             <div className="text-2xl font-light text-orbit-white leading-none">{loading ? '—' : totals.total}</div>
-            <div className="text-[9px] text-orbit-dim tracking-wider mb-0.5">TRACKED SATELLITES</div>
+            <div className="text-[10px] text-orbit-dim tracking-wider mb-0.5">TRACKED SATELLITES</div>
           </div>
           {!loading && !error && (
-            <div className="flex items-center gap-1.5 mt-2 text-[9px]">
-              <span className="px-1.5 py-0.5 rounded text-emerald-400 bg-emerald-400/8 border border-emerald-400/30 tracking-widest">OBSERVED</span>
-              <span className="text-orbit-dim/60">CelesTrak live orbital data</span>
+            <div className="flex items-center gap-1.5 mt-2 text-[10px]">
+              <span className="px-1.5 py-0.5 rounded text-emerald-400 bg-emerald-400/10 border border-emerald-400/30 tracking-widest font-medium">LIVE</span>
+              <span className="text-orbit-dim">CelesTrak orbital data</span>
             </div>
           )}
           {error && (
@@ -90,24 +90,25 @@ export function EarthTelemetryHUD({ satellites, totals, loading, error, onSelect
           ))}
         </div>
 
-        {/* List */}
-        <div className="overflow-y-auto flex-1">
+        {/* List — min-h-0 lets this actually shrink to its flex share and scroll,
+            instead of the panel's overflow-hidden silently clipping the bottom rows. */}
+        <div className="overflow-y-auto min-h-0 flex-1">
           {loading && (
-            <div className="p-4 text-center text-[11px] text-orbit-dim">Loading live satellite data…</div>
+            <div className="p-4 text-center text-[12px] text-orbit-dim">Loading live satellite data…</div>
           )}
           {!loading && filtered.length === 0 && (
-            <div className="p-4 text-center text-[11px] text-orbit-dim">No satellites in this filter.</div>
+            <div className="p-4 text-center text-[12px] text-orbit-dim">No satellites in this filter.</div>
           )}
           {filtered.map((s) => (
             <button
               key={s.id}
               onClick={() => onSelect(s.id)}
-              className="w-full flex items-center gap-2.5 px-4 py-2 hover:bg-white/5 transition-colors text-left"
+              className="w-full flex items-center gap-2.5 px-4 py-2.5 hover:bg-white/5 transition-colors text-left group"
             >
-              <span className={clsx('w-1.5 h-1.5 rounded-full shrink-0', REGIME_DOT[s.orbitRegime])} />
+              <span className={clsx('w-2 h-2 rounded-full shrink-0 transition-transform group-hover:scale-125', REGIME_DOT[s.orbitRegime])} />
               <span className="flex-1 min-w-0">
-                <span className="block text-[12px] text-orbit-white truncate">{s.name}</span>
-                <span className="block text-[9px] text-orbit-dim/70 font-mono">NORAD {s.noradId} · {Math.round(s.altitudeKm)} km</span>
+                <span className="block text-[13px] text-orbit-white/90 group-hover:text-orbit-white truncate">{s.name}</span>
+                <span className="block text-[10px] text-orbit-dim font-mono mt-0.5">NORAD {s.noradId} · {Math.round(s.altitudeKm)} km</span>
               </span>
             </button>
           ))}
