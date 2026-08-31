@@ -884,23 +884,9 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
       if (focusedId) {
         const tracked = objectsRef.current.get(focusedId);
         if (tracked) {
-          // CRITICAL FIX: use world-space position, not local-space.
-          // model.position is relative to the scene root but was set to
-          // world position each frame so this was correct; however using
-          // getWorldPosition guarantees correctness regardless of parenting.
-          const wp = new THREE.Vector3();
-          tracked.model.getWorldPosition(wp);
-          o.tTarget.copy(wp);
-          // Adaptive focus radius: GEO satellites are much further from Earth
-          // than LEO, so a fixed focus radius would leave them tiny dots.
-          // Use the actual distance from the Earth centre (bodyWorldPos 'earth')
-          // to pick a suitable close-up distance.
-          const earthPos = bodyWorldPos.current.get('earth') ?? new THREE.Vector3();
-          const satDistFromEarth = wp.distanceTo(earthPos);
-          // SATELLITE_FOCUS_RADIUS was tuned for LEO (~1.35 scene units).
-          // Scale proportionally so GEO (~3.3 units) gets a larger radius.
-          const adaptiveRadius = Math.max(SATELLITE_FOCUS_RADIUS, satDistFromEarth * 0.18);
-          o.tRadius = adaptiveRadius;
+          const focusPos = tracked.model.visible ? tracked.model.position : tracked.sprite.position;
+          o.tTarget.copy(focusPos);
+          o.tRadius = SATELLITE_FOCUS_RADIUS;
         }
       }
 
@@ -1293,10 +1279,10 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
       )}
 
       {/* Mission Popup */}
-      {/* Earth Mode uses the parent-owned SatelliteDetailPanel instead of this floating
-          popup — a non-catalog satellite (e.g. a GPS satellite) has no Mission record
+      {/* Earth Mode uses the parent-owned SatelliteHUDPanel instead of this floating
+          popup — a fleet-only satellite (e.g. a GPS satellite) has no Mission record
           and can't resolve selectedMissionData anyway, but even for Orbital missions
-          like ISS, Earth's selection surface is the detail panel, not this card. */}
+          like ISS, Earth's selection surface is the HUD, not this card. */}
       {selectedObject && selectedMissionData && popupPos && selectedPlanet !== 'earth' && (
         <MissionPopup
           obj={selectedObject}
@@ -1441,13 +1427,13 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
         <div className="glass border border-space-border/50 rounded-lg p-3 text-right">
           <div className="text-[9px] text-orbit-dim tracking-widest mb-2">TRACKED OBJECTS</div>
           {([
-            { key: 'earth',   label: 'EARTH',   color: 'text-blue-400' },
-            { key: 'moon',    label: 'MOON',    color: 'text-slate-300' },
-            { key: 'mars',    label: 'MARS',    color: 'text-orange-400' },
-            { key: 'jupiter', label: 'JUPITER', color: 'text-orange-300' },
-            { key: 'saturn',  label: 'SATURN',  color: 'text-yellow-300' },
-            { key: 'uranus',  label: 'URANUS',  color: 'text-cyan-300' },
-            { key: 'neptune', label: 'NEPTUNE', color: 'text-blue-300' },
+            { key: 'earth',   label: '🌎 EARTH',   color: 'text-blue-400' },
+            { key: 'moon',    label: '🌙 MOON',    color: 'text-slate-300' },
+            { key: 'mars',    label: '🔴 MARS',    color: 'text-orange-400' },
+            { key: 'jupiter', label: '🟠 JUPITER', color: 'text-orange-300' },
+            { key: 'saturn',  label: '🪐 SATURN',  color: 'text-yellow-300' },
+            { key: 'uranus',  label: '🔵 URANUS',  color: 'text-cyan-300' },
+            { key: 'neptune', label: '💙 NEPTUNE', color: 'text-blue-300' },
           ] as const).map(({ key, label, color }) => (
             <div key={key} className="flex items-center justify-between gap-4">
               <span className={`text-[9px] ${color} tracking-wider`}>{label}</span>

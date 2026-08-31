@@ -89,7 +89,7 @@ const DEST_CONFIG = {
   },
   neptune: {
     label: 'NEPTUNE',
-    emoji: '🌐',
+    emoji: '💙',
     color: 'text-blue-300',
     bg: 'bg-blue-300/10',
     border: 'border-blue-300/20',

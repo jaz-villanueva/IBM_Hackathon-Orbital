@@ -8,8 +8,6 @@ const nextConfig = {
       { protocol: 'https', hostname: 'www.nasa.gov' },
       { protocol: 'https', hostname: 'solarsystem.nasa.gov' },
       { protocol: 'https', hostname: 'science.nasa.gov' },
-      { protocol: 'https', hostname: 'www.esa.int' },
-      { protocol: 'https', hostname: 'esatellites.org' },
     ],
   },
   serverExternalPackages: [],

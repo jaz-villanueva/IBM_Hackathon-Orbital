@@ -151,7 +151,6 @@ export function MissionDetail({ mission }: MissionDetailProps) {
             src={mission.heroImageUrl}
             alt={mission.name}
             className="w-full h-full object-cover opacity-50"
-            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
           />
         ) : (
           <div className="w-full h-full bg-space-navy" />
