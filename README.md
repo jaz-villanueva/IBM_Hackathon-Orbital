@@ -315,13 +315,4 @@ orbital/
 
 ---
 
-
-## Team
-
-- Maria Nicole Decano — UI / Documentation
-- Ram Jacob De Mesa — Frontend / 3D Visualization
-- Ron John Galvez — AI / Backend / Data / APIs
-- Jonida Metaj — Risk Analysis
-- Jaz Villanueva — AI / Backend / Data / APIs
-
 ---
