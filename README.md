@@ -312,7 +312,3 @@ orbital/
 ├── package.json                       # Next.js scripts and dependencies
 └── next.config.js, tsconfig.json, tailwind.config.ts, postcss.config.js
 ```
-
----
-
----
