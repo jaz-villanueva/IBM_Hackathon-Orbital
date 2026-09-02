@@ -2,6 +2,8 @@
 
 > **"See what humanity is doing in space."**
 
+![ORBITAL](public/orbital.png)
+
 An AI-powered interactive catalog of active human space missions across Earth, Moon, Mars, and the wider solar system, built for the IBM Bob AI Challenge.
 
 ---
