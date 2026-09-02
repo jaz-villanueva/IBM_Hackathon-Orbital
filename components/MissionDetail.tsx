@@ -30,16 +30,33 @@ function HeroSection({
   mission: Mission;
   status: { dot: string; label: string; text: string };
 }) {
-  const [imgFailed, setImgFailed] = useState(false);
+  // Falls back heroImageUrl → thumbnailUrl (the two verified sources already
+  // on every mission) → a plain backdrop. Never a generic/unrelated image.
+  const [tier, setTier] = useState<'hero' | 'thumb' | 'none'>('hero');
+  const src =
+    tier === 'hero'  ? mission.heroImageUrl :
+    tier === 'thumb' ? mission.thumbnailUrl :
+    undefined;
+  const handleError = () => {
+    if (tier === 'hero' && mission.thumbnailUrl && mission.thumbnailUrl !== mission.heroImageUrl) {
+      setTier('thumb');
+    } else {
+      setTier('none');
+    }
+  };
   return (
     <div className="relative h-64 md:h-80 overflow-hidden">
-      {mission.heroImageUrl && !imgFailed ? (
+      {src ? (
+        // Deliberately object-cover here (unlike the card grid): this is a
+        // dimmed, gradient-overlaid backdrop behind the title text, not a
+        // "look closely at the spacecraft" image — cropping doesn't lose
+        // anything the viewer needs, and cover fills the wide banner cleanly.
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={mission.heroImageUrl}
+          src={src}
           alt={mission.name}
           className="w-full h-full object-cover opacity-50"
-          onError={() => setImgFailed(true)}
+          onError={handleError}
         />
       ) : (
         <div className="w-full h-full bg-space-navy" />

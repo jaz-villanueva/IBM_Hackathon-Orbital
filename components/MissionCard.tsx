@@ -40,23 +40,49 @@ const TYPE_LABELS: Record<string, string> = {
   flyby: 'FLYBY',
 };
 
+/**
+ * Which image source to try. Falls back thumbnailUrl → heroImageUrl (the two
+ * verified sources already on every mission) → a deliberate placeholder.
+ * Never falls back to a generic/unrelated image — an incorrect image is
+ * worse than no image.
+ */
 function CardThumbnail({ mission }: { mission: Mission }) {
-  const [imgFailed, setImgFailed] = useState(false);
+  const [tier, setTier] = useState<'thumb' | 'hero' | 'none'>('thumb');
   const dest = mission.destination;
+
+  const src =
+    tier === 'thumb' ? mission.thumbnailUrl :
+    tier === 'hero'  ? mission.heroImageUrl :
+    undefined;
+
+  const handleError = () => {
+    // thumbnailUrl and heroImageUrl are frequently the same verified URL —
+    // skip straight to the placeholder rather than retrying an identical URL.
+    if (tier === 'thumb' && mission.heroImageUrl && mission.heroImageUrl !== mission.thumbnailUrl) {
+      setTier('hero');
+    } else {
+      setTier('none');
+    }
+  };
+
   return (
     <div className="relative h-32 bg-space-deep overflow-hidden">
-      {mission.thumbnailUrl && !imgFailed ? (
+      {src ? (
+        // object-contain (not cover): these are mission/spacecraft renderings,
+        // not scenery — the whole spacecraft should stay visible rather than
+        // being cropped to fill the card.
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={mission.thumbnailUrl}
+          src={src}
           alt={mission.name}
-          className="w-full h-full object-cover opacity-70 group-hover:opacity-90 transition-opacity duration-300"
+          className="w-full h-full object-contain opacity-80 group-hover:opacity-100 transition-opacity duration-300"
           loading="lazy"
-          onError={() => setImgFailed(true)}
+          onError={handleError}
         />
       ) : (
-        <div className="w-full h-full flex items-center justify-center">
-          <Satellite size={32} className="text-space-border" />
+        <div className="w-full h-full flex flex-col items-center justify-center gap-1.5">
+          <Satellite size={28} className="text-space-border" />
+          <span className="text-[8px] text-orbit-dim/50 tracking-widest">MISSION IMAGE UNAVAILABLE</span>
         </div>
       )}
       {/* Destination badge */}

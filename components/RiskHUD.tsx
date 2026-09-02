@@ -418,7 +418,7 @@ export function RiskHUD({ simulationTimeSec, onAnalyzeWithAI }: RiskHUDProps) {
   // bring it back. Replaces the old separate minimize+dismiss states,
   // which used to have a dead end (dismissed had no way back without a
   // page reload).
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(true);
   const [pairsInfoOpen, setPairsInfoOpen] = useState(false);
 
   // Keep the latest simulationTimeSec in a ref so the interval callback
@@ -459,7 +459,7 @@ export function RiskHUD({ simulationTimeSec, onAnalyzeWithAI }: RiskHUDProps) {
   // ── Closed: a small persistent pill, never blocks the scene ──────────────
   if (!open) {
     return (
-      <div className="fixed bottom-4 left-4 z-50">
+      <div className="fixed bottom-4 left-4 z-40">
         <button
           onClick={() => setOpen(true)}
           className={clsx(
@@ -484,9 +484,14 @@ export function RiskHUD({ simulationTimeSec, onAnalyzeWithAI }: RiskHUDProps) {
   // ── Open: full floating panel, overlays the scene without restructuring it ──
   return (
     <div className={clsx(
-      'fixed bottom-4 left-4 z-50 animate-slide-up',
+      // Mobile: cleared above the (always single-row, horizontally-scrollable)
+      // bottom planet-nav rather than sitting right on top of it. Desktop
+      // (sm+): the planet-nav reserves its own margins away from this corner
+      // (see the bottom-nav zone in app/page.tsx), so the original bottom-4
+      // is safe again.
+      'fixed bottom-[124px] left-4 right-4 sm:bottom-4 sm:right-auto z-40 animate-slide-up',
       'glass rounded-xl border border-space-border shadow-2xl',
-      'w-[calc(100vw-2rem)] sm:w-80 flex flex-col max-h-[calc(100vh-6rem)] overflow-hidden',
+      'w-auto sm:w-80 flex flex-col max-h-[calc(100vh-11rem)] sm:max-h-[calc(100vh-6rem)] overflow-hidden',
     )}>
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}

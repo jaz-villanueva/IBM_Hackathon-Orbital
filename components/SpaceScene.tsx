@@ -27,7 +27,7 @@
 import { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import * as THREE from 'three';
 import Link from 'next/link';
-import { Search, X, Layers, ChevronDown, ChevronUp, Sparkles, Clock, Play } from 'lucide-react';
+import { Search, X, Layers, ChevronDown, ChevronUp, Sparkles, Clock, Play, Satellite, Rocket, Eye } from 'lucide-react';
 import { MISSIONS, searchMissions } from '@/lib/missions';
 import { ALL_SCENE_OBJECTS, SceneObject, ObjectType } from '@/lib/spacecraft-positions';
 import {
@@ -74,6 +74,13 @@ export interface ExtraOrbiter {
   sceneObject: SceneObject;
 }
 
+/**
+ * Which visualization layers the main scene renders. Controls rendering
+ * only — live data (fleet fetch, mission catalog) keeps loading regardless
+ * of which layers are currently shown.
+ */
+export type VisualizationMode = 'satellites' | 'missions' | 'both';
+
 interface SpaceSceneProps {
   selectedPlanet: string | null;
   missions: Mission[];
@@ -110,6 +117,12 @@ interface SpaceSceneProps {
    */
   focusedMissionId?: string | null;
   // Note: onMissionSelect kept nullable for popup close compatibility
+  /** Which visualization layers to render. Controlled by the parent (default 'both' if omitted). */
+  visMode?: VisualizationMode;
+  /** Called when the user changes the visualization mode via the in-scene toggle. */
+  onVisModeChange?: (mode: VisualizationMode) => void;
+  /** Called when the user clicks the AI Analyst control in the scene's right-side stack. */
+  onOpenAIAnalyst?: () => void;
 }
 
 // ─── Scene constants ──────────────────────────────────────────────────────────
@@ -322,7 +335,7 @@ function getBodyPos(id: string, bodyWorldPos: Map<string, THREE.Vector3>): THREE
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, selectedMission, onSimTimeUpdate, extraOrbiters, onObjectSelect, focusedOrbiterId, focusedMissionId }: SpaceSceneProps) {
+export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, selectedMission, onSimTimeUpdate, extraOrbiters, onObjectSelect, focusedOrbiterId, focusedMissionId, visMode = 'both', onVisModeChange, onOpenAIAnalyst }: SpaceSceneProps) {
   const mountRef      = useRef<HTMLDivElement>(null);
   const rendererRef   = useRef<THREE.WebGLRenderer | null>(null);
   const sceneRef      = useRef<THREE.Scene | null>(null);
@@ -426,8 +439,15 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
   // When a planet/moon is selected, only show missions belonging to that destination.
   const visibleObjects = useMemo(() => {
     const extraIds = new Set((extraOrbiters ?? []).map((e) => e.id));
+    // A mission like ISS is both a static catalog mission AND a live-tracked
+    // satellite (it's in the fleet's 'stations' group). When both layers are
+    // shown, dedupe in favour of the live version so it isn't double-rendered.
+    // In MISSIONS-only mode there's no live layer to dedupe against, so the
+    // static mission version is kept — otherwise a mission that also happens
+    // to be a tracked satellite would vanish entirely under "missions".
+    const dedupeAgainstSatellites = visMode !== 'missions';
     const base = ALL_SCENE_OBJECTS.filter(obj => {
-      if (extraIds.has(obj.missionId)) return false; // extraOrbiters take precedence — avoid duplicate markers/rings
+      if (dedupeAgainstSatellites && extraIds.has(obj.missionId)) return false;
       if (obj.status === 'completed') return false;
       if (!typeFilters[obj.objectType]) return false;
       if (!statusFilters[obj.status as keyof typeof statusFilters]) return false;
@@ -436,8 +456,11 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
       if (selectedPlanet && obj.destination !== selectedPlanet) return false;
       return true;
     });
-    return [...base, ...(extraOrbiters ?? []).map((e) => e.sceneObject)];
-  }, [typeFilters, statusFilters, destFilters, selectedPlanet, extraOrbiters]);
+    const satellites = (extraOrbiters ?? []).map((e) => e.sceneObject);
+    if (visMode === 'satellites') return satellites;
+    if (visMode === 'missions') return base;
+    return [...base, ...satellites];
+  }, [typeFilters, statusFilters, destFilters, selectedPlanet, extraOrbiters, visMode]);
 
   const counts = useMemo(() => {
     const c = { mercury: 0, venus: 0, earth: 0, moon: 0, mars: 0, jupiter: 0, saturn: 0, uranus: 0, neptune: 0 };
@@ -1022,20 +1045,6 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
     el.addEventListener('wheel', onWheel, { passive: false });
     window.addEventListener('resize', onResize);
 
-    // Reset drag state if the mouse is released anywhere outside the canvas
-    // (e.g. on a UI element above the scene or outside the browser window).
-    // Without this, isDraggingRef can get stuck at `true`, causing the orbit
-    // to continue rotating on every mousemove — and on some Chromium/Windows
-    // builds with hardware-accelerated compositing this stale drag state
-    // prevents fixed-position nav elements (Missions, Timeline) from
-    // receiving pointer events correctly.  Alt+Tab normally flushes the
-    // compositor and happens to clear the symptom, but the right fix is to
-    // keep drag state consistent at the source.
-    const onWindowMouseUp = () => {
-      isDraggingRef.current = false;
-    };
-    window.addEventListener('mouseup', onWindowMouseUp);
-
     // ─── Animation loop ─────────────────────────────────────────────────────
     const animate = () => {
       frameRef.current = requestAnimationFrame(animate);
@@ -1266,7 +1275,6 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
       el.removeEventListener('mouseup', onMouseUp);
       el.removeEventListener('wheel', onWheel);
       window.removeEventListener('resize', onResize);
-      window.removeEventListener('mouseup', onWindowMouseUp);
       renderer.dispose();
       if (el.contains(renderer.domElement)) el.removeChild(renderer.domElement);
       document.body.style.cursor = '';
@@ -1381,6 +1389,27 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visibleObjects, extraOrbiters]);
 
+  // ─── Clear a selection that just became invisible ──────────────────────────
+  // Fires whenever visibleObjects changes (visualization mode, Mission Layers
+  // filters, or planet selection) — if the currently-selected object is no
+  // longer among them, clear the selection/popup rather than leaving the
+  // camera or HUD referencing an object with no marker in the scene. Checks
+  // both missionId AND isLiveSatellite so a mission that also happens to be a
+  // live satellite (e.g. ISS) is treated as a different object when its
+  // representation changes between modes, not just when it disappears.
+  useEffect(() => {
+    if (!selectedObject) return;
+    const stillVisible = visibleObjects.some(
+      (o) => o.missionId === selectedObject.missionId && !!o.isLiveSatellite === !!selectedObject.isLiveSatellite
+    );
+    if (!stillVisible) {
+      setSelectedObject(null);
+      setPopupPos(null);
+      onObjectSelect?.(null);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visibleObjects]);
+
   // ─── Orbit path when mission object selected ──────────────────────────────
 
   useEffect(() => {
@@ -1478,7 +1507,7 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
   // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
-    <div className="relative w-full h-full select-none pointer-events-auto" ref={mountRef}>
+    <div className="relative w-full h-full select-none" ref={mountRef}>
 
       {/* Tooltip */}
       {tooltip && (
@@ -1507,9 +1536,17 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
         />
       )}
 
-      {/* ── Simulation Clock ── */}
-      <div className="absolute top-[385px] right-4 z-20">
-        <div className="glass border border-space-border/70 rounded-lg px-3 py-2 space-y-1.5">
+      {/* ── LEFT ZONE: Simulation Clock, Legend, Data provenance, controls hint —
+          one flowing stack instead of four independently bottom/top-pinned
+          divs, so none of them can drift into overlapping the same space
+          (that was the bug: the old bottom-[10px] and bottom-[20px] blocks
+          genuinely overlapped each other). Anchored below the hero title,
+          growing downward, well clear of the bottom planet-nav/Safety zone. ── */}
+      <div
+        className="absolute top-[375px] left-10 z-20 flex flex-col gap-2 max-w-[210px] max-h-[calc(100vh-505px)] overflow-y-auto"
+        style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(100,116,139,0.4) transparent' }}
+      >
+        <div className="shrink-0 glass border border-space-border/70 rounded-lg px-3 py-2 space-y-1.5">
           <div className="flex items-center gap-2">
             <Clock size={10} className="text-orbit-dim" />
             <span className="text-[9px] text-orbit-dim tracking-widest">SIMULATION CLOCK</span>
@@ -1540,11 +1577,29 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
             <div className="text-[9px] text-emerald-400/70 tracking-wider">REAL TIME</div>
           )}
         </div>
-      </div>
 
-      {/* ── Data provenance ── */}
-      <div className="absolute bottom-[65px] left-4 z-20">
-        <div className="glass border border-space-border/40 rounded px-2 py-1">
+        <div className="shrink-0 pointer-events-none space-y-1">
+          <div className="text-[8px] text-orbit-dim/50 tracking-widest mb-1">LEGEND</div>
+          {[
+            { color: '#22c55e', label: 'Active' },
+            { color: '#3b82f6', label: 'Science ops' },
+            { color: '#f59e0b', label: 'Surface ops' },
+            { color: '#60a5fa', label: 'Planned' },
+            { color: '#64748b', label: 'Completed' },
+          ].map(({ color, label }) => (
+            <div key={label} className="flex items-center gap-2 text-[10px] text-orbit-dim tracking-wider">
+              <div className="w-2 h-2 rounded-full" style={{ background: color }} />
+              <span>{label}</span>
+            </div>
+          ))}
+          {selectedObject?.isOrbiter && (
+            <div className="pt-1 border-t border-space-border/30 mt-1 text-[9px] text-orbit-blue/80 tracking-wider">
+              ORBIT PATH SHOWN
+            </div>
+          )}
+        </div>
+
+        <div className="shrink-0 glass border border-space-border/40 rounded px-2 py-1">
           <div className="text-[8px] text-orbit-dim/60 tracking-widest">
             PLANETS · DERIVED · JPL KEPLERIAN ELEMENTS (1800–2050)
           </div>
@@ -1552,94 +1607,141 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
             SPACECRAFT · DERIVED · KEPLERIAN PROPAGATION
           </div>
         </div>
-      </div>
 
-      {/* ── Search ── */}
-      <div className="absolute top-4 right-4 z-20 w-56">
-        <div className="relative">
-          <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-orbit-dim pointer-events-none" />
-          <input
-            type="text" value={searchQuery}
-            onChange={e => handleSearch(e.target.value)}
-            placeholder="Search missions..."
-            className="w-full glass border border-space-border rounded-lg pl-7 pr-8 py-2 text-[11px] text-orbit-white placeholder:text-orbit-dim/50 outline-none focus:border-orbit-blue/50 tracking-wide"
-          />
-          {searchQuery && (
-            <button onClick={() => { setSearchQuery(''); setSearchResults([]); }}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-orbit-dim hover:text-orbit-white">
-              <X size={11} />
-            </button>
+        {/* Least essential item — placed last so it's the first to scroll out
+            of view on short viewports, rather than something more useful. */}
+        <div className="shrink-0 text-[10px] text-orbit-dim/40 tracking-wider pointer-events-none">
+          <div>DRAG to rotate · SCROLL to zoom</div>
+          <div>CLICK planet or spacecraft</div>
+          {simSpeed > 1 && (
+            <div className="mt-1 text-amber-400/50">SIM SPEED {simSpeed}×</div>
           )}
         </div>
-        {searchResults.length > 0 && (
-          <div className="mt-1 glass border border-space-border rounded-lg overflow-hidden">
-            {searchResults.map(m => (
-              <button key={m.id} onClick={() => handleSearchSelect(m)}
-                className="w-full flex items-center gap-2 px-3 py-2 hover:bg-white/5 text-left border-b border-space-border/30 last:border-0">
-                <span className="text-[9px] text-orbit-dim capitalize w-10 shrink-0">{m.destination}</span>
-                <span className="text-[11px] text-orbit-white truncate">{m.shortName || m.name}</span>
+      </div>
+
+      {/* ── RIGHT ZONE: Search, Mission Layers, View toggle, Tracked Objects,
+          AI Analyst, AI Mission Pulse — one scrollable flex column so that
+          any item growing (search results, an open filter panel, an AI
+          response) pushes the items below it down within the column instead
+          of overlapping a sibling pinned at its own fixed offset (the old
+          bug). Scrolls internally rather than overflowing the viewport on
+          shorter screens. ── */}
+      <div
+        className="absolute top-4 right-4 z-20 w-56 flex flex-col gap-2 max-h-[calc(100vh-8rem)] overflow-y-auto"
+        style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(100,116,139,0.4) transparent' }}
+      >
+        {/* Search */}
+        <div className="shrink-0">
+          <div className="relative">
+            <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-orbit-dim pointer-events-none" />
+            <input
+              type="text" value={searchQuery}
+              onChange={e => handleSearch(e.target.value)}
+              placeholder="Search missions..."
+              className="w-full glass border border-space-border rounded-lg pl-7 pr-8 py-2 text-[11px] text-orbit-white placeholder:text-orbit-dim/50 outline-none focus:border-orbit-blue/50 tracking-wide"
+            />
+            {searchQuery && (
+              <button onClick={() => { setSearchQuery(''); setSearchResults([]); }}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-orbit-dim hover:text-orbit-white">
+                <X size={11} />
+              </button>
+            )}
+          </div>
+          {searchResults.length > 0 && (
+            <div className="mt-1 glass border border-space-border rounded-lg overflow-hidden">
+              {searchResults.map(m => (
+                <button key={m.id} onClick={() => handleSearchSelect(m)}
+                  className="w-full flex items-center gap-2 px-3 py-2 hover:bg-white/5 text-left border-b border-space-border/30 last:border-0">
+                  <span className="text-[9px] text-orbit-dim capitalize w-10 shrink-0">{m.destination}</span>
+                  <span className="text-[11px] text-orbit-white truncate">{m.shortName || m.name}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Mission Layers filter */}
+        <div className="shrink-0">
+          <button onClick={() => setFiltersOpen(p => !p)}
+            className="w-full flex items-center justify-between glass border border-space-border rounded-lg px-3 py-2 text-[10px] text-orbit-dim hover:text-orbit-white tracking-wider">
+            <div className="flex items-center gap-2"><Layers size={11} /><span>MISSION LAYERS</span></div>
+            {filtersOpen ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
+          </button>
+
+          {filtersOpen && (
+            <div className="mt-1 glass border border-space-border rounded-lg p-3 space-y-3 max-h-72 overflow-y-auto">
+              <div>
+                <div className="text-[9px] text-orbit-dim tracking-widest mb-1.5">OBJECT TYPE</div>
+                <div className="space-y-1">
+                  {(Object.keys(typeFilters) as ObjectType[]).map(type => (
+                    <label key={type} className="flex items-center gap-2 cursor-pointer group">
+                      <input type="checkbox" checked={typeFilters[type]} className="w-3 h-3 accent-blue-500"
+                        onChange={e => setTypeFilters(p => ({ ...p, [type]: e.target.checked }))} />
+                      <span className="text-[10px] text-orbit-dim group-hover:text-orbit-white capitalize tracking-wide">{type}s</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <div className="text-[9px] text-orbit-dim tracking-widest mb-1.5">STATUS</div>
+                <div className="space-y-1">
+                  {(Object.keys(statusFilters) as (keyof typeof statusFilters)[]).map(s => (
+                    <label key={s} className="flex items-center gap-2 cursor-pointer group">
+                      <input type="checkbox" checked={statusFilters[s]} className="w-3 h-3 accent-blue-500"
+                        onChange={e => setStatusFilters(p => ({ ...p, [s]: e.target.checked }))} />
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-1.5 h-1.5 rounded-full" style={{ background: hexToCSS(STATUS_COLOR[s]) }} />
+                        <span className="text-[10px] text-orbit-dim group-hover:text-orbit-white capitalize tracking-wide">{s}</span>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <div className="text-[9px] text-orbit-dim tracking-widest mb-1.5">DESTINATION</div>
+                <div className="space-y-1">
+                  {(['mercury', 'venus', 'earth', 'moon', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune'] as const).map(d => (
+                    <label key={d} className="flex items-center gap-2 cursor-pointer group">
+                      <input type="checkbox" checked={destFilters[d]} className="w-3 h-3 accent-blue-500"
+                        onChange={e => setDestFilters(p => ({ ...p, [d]: e.target.checked }))} />
+                      <span className="text-[10px] text-orbit-dim group-hover:text-orbit-white capitalize tracking-wide">{d}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Visualization toggle */}
+        <div className="shrink-0 glass border border-space-border rounded-lg px-3 py-2">
+          <div className="text-[9px] text-orbit-dim tracking-widest mb-1.5">VIEW</div>
+          <div className="grid grid-cols-3 gap-1">
+            {([
+              { mode: 'satellites' as VisualizationMode, label: 'SATS',  icon: Satellite, title: 'Show spacecraft' },
+              { mode: 'missions'   as VisualizationMode, label: 'MSNS',  icon: Rocket,    title: 'Show missions' },
+              { mode: 'both'       as VisualizationMode, label: 'BOTH',  icon: Eye,       title: 'Show everything' },
+            ]).map(({ mode, label, icon: Icon, title }) => (
+              <button
+                key={mode}
+                onClick={() => onVisModeChange?.(mode)}
+                title={title}
+                aria-pressed={visMode === mode}
+                className={`flex flex-col items-center gap-0.5 py-1.5 rounded border text-[8px] tracking-wider transition-colors ${
+                  visMode === mode
+                    ? 'bg-orbit-blue/20 border-orbit-blue/50 text-orbit-blue'
+                    : 'border-space-border/50 text-orbit-dim hover:text-orbit-white'
+                }`}
+              >
+                <Icon size={12} />
+                {label}
               </button>
             ))}
           </div>
-        )}
-      </div>
+        </div>
 
-      {/* ── Mission Layers filter ── */}
-      <div className="absolute top-16 right-4 z-20 w-56">
-        <button onClick={() => setFiltersOpen(p => !p)}
-          className="w-full flex items-center justify-between glass border border-space-border rounded-lg px-3 py-2 text-[10px] text-orbit-dim hover:text-orbit-white tracking-wider">
-          <div className="flex items-center gap-2"><Layers size={11} /><span>MISSION LAYERS</span></div>
-          {filtersOpen ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
-        </button>
-
-        {filtersOpen && (
-          <div className="mt-1 glass border border-space-border rounded-lg p-3 space-y-3 max-h-72 overflow-y-auto">
-            <div>
-              <div className="text-[9px] text-orbit-dim tracking-widest mb-1.5">OBJECT TYPE</div>
-              <div className="space-y-1">
-                {(Object.keys(typeFilters) as ObjectType[]).map(type => (
-                  <label key={type} className="flex items-center gap-2 cursor-pointer group">
-                    <input type="checkbox" checked={typeFilters[type]} className="w-3 h-3 accent-blue-500"
-                      onChange={e => setTypeFilters(p => ({ ...p, [type]: e.target.checked }))} />
-                    <span className="text-[10px] text-orbit-dim group-hover:text-orbit-white capitalize tracking-wide">{type}s</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-            <div>
-              <div className="text-[9px] text-orbit-dim tracking-widest mb-1.5">STATUS</div>
-              <div className="space-y-1">
-                {(Object.keys(statusFilters) as (keyof typeof statusFilters)[]).map(s => (
-                  <label key={s} className="flex items-center gap-2 cursor-pointer group">
-                    <input type="checkbox" checked={statusFilters[s]} className="w-3 h-3 accent-blue-500"
-                      onChange={e => setStatusFilters(p => ({ ...p, [s]: e.target.checked }))} />
-                    <div className="flex items-center gap-1.5">
-                      <div className="w-1.5 h-1.5 rounded-full" style={{ background: hexToCSS(STATUS_COLOR[s]) }} />
-                      <span className="text-[10px] text-orbit-dim group-hover:text-orbit-white capitalize tracking-wide">{s}</span>
-                    </div>
-                  </label>
-                ))}
-              </div>
-            </div>
-            <div>
-              <div className="text-[9px] text-orbit-dim tracking-widest mb-1.5">DESTINATION</div>
-              <div className="space-y-1">
-                {(['mercury', 'venus', 'earth', 'moon', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune'] as const).map(d => (
-                  <label key={d} className="flex items-center gap-2 cursor-pointer group">
-                    <input type="checkbox" checked={destFilters[d]} className="w-3 h-3 accent-blue-500"
-                      onChange={e => setDestFilters(p => ({ ...p, [d]: e.target.checked }))} />
-                    <span className="text-[10px] text-orbit-dim group-hover:text-orbit-white capitalize tracking-wide">{d}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* ── Mission Counter ── */}
-      <div className="absolute bottom-28 right-4 z-20">
-        <div className="glass border border-space-border/50 rounded-lg p-3 text-right">
+        {/* Mission Counter */}
+        <div className="shrink-0 glass border border-space-border/50 rounded-lg p-3 text-right">
           <div className="text-[9px] text-orbit-dim tracking-widest mb-2">TRACKED OBJECTS</div>
           {([
             { key: 'mercury', label: 'MERCURY', color: 'text-stone-400' },
@@ -1665,55 +1767,33 @@ export function SpaceScene({ selectedPlanet, onPlanetSelect, onMissionSelect, se
             <span className="text-[11px] font-semibold text-orbit-white tabular-nums">{counts.mercury + counts.venus + counts.earth + counts.moon + counts.mars + counts.jupiter + counts.saturn + counts.uranus + counts.neptune}</span>
           </div>
         </div>
-      </div>
 
-      {/* ── AI Mission Pulse ── */}
-      <div className="absolute bottom-4 right-4 z-20 max-w-xs">
-        <button onClick={handleAIPulse} disabled={aiPulseLoading}
-          className="flex items-center gap-2 px-4 py-2.5 glass rounded-lg border border-purple-400/30 text-purple-400 hover:bg-purple-400/10 transition-colors text-xs tracking-wider disabled:opacity-50">
-          <Sparkles size={13} className={aiPulseLoading ? 'animate-spin' : ''} />
-          <span>AI MISSION PULSE</span>
-        </button>
-        {aiPulseText && (
-          <div className="mt-2 glass border border-purple-400/20 rounded-lg p-3 text-[11px] text-orbit-dim leading-relaxed animate-slide-up">
-            <div className="flex items-start justify-between gap-2 mb-1">
-              <span className="text-[9px] text-purple-400 tracking-widest">AI ANALYSIS</span>
-              <button onClick={() => setAiPulseText(null)} className="text-orbit-dim hover:text-orbit-white"><X size={10} /></button>
-            </div>
-            {aiPulseText}
-          </div>
+        {/* AI Analyst */}
+        {onOpenAIAnalyst && (
+          <button onClick={onOpenAIAnalyst}
+            className="shrink-0 flex items-center justify-center gap-2 px-4 py-2.5 glass rounded-lg border border-purple-400/30 text-purple-400 hover:bg-purple-400/10 transition-colors text-xs tracking-wider">
+            <Sparkles size={13} />
+            <span>AI ANALYST</span>
+          </button>
         )}
-      </div>
 
-      {/* ── Bottom legend ── */}
-      <div className={`absolute bottom-[100px] left-4 space-y-1 pointer-events-none z-10 transition-opacity duration-300 ${selectedPlanet === 'earth' ? 'opacity-0' : 'opacity-100'}`}>
-        <div className="text-[8px] text-orbit-dim/50 tracking-widest mb-1">LEGEND</div>
-        {[
-          { color: '#22c55e', label: 'Active' },
-          { color: '#3b82f6', label: 'Science ops' },
-          { color: '#f59e0b', label: 'Surface ops' },
-          { color: '#60a5fa', label: 'Planned' },
-          { color: '#64748b', label: 'Completed' },
-        ].map(({ color, label }) => (
-          <div key={label} className="flex items-center gap-2 text-[10px] text-orbit-dim tracking-wider">
-            <div className="w-2 h-2 rounded-full" style={{ background: color }} />
-            <span>{label}</span>
-          </div>
-        ))}
-        <div className="pt-1 border-t border-space-border/30 mt-1">
-          {selectedObject?.isOrbiter && (
-            <div className="text-[9px] text-orbit-blue/80 tracking-wider">ORBIT PATH SHOWN</div>
+        {/* AI Mission Pulse */}
+        <div className="shrink-0">
+          <button onClick={handleAIPulse} disabled={aiPulseLoading}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 glass rounded-lg border border-purple-400/30 text-purple-400 hover:bg-purple-400/10 transition-colors text-xs tracking-wider disabled:opacity-50">
+            <Sparkles size={13} className={aiPulseLoading ? 'animate-spin' : ''} />
+            <span>AI MISSION PULSE</span>
+          </button>
+          {aiPulseText && (
+            <div className="mt-2 glass border border-purple-400/20 rounded-lg p-3 text-[11px] text-orbit-dim leading-relaxed animate-slide-up">
+              <div className="flex items-start justify-between gap-2 mb-1">
+                <span className="text-[9px] text-purple-400 tracking-widest">AI ANALYSIS</span>
+                <button onClick={() => setAiPulseText(null)} className="text-orbit-dim hover:text-orbit-white"><X size={10} /></button>
+              </div>
+              {aiPulseText}
+            </div>
           )}
         </div>
-      </div>
-
-      {/* Controls hint */}
-      <div className={`absolute bottom-[220px] left-4 text-[10px] text-orbit-dim/40 tracking-wider pointer-events-none z-10 transition-opacity duration-300 ${selectedPlanet === 'earth' ? 'opacity-0' : 'opacity-100'}`}>
-        <div>DRAG to rotate · SCROLL to zoom</div>
-        <div>CLICK planet or spacecraft</div>
-        {simSpeed > 1 && (
-          <div className="mt-1 text-amber-400/50">SIM SPEED {simSpeed}×</div>
-        )}
       </div>
     </div>
   );

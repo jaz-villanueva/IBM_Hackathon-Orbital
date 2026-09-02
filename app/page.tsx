@@ -15,8 +15,8 @@ import { SatelliteHUDPanel } from '@/components/satellites/SatelliteHUDPanel';
 import { buildSceneObject } from '@/lib/satellites/scene';
 import { MISSIONS, getMissionsByDestination } from '@/lib/missions';
 import { Mission, AIContext, OrbitalRiskContext, FleetSatelliteEntry, SatelliteAIContext } from '@/lib/types';
-import { Sparkles, ChevronRight, ArrowRight, Database, ChevronDown } from 'lucide-react';
-import type { ExtraOrbiter } from '@/components/SpaceScene';
+import { ChevronRight, ArrowRight, Database, ChevronDown } from 'lucide-react';
+import type { ExtraOrbiter, VisualizationMode } from '@/components/SpaceScene';
 
 // Dynamically import ThreeJS scene to avoid SSR issues
 const SpaceScene = dynamic(() => import('@/components/SpaceScene').then((m) => ({ default: m.SpaceScene })), {
@@ -64,6 +64,22 @@ function HomePageInner() {
   const [aiSatellite, setAiSatellite] = useState<SatelliteAIContext | null>(null);
   /** One-off ExtraOrbiter for a deep-linked/selected satellite not present in the fetched fleet groups. */
   const [deepLinkOrbiter, setDeepLinkOrbiter] = useState<ExtraOrbiter | null>(null);
+
+  // ── Main-scene visualization toggle: which layers SpaceScene renders.
+  // Controls rendering only — the fleet fetch above and the mission catalog
+  // keep loading/updating regardless of this value.
+  const [visMode, setVisMode] = useState<VisualizationMode>('both');
+
+  // Satellites disappear entirely in 'missions' mode — if one is currently
+  // selected/focused (via a 3D click OR the EarthTelemetryHUD list, which
+  // SpaceScene's own internal selection-clearing effect can't see), clear it
+  // here so the camera doesn't keep tracking a now-invisible object.
+  useEffect(() => {
+    if (visMode === 'missions' && selectedSatelliteId) {
+      setSelectedSatelliteId(null);
+      setAiSatellite(null);
+    }
+  }, [visMode, selectedSatelliteId]);
 
   // Fetch the live fleet once, as soon as the page loads — not gated behind
   // clicking Earth first. The fleet endpoint alone takes several seconds
@@ -226,7 +242,6 @@ function HomePageInner() {
     if (dest) setSelectedPlanet(dest);
     setSelectedMission(mission);
     setFocusedMissionId(mission.id);
-    setSelectedSatelliteId(null); // clear satellite HUD so the mission focus takes effect
   }, []);
 
   // Called by RiskHUD when user clicks "Analyze with AI" on a conjunction card.
@@ -308,7 +323,7 @@ function HomePageInner() {
       {/* Hero Section — 3D Visualization */}
       <section ref={heroRef} className="relative h-[calc(100vh-3.5rem)] mt-14 overflow-hidden">
         {/* Scene */}
-        <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute inset-0">
           <SpaceScene
             selectedPlanet={selectedPlanet}
             missions={MISSIONS}
@@ -319,7 +334,10 @@ function HomePageInner() {
             extraOrbiters={extraOrbiters}
             onObjectSelect={handleObjectSelect}
             focusedOrbiterId={selectedPlanet === 'earth' ? selectedSatelliteId : null}
-            focusedMissionId={focusedMissionId}
+            focusedMissionId={selectedPlanet !== 'earth' ? focusedMissionId : null}
+            visMode={visMode}
+            onVisModeChange={setVisMode}
+            onOpenAIAnalyst={() => setAiOpen(true)}
           />
         </div>
 
@@ -327,8 +345,8 @@ function HomePageInner() {
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-space-black pointer-events-none" />
         <div className="absolute inset-0 bg-gradient-to-r from-space-black/20 via-transparent to-space-black/20 pointer-events-none" />
 
-        {/* Top-left hero copy — hidden when Earth is selected (satellite widget occupies this space) */}
-        <div className={`absolute top-8 left-6 md:left-10 pointer-events-none transition-opacity duration-300 ${selectedPlanet === 'earth' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+        {/* Top-left hero copy */}
+        <div className="absolute top-8 left-6 md:left-10 pointer-events-none">
           <div className="text-[9px] text-orbit-dim tracking-widest mb-2 font-mono">ORBITAL · AI MISSION ATLAS</div>
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-extralight text-orbit-white tracking-wider leading-none">
             SEE WHAT
@@ -364,8 +382,8 @@ function HomePageInner() {
           )
         )}
 
-        {/* Planet info panel — shown for all selected planets, including Earth (when no satellite is focused) */}
-        {selectedPlanet && PLANET_LABELS[selectedPlanet] && !(selectedPlanet === 'earth' && selectedSatelliteId) && (
+        {/* Planet info panel (Moon/Mars/outer planets — unchanged) */}
+        {selectedPlanet && selectedPlanet !== 'earth' && PLANET_LABELS[selectedPlanet] && (
           <div className="absolute top-[110px] right-[15px] animate-slide-up">
             <div className="glass rounded-xl p-5 w-64 border border-space-border">
               <div className={`text-[10px] tracking-widest font-semibold mb-1 ${PLANET_LABELS[selectedPlanet].color}`}>
@@ -435,13 +453,17 @@ function HomePageInner() {
           </div>
         )}
 
-        {/* Bottom orbit controls — a single horizontally-scrollable row on
-            mobile (a wrapped multi-row layout has unpredictable height,
-            which risks colliding with the satellite HUD panels' bottom-sheet
-            positioning on small screens); the original centered, wrapping
-            row is unchanged at sm+. */}
+        {/* Bottom-center planet navigation — a reserved zone of its own,
+            with the SpaceScene left utility stack and its right-side control
+            stack explicitly excluded (sm:left-[352px]/sm:right-[256px]) so a
+            wide centered row can never spill into either. Always a single
+            horizontally-scrollable row rather than wrapping: wrapping gives
+            the row an unpredictable height depending on how many buttons fit
+            per line, which is exactly what let it collide with whatever sits
+            above it — a fixed single-row height is stable at every tested
+            viewport size (1024px up), not just mobile. */}
         <div
-          className="absolute bottom-[64px] left-0 right-0 flex justify-start sm:justify-center gap-1.5 flex-nowrap sm:flex-wrap overflow-x-auto sm:overflow-visible px-4 pointer-events-auto"
+          className="absolute bottom-[64px] left-0 right-0 sm:left-[352px] sm:right-[256px] flex justify-start sm:justify-center gap-1.5 flex-nowrap overflow-x-auto px-4 pointer-events-auto"
           style={{ scrollbarWidth: 'none' }}
         >
           {[
@@ -482,14 +504,6 @@ function HomePageInner() {
           </button>
         </div>
 
-        {/* AI Analyst button — kept for deep conversation mode */}
-        <button
-          onClick={() => setAiOpen(true)}
-          className="absolute bottom-16 right-4 flex items-center gap-2 px-4 py-2.5 glass rounded-lg border border-purple-400/30 text-purple-400 hover:bg-purple-400/10 transition-colors text-xs tracking-wider"
-        >
-          <Sparkles size={13} />
-          <span>AI ANALYST</span>
-        </button>
       </section>
 
       {/* Content below the hero */}

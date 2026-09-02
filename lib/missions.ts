@@ -120,8 +120,11 @@ export const MISSIONS: Mission[] = [
       'Study atmospheric composition and clouds',
       'Understand the global carbon and water cycles',
     ],
-    heroImageUrl: 'https://images-assets.nasa.gov/image/PIA01349/PIA01349~orig.jpg',
-    thumbnailUrl: 'https://images-assets.nasa.gov/image/PIA01349/PIA01349~thumb.jpg',
+    // PIA01349 was "Color Image of Death Valley, California from SIR-C" — a
+    // radar image, not Terra itself. Replaced with the actual spacecraft.
+    // Source: Wikimedia Commons, "Artistic rendering of the Terra satellite" (NASA).
+    heroImageUrl: 'https://upload.wikimedia.org/wikipedia/commons/9/92/Terra_spacecraft_model.png',
+    thumbnailUrl: 'https://upload.wikimedia.org/wikipedia/commons/9/92/Terra_spacecraft_model.png',
     currentLocation: {
       description: 'Sun-synchronous orbit, ~705 km altitude',
       label: 'DERIVED',
@@ -190,8 +193,10 @@ export const MISSIONS: Mission[] = [
       'Track atmospheric water vapor and precipitation',
       'Observe polar ice changes',
     ],
-    heroImageUrl: 'https://images-assets.nasa.gov/image/0201490/0201490~orig.jpg',
-    thumbnailUrl: 'https://images-assets.nasa.gov/image/0201490/0201490~thumb.jpg',
+    // 0201490 was a generic "Space Science" placeholder, not Aqua itself.
+    // Source: NASA/JPL-Caltech, "Aqua Satellite Orbiting Earth Artist Concept" (PIA18156).
+    heroImageUrl: 'https://images-assets.nasa.gov/image/PIA18156/PIA18156~orig.jpg',
+    thumbnailUrl: 'https://images-assets.nasa.gov/image/PIA18156/PIA18156~thumb.jpg',
     currentLocation: {
       description: 'Sun-synchronous orbit, ~705 km altitude',
       label: 'DERIVED',
@@ -260,8 +265,12 @@ export const MISSIONS: Mission[] = [
       'Support water resource management',
       'Track forest changes and agricultural production',
     ],
-    heroImageUrl: 'https://images-assets.nasa.gov/image/GSFC_20171208_Archive_e001925/GSFC_20171208_Archive_e001925~orig.jpg',
-    thumbnailUrl: 'https://images-assets.nasa.gov/image/GSFC_20171208_Archive_e001925/GSFC_20171208_Archive_e001925~thumb.jpg',
+    // GSFC_20171208_Archive_e001925 was "The Two-faced Whirlpool Galaxy" — a
+    // galaxy image, completely unrelated to Landsat 9. Replaced with an
+    // actual pre-launch photo of the spacecraft.
+    // Source: NASA, "Landsat 9 Spacecraft Mate to EPSA" (KSC-20210811-PH-RNB01_0028).
+    heroImageUrl: 'https://images-assets.nasa.gov/image/KSC-20210811-PH-RNB01_0028/KSC-20210811-PH-RNB01_0028~orig.jpg',
+    thumbnailUrl: 'https://images-assets.nasa.gov/image/KSC-20210811-PH-RNB01_0028/KSC-20210811-PH-RNB01_0028~thumb.jpg',
     currentLocation: {
       description: 'Sun-synchronous orbit, ~705 km altitude',
       label: 'DERIVED',
@@ -426,8 +435,11 @@ export const MISSIONS: Mission[] = [
       'Search for water ice in permanently shadowed polar regions',
       'Measure lunar temperatures',
     ],
-    heroImageUrl: 'https://images-assets.nasa.gov/image/PIA14021/PIA14021~orig.jpg',
-    thumbnailUrl: 'https://images-assets.nasa.gov/image/PIA14021/PIA14021~thumb.jpg',
+    // PIA14021 was a lunar farside mosaic (a photo LRO took), not the LRO
+    // spacecraft itself. Replaced with an actual spacecraft illustration.
+    // Source: Wikimedia Commons, "Illustration of LRO" (NASA).
+    heroImageUrl: 'https://upload.wikimedia.org/wikipedia/commons/9/95/Lunar_Reconnaissance_Orbiter_001.jpg',
+    thumbnailUrl: 'https://upload.wikimedia.org/wikipedia/commons/9/95/Lunar_Reconnaissance_Orbiter_001.jpg',
     currentLocation: {
       description: 'Polar orbit around the Moon, ~50–200 km altitude',
       label: 'DERIVED',
@@ -495,8 +507,11 @@ export const MISSIONS: Mission[] = [
       'Map permanently shadowed regions with NASA\'s ShadowCam',
       'Test deep-space communications',
     ],
-    heroImageUrl: 'https://images-assets.nasa.gov/image/as8-14-2392/as8-14-2392~orig.jpg',
-    thumbnailUrl: 'https://images-assets.nasa.gov/image/as8-14-2392/as8-14-2392~thumb.jpg',
+    // as8-14-2392 is an Apollo 8 "Earthrise"-type photo from 1968 — over 50
+    // years before KPLO/Danuri existed. Replaced with an actual spacecraft rendering.
+    // Source: Wikimedia Commons, "A rendered image of KPLO" (KARI).
+    heroImageUrl: 'https://upload.wikimedia.org/wikipedia/commons/e/e9/Kplo_rendered_image.png',
+    thumbnailUrl: 'https://upload.wikimedia.org/wikipedia/commons/e/e9/Kplo_rendered_image.png',
     currentLocation: {
       description: 'Polar orbit around the Moon, ~100 km altitude',
       label: 'DERIVED',
@@ -563,8 +578,11 @@ export const MISSIONS: Mission[] = [
       'Test technologies for future Mars missions',
       'Expand international partnerships in deep space',
     ],
-    heroImageUrl: 'https://images-assets.nasa.gov/image/jsc2025e037586/jsc2025e037586~orig.jpg',
-    thumbnailUrl: 'https://images-assets.nasa.gov/image/jsc2025e037586/jsc2025e037586~thumb.jpg',
+    // jsc2025e037586 was "The Lunar Gateway Launch Map" — a map/diagram, not
+    // a spacecraft rendering. Replaced with an actual configuration illustration.
+    // Source: NASA, "Gateway Configuration Illustrations" (KSC-20240716-PH-NAS01_0002).
+    heroImageUrl: 'https://images-assets.nasa.gov/image/KSC-20240716-PH-NAS01_0002/KSC-20240716-PH-NAS01_0002~medium.jpg',
+    thumbnailUrl: 'https://images-assets.nasa.gov/image/KSC-20240716-PH-NAS01_0002/KSC-20240716-PH-NAS01_0002~medium.jpg',
     phases: [
       { id: 'development', name: 'Development & Integration', description: 'PPE and HALO development and integration', isCurrent: true },
       { id: 'launch', name: 'First Launch', description: 'PPE and HALO launch on Falcon Heavy', isFuture: true },
@@ -624,8 +642,12 @@ export const MISSIONS: Mission[] = [
       'Characterize Martian weather and dust',
       'Support Ingenuity helicopter flight operations',
     ],
-    heroImageUrl: 'https://images-assets.nasa.gov/image/PIA24546/PIA24546~orig.jpg',
-    thumbnailUrl: 'https://images-assets.nasa.gov/image/PIA24546/PIA24546~thumb.jpg',
+    // PIA24546 ("Mastcam-Z Views Santa Cruz on Mars") is Martian terrain
+    // photographed BY Perseverance, not an image of the rover itself.
+    // Replaced with an actual rover selfie.
+    // Source: NASA/JPL-Caltech/MSSS, "Perseverance's Selfie with Ingenuity" (PIA24542).
+    heroImageUrl: 'https://images-assets.nasa.gov/image/PIA24542/PIA24542~orig.jpg',
+    thumbnailUrl: 'https://images-assets.nasa.gov/image/PIA24542/PIA24542~thumb.jpg',
     currentLocation: {
       description: 'Jezero Crater, Mars — exploring the ancient lake delta margin',
       label: 'OBSERVED',
@@ -809,8 +831,11 @@ export const MISSIONS: Mission[] = [
       'Understand how Martian climate evolved over time',
       'Serve as a communications relay for surface missions',
     ],
-    heroImageUrl: 'https://images-assets.nasa.gov/image/PIA18922/PIA18922~orig.jpg',
-    thumbnailUrl: 'https://images-assets.nasa.gov/image/PIA18922/PIA18922~thumb.jpg',
+    // PIA18922 was "Dawn Blue Glow Artist Concept" — that's the Dawn mission
+    // (asteroid belt), not MAVEN. Replaced with an actual MAVEN rendering.
+    // Source: NASA/JPL-Caltech, "MAVEN Artist Concept" (PIA17487).
+    heroImageUrl: 'https://images-assets.nasa.gov/image/PIA17487/PIA17487~orig.jpg',
+    thumbnailUrl: 'https://images-assets.nasa.gov/image/PIA17487/PIA17487~thumb.jpg',
     currentLocation: {
       description: 'Elliptical orbit around Mars',
       label: 'DERIVED',
@@ -881,8 +906,11 @@ export const MISSIONS: Mission[] = [
       'Search for evidence of past water',
       'Serve as communications relay for surface missions',
     ],
-    heroImageUrl: 'https://images-assets.nasa.gov/image/PIA10216/PIA10216~orig.jpg',
-    thumbnailUrl: 'https://images-assets.nasa.gov/image/PIA10216/PIA10216~thumb.jpg',
+    // PIA10216 was "Spirit West Valley Panorama" — a Spirit rover surface
+    // photo, not MRO (an orbiter). Replaced with an actual MRO rendering.
+    // Source: NASA/JPL-Caltech, "Mars Reconnaissance Orbiter, Front View Artist Concept" (PIA07245).
+    heroImageUrl: 'https://images-assets.nasa.gov/image/PIA07245/PIA07245~orig.jpg',
+    thumbnailUrl: 'https://images-assets.nasa.gov/image/PIA07245/PIA07245~thumb.jpg',
     currentLocation: {
       description: 'Near-polar orbit around Mars, ~300 km altitude',
       label: 'DERIVED',
@@ -951,8 +979,13 @@ export const MISSIONS: Mission[] = [
       'Characterize Martian atmosphere and ionosphere',
       'Study interactions between solar wind and Mars',
     ],
-    heroImageUrl: 'https://images-assets.nasa.gov/image/PIA19952/PIA19952~orig.jpg',
-    thumbnailUrl: 'https://images-assets.nasa.gov/image/PIA19952/PIA19952~thumb.jpg',
+    // PIA19952 was "The Rich Color Variations of Pluto" — completely
+    // unrelated (Pluto, not Mars; not even a NASA mission). Replaced with an
+    // actual ESA photo of the Mars Express spacecraft.
+    // Source: ESA, "Mars Express seen during ground testing in 2003, in its
+    // vacuum chamber with simulated Sun illumination." Credit: ESA.
+    heroImageUrl: 'https://www.esa.int/var/esa/storage/images/esa_multimedia/images/2003/05/mars_express_spacecraft/9620280-3-eng-GB/Mars_Express_spacecraft.jpg',
+    thumbnailUrl: 'https://www.esa.int/var/esa/storage/images/esa_multimedia/images/2003/05/mars_express_spacecraft/9620280-3-eng-GB/Mars_Express_spacecraft.jpg',
     currentLocation: {
       description: 'Elliptical orbit around Mars',
       label: 'DERIVED',
@@ -1023,8 +1056,11 @@ export const MISSIONS: Mission[] = [
       'Study solar wind interaction with Mars',
       'Serve as relay for future ExoMars surface missions',
     ],
-    heroImageUrl: 'https://images-assets.nasa.gov/image/PIA21131/PIA21131~orig.jpg',
-    thumbnailUrl: 'https://images-assets.nasa.gov/image/PIA21131/PIA21131~thumb.jpg',
+    // PIA21131 was a Mars surface crater photo (Schiaparelli impact site),
+    // not the TGO spacecraft. Replaced with an actual ESA rendering.
+    // Source: ESA/ATG medialab, "Trace Gas Orbiter" artist's impression.
+    heroImageUrl: 'https://www.esa.int/var/esa/storage/images/esa_multimedia/images/2015/11/trace_gas_orbiter/15667434-1-eng-GB/Trace_Gas_Orbiter.jpg',
+    thumbnailUrl: 'https://www.esa.int/var/esa/storage/images/esa_multimedia/images/2015/11/trace_gas_orbiter/15667434-1-eng-GB/Trace_Gas_Orbiter.jpg',
     currentLocation: {
       description: 'Near-circular orbit around Mars, ~400 km altitude',
       label: 'DERIVED',
@@ -1259,8 +1295,12 @@ export const MISSIONS: Mission[] = [
       'Search for plumes of water vapor erupting from the surface',
       'Assess Europa\'s potential habitability',
     ],
-    heroImageUrl: 'https://images-assets.nasa.gov/image/PIA25453/PIA25453~orig.jpg',
-    thumbnailUrl: 'https://images-assets.nasa.gov/image/PIA25453/PIA25453~thumb.jpg',
+    // PIA25453 was "Olympus Rupes" — a Mercury surface feature, not Europa
+    // Clipper. Replaced with an actual spacecraft rendering.
+    // Source: NASA/JPL-Caltech, "Europa Clipper: NASA's Largest Planetary
+    // Spacecraft (Artist's Concept)" (PIA26433).
+    heroImageUrl: 'https://images-assets.nasa.gov/image/PIA26433/PIA26433~orig.jpg',
+    thumbnailUrl: 'https://images-assets.nasa.gov/image/PIA26433/PIA26433~thumb.jpg',
     currentLocation: {
       description: 'En route to Jupiter — cruise phase, Mars flyby Feb 2025, Earth flyby Dec 2026',
       label: 'DERIVED',
@@ -1336,8 +1376,12 @@ export const MISSIONS: Mission[] = [
       'Study the interaction between Jupiter and its icy moons',
       'Become the first spacecraft to orbit Ganymede',
     ],
-    heroImageUrl: 'https://images-assets.nasa.gov/image/PIA25977/PIA25977~orig.jpg',
-    thumbnailUrl: 'https://images-assets.nasa.gov/image/PIA25977/PIA25977~thumb.jpg',
+    // PIA25977 was "Mareotis Fossae" — a Mars surface feature, not JUICE
+    // (a Jupiter mission). Replaced with a real ESA photo of the spacecraft.
+    // Source: ESA/CNES/Arianespace/Optique video du CSG – P. Baudon,
+    // "Juice transfers to fuelling facility" (real hardware photo).
+    heroImageUrl: 'https://www.esa.int/var/esa/storage/images/esa_multimedia/images/2023/03/juice_transfers_to_fuelling_facility2/24763133-1-eng-GB/Juice_transfers_to_fuelling_facility.jpg',
+    thumbnailUrl: 'https://www.esa.int/var/esa/storage/images/esa_multimedia/images/2023/03/juice_transfers_to_fuelling_facility2/24763133-1-eng-GB/Juice_transfers_to_fuelling_facility.jpg',
     currentLocation: {
       description: 'En route to Jupiter — cruise phase, Venus/Earth gravity assists 2024–2026',
       label: 'DERIVED',
@@ -1415,8 +1459,11 @@ export const MISSIONS: Mission[] = [
       'Investigate Jupiter\'s magnetosphere',
       'Deploy an atmospheric probe into Jupiter',
     ],
-    heroImageUrl: 'https://images-assets.nasa.gov/image/PIA01299/PIA01299~orig.jpg',
-    thumbnailUrl: 'https://images-assets.nasa.gov/image/PIA01299/PIA01299~thumb.jpg',
+    // PIA01299 was "The Galilean Satellites" (Jupiter's moons), not the
+    // Galileo spacecraft itself. Replaced with an actual spacecraft rendering.
+    // Source: NASA/JPL-Caltech, "Galileo Over Io Artist Concept" (PIA18176).
+    heroImageUrl: 'https://images-assets.nasa.gov/image/PIA18176/PIA18176~orig.jpg',
+    thumbnailUrl: 'https://images-assets.nasa.gov/image/PIA18176/PIA18176~thumb.jpg',
     currentLocation: {
       description: 'Destroyed in Jupiter\'s atmosphere — intentional deorbit 21 September 2003',
       label: 'OBSERVED',
@@ -1595,8 +1642,11 @@ export const MISSIONS: Mission[] = [
       'Study the composition of Titan\'s surface materials',
       'Measure atmospheric and meteorological conditions',
     ],
-    heroImageUrl: 'https://images-assets.nasa.gov/image/PIA23491/PIA23491~orig.jpg',
-    thumbnailUrl: 'https://images-assets.nasa.gov/image/PIA23491/PIA23491~thumb.jpg',
+    // PIA23491 was "Mars 2020 Collecting Sample (Artist's Concept)" — that's
+    // the Perseverance rover on Mars, not Dragonfly (a Titan rotorcraft).
+    // Source: NASA/Johns Hopkins APL, official Dragonfly factsheet rendering.
+    heroImageUrl: 'https://assets.science.nasa.gov/dynamicimage/assets/science/psd/planetary-science-division/2025/Dragonfly_2024_Factsheet-LandStill_1.jpg?w=1600',
+    thumbnailUrl: 'https://assets.science.nasa.gov/dynamicimage/assets/science/psd/planetary-science-division/2025/Dragonfly_2024_Factsheet-LandStill_1.jpg?w=600',
     currentLocation: {
       description: 'Under development at Johns Hopkins APL; planned launch July 2028',
       label: 'OBSERVED',
@@ -1749,8 +1799,11 @@ export const MISSIONS: Mission[] = [
       'Characterize Mercury\'s magnetic field and its interaction with the solar wind',
       'Determine whether ice exists in permanently shadowed polar craters',
     ],
-    heroImageUrl: 'https://images-assets.nasa.gov/image/PIA16853/PIA16853~orig.jpg',
-    thumbnailUrl: 'https://images-assets.nasa.gov/image/PIA16853/PIA16853~thumb.jpg',
+    // PIA16853 was a Mercury surface color-mapping image, not the MESSENGER
+    // spacecraft itself. Replaced with an actual spacecraft rendering.
+    // Source: NASA/JPL-Caltech, "MESSENGER at Mercury Artist Concept" (PIA18145).
+    heroImageUrl: 'https://images-assets.nasa.gov/image/PIA18145/PIA18145~orig.jpg',
+    thumbnailUrl: 'https://images-assets.nasa.gov/image/PIA18145/PIA18145~thumb.jpg',
     currentLocation: {
       description: 'Impact site on Mercury\'s surface — intentional deorbit 30 April 2015',
       label: 'OBSERVED',
@@ -1826,8 +1879,14 @@ export const MISSIONS: Mission[] = [
       'Map Mercury\'s surface composition and geology',
       'Investigate Mercury\'s internal structure and large iron core',
     ],
-    heroImageUrl: 'https://images-assets.nasa.gov/image/PIA24031/PIA24031~orig.jpg',
-    thumbnailUrl: 'https://images-assets.nasa.gov/image/PIA24031/PIA24031~thumb.jpg',
+    // PIA24031 was "NASA Astronauts on Mars (Illustration)" — completely
+    // unrelated (wrong agency, wrong planet, wrong mission type). Replaced
+    // with an actual ESA/JAXA BepiColombo rendering.
+    // Source: ESA/ATG medialab, "BepiColombo in low Earth orbit" — shows the
+    // Mercury Transfer Module, Mercury Planetary Orbiter, and Mercury
+    // Magnetospheric Orbiter in their launch/cruise configuration.
+    heroImageUrl: 'https://www.esa.int/var/esa/storage/images/esa_multimedia/images/2018/03/bepicolombo_in_low_earth_orbit3/17437396-1-eng-GB/BepiColombo_in_low_Earth_orbit.jpg',
+    thumbnailUrl: 'https://www.esa.int/var/esa/storage/images/esa_multimedia/images/2018/03/bepicolombo_in_low_earth_orbit3/17437396-1-eng-GB/BepiColombo_in_low_Earth_orbit.jpg',
     currentLocation: {
       description: 'En route to Mercury — sixth Mercury flyby completed Jan 2025; Mercury orbit insertion planned Nov 2026',
       label: 'DERIVED',
@@ -1922,8 +1981,14 @@ export const MISSIONS: Mission[] = [
       'Search for active volcanism and lightning on Venus',
       'Study Venus\'s heat balance and atmospheric chemistry',
     ],
-    heroImageUrl: 'https://images-assets.nasa.gov/image/PIA23791/PIA23791~orig.jpg',
-    thumbnailUrl: 'https://images-assets.nasa.gov/image/PIA23791/PIA23791~thumb.jpg',
+    // PIA23791 ("Venus from Mariner 10") is a 1970s NASA Mariner 10 photo —
+    // wrong mission entirely, and was also falsely mislabeled below as a
+    // JAXA-sourced Akatsuki image (it's a NASA-numbered PIA id, not JAXA's).
+    // It was also duplicated verbatim on the unrelated Venus Express entry.
+    // Replaced with an actual JAXA Akatsuki spacecraft model photo.
+    // Source: Wikimedia Commons ("A model of the spacecraft Akatsuki", JAXA).
+    heroImageUrl: 'https://upload.wikimedia.org/wikipedia/commons/4/4b/Akatsuki-1.jpg',
+    thumbnailUrl: 'https://upload.wikimedia.org/wikipedia/commons/4/4b/Akatsuki-1.jpg',
     currentLocation: {
       description: 'Heliocentric orbit — operations ended September 2025 after loss of attitude control',
       label: 'OBSERVED',
@@ -1962,7 +2027,8 @@ export const MISSIONS: Mission[] = [
       { id: 'aka-e5', missionId: 'akatsuki', eventType: 'milestone', timestamp: '2025-09-01', title: 'End of Mission', description: 'JAXA officially ends Akatsuki operations following progressive loss of attitude control capability', source: 'JAXA' },
     ],
     images: [
-      { id: 'aka-img-1', missionId: 'akatsuki', url: 'https://images-assets.nasa.gov/image/PIA23791/PIA23791~orig.jpg', title: 'Venus Ultraviolet View — Akatsuki', date: '2018-01-01', source: 'JAXA', sourceUrl: 'https://images.nasa.gov/details/PIA23791' },
+      // Was PIA23791, a 1970s Mariner 10 photo falsely attributed to JAXA — see heroImageUrl note above.
+      { id: 'aka-img-1', missionId: 'akatsuki', url: 'https://upload.wikimedia.org/wikipedia/commons/4/4b/Akatsuki-1.jpg', title: 'A model of the Akatsuki spacecraft', date: '2010-01-01', source: 'JAXA', sourceUrl: 'https://en.wikipedia.org/wiki/Akatsuki_(spacecraft)' },
     ],
     sourceUrl: 'https://global.jaxa.jp/projects/sas/planet_c/',
     tags: ['orbiter', 'Venus', 'JAXA', 'atmosphere', 'completed'],
@@ -1998,8 +2064,12 @@ export const MISSIONS: Mission[] = [
       'Study Venus\'s gravity field',
       'Investigate atmospheric entry dynamics during final aerobraking',
     ],
-    heroImageUrl: 'https://images-assets.nasa.gov/image/PIA00271/PIA00271~orig.jpg',
-    thumbnailUrl: 'https://images-assets.nasa.gov/image/PIA00271/PIA00271~thumb.jpg',
+    // PIA00271 was a computer-simulated Venus radar map, not the Magellan
+    // spacecraft. Replaced with an actual pre-launch photo.
+    // Source: Wikimedia Commons, "Magellan with its Star 48B solid rocket
+    // motor undergoing final checks at the Kennedy Space Center" (NASA).
+    heroImageUrl: 'https://upload.wikimedia.org/wikipedia/commons/1/1e/Magellan_at_Kennedy_Space_Center.jpg',
+    thumbnailUrl: 'https://upload.wikimedia.org/wikipedia/commons/1/1e/Magellan_at_Kennedy_Space_Center.jpg',
     currentLocation: {
       description: 'Destroyed in Venus\'s atmosphere — intentional deorbit 12 October 1994',
       label: 'OBSERVED',
@@ -2073,8 +2143,12 @@ export const MISSIONS: Mission[] = [
       'Investigate Venus\'s southern polar vortex',
       'Search for lightning and active volcanism',
     ],
-    heroImageUrl: 'https://images-assets.nasa.gov/image/PIA23791/PIA23791~orig.jpg',
-    thumbnailUrl: 'https://images-assets.nasa.gov/image/PIA23791/PIA23791~thumb.jpg',
+    // PIA23791 ("Venus from Mariner 10") is a 1970s NASA Mariner 10 photo —
+    // wrong mission, and duplicated verbatim on the unrelated Akatsuki entry.
+    // Replaced with an actual ESA photo of the Venus Express spacecraft.
+    // Source: ESA/C.Carreau, "The Venus Express spacecraft".
+    heroImageUrl: 'https://www.esa.int/var/esa/storage/images/esa_multimedia/images/2005/08/the_venus_express_spacecraft2/9976806-2-eng-GB/The_Venus_Express_spacecraft.jpg',
+    thumbnailUrl: 'https://www.esa.int/var/esa/storage/images/esa_multimedia/images/2005/08/the_venus_express_spacecraft2/9976806-2-eng-GB/The_Venus_Express_spacecraft.jpg',
     currentLocation: {
       description: 'Destroyed in Venus\'s atmosphere — last contact 18 January 2015 after fuel exhaustion',
       label: 'OBSERVED',
@@ -2111,7 +2185,9 @@ export const MISSIONS: Mission[] = [
       { id: 've-e4', missionId: 'venus-express', eventType: 'milestone', timestamp: '2015-01-18', title: 'End of Mission', description: 'Last contact with Venus Express; spacecraft lost after propellant exhaustion following aerobraking', source: 'ESA' },
     ],
     images: [
-      { id: 've-img-1', missionId: 'venus-express', url: 'https://images-assets.nasa.gov/image/PIA23791/PIA23791~orig.jpg', title: 'Venus Ultraviolet Cloud View', date: '2010-01-01', source: 'ESA', sourceUrl: 'https://images.nasa.gov/details/PIA23791' },
+      // Was PIA23791, a 1970s Mariner 10 photo falsely attributed to ESA — see heroImageUrl note above.
+      // Reuses the verified hero image rather than guessing a second unverified ESA URL.
+      { id: 've-img-1', missionId: 'venus-express', url: 'https://www.esa.int/var/esa/storage/images/esa_multimedia/images/2005/08/the_venus_express_spacecraft2/9976806-2-eng-GB/The_Venus_Express_spacecraft.jpg', title: 'The Venus Express spacecraft', date: '2005-08-01', source: 'ESA', sourceUrl: 'https://www.esa.int/ESA_Multimedia/Images/2005/08/The_Venus_Express_spacecraft2' },
     ],
     sourceUrl: 'https://www.esa.int/Science_Exploration/Space_Science/Venus_Express',
     tags: ['orbiter', 'Venus', 'ESA', 'atmosphere', 'volcanism', 'completed'],
@@ -2146,8 +2222,12 @@ export const MISSIONS: Mission[] = [
       'Image the tessera highlands of Alpha Regio at fine scale',
       'Measure surface conditions at the landing site',
     ],
-    heroImageUrl: 'https://images-assets.nasa.gov/image/PIA24818/PIA24818~orig.jpg',
-    thumbnailUrl: 'https://images-assets.nasa.gov/image/PIA24818/PIA24818~thumb.jpg',
+    // PIA24818 was "Jupiter's Bands" — completely unrelated (Jupiter, not
+    // Venus). Replaced with an actual DAVINCI probe visualization.
+    // Source: NASA Scientific Visualization Studio, "DAVINCI's descent probe
+    // lying on the surface of Venus".
+    heroImageUrl: 'https://science.nasa.gov/wp-content/uploads/2023/06/davinci-probe-on-surface-1280x900-1.jpg',
+    thumbnailUrl: 'https://science.nasa.gov/wp-content/uploads/2023/06/davinci-probe-on-surface-1280x900-1.jpg',
     currentLocation: {
       description: 'Under development at NASA Goddard Space Flight Center; launch target ~2030',
       label: 'OBSERVED',
@@ -2224,8 +2304,13 @@ export const MISSIONS: Mission[] = [
       'Measure surface emissivity to constrain crustal composition',
       'Investigate why Venus and Earth evolved so differently',
     ],
-    heroImageUrl: 'https://images-assets.nasa.gov/image/PIA24813/PIA24813~orig.jpg',
-    thumbnailUrl: 'https://images-assets.nasa.gov/image/PIA24813/PIA24813~thumb.jpg',
+    // PIA24813 was "Jezero Crater's Scarp A" — a Mars surface feature (Jezero
+    // is Perseverance's landing site), not VERITAS (a Venus mission).
+    // Replaced with an actual spacecraft rendering.
+    // Source: Wikimedia Commons, "Illustration of the VERITAS spacecraft in
+    // orbit around Venus" (NASA).
+    heroImageUrl: 'https://upload.wikimedia.org/wikipedia/commons/c/c9/Veritas20150930.jpg',
+    thumbnailUrl: 'https://upload.wikimedia.org/wikipedia/commons/c/c9/Veritas20150930.jpg',
     currentLocation: {
       description: 'Under development at NASA JPL; launch target early 2030s',
       label: 'OBSERVED',
@@ -2292,8 +2377,11 @@ export const MISSIONS: Mission[] = [
       'Study the structure and dynamics of Venus\'s atmosphere',
       'Establish the geological context for potential future Venus surface missions',
     ],
-    heroImageUrl: 'https://images-assets.nasa.gov/image/PIA24817/PIA24817~orig.jpg',
-    thumbnailUrl: 'https://images-assets.nasa.gov/image/PIA24817/PIA24817~thumb.jpg',
+    // PIA24817 was "Sizing Up Jupiter's Great Red Spot" — completely
+    // unrelated (Jupiter, not Venus). Replaced with an actual ESA rendering.
+    // Source: ESA, "Envision mission concept".
+    heroImageUrl: 'https://www.esa.int/var/esa/storage/images/esa_multimedia/images/2019/03/envision_mission_concept/19317905-1-eng-GB/EnVision_mission_concept.png',
+    thumbnailUrl: 'https://www.esa.int/var/esa/storage/images/esa_multimedia/images/2019/03/envision_mission_concept/19317905-1-eng-GB/EnVision_mission_concept.png',
     currentLocation: {
       description: 'Under development at ESA; launch targeted for early 2030s',
       label: 'OBSERVED',
